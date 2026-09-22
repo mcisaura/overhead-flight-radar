@@ -2,6 +2,14 @@
 
 Overhead is a personal flight-watching web app. It finds the nearest recently reported airborne aircraft, shows its flight details in an illustrated sky, looks up a possible origin and destination, and displays local weather. The app is designed for a public, noncommercial hobby site.
 
+## Inspiration
+
+British Airways' **#LookUp** campaign, launched in London in November 2013, inspired this project. Its digital billboards used custom aircraft-detection technology to respond to British Airways planes passing overhead. A child on the screen pointed toward the aircraft while the display showed details about that flight. Overhead brings that moment of curiosity to a personal web app: look up, find a plane, and learn where its journey may lead.
+
+Read more: [SimpliFlying's contemporary coverage](https://simpliflying.com/blog/british-airways-plane-detecting-billboards-showcase-magic-flying-lookup), [The Drum's retrospective](https://www.thedrum.com/news/worlds-best-ooh-ads-ever-10-ba-rediscovers-wonder-in-the-skies), [Engadget's 2013 report](https://www.engadget.com/2013-11-22-british-airways-billboard.html), and the [campaign video](https://www.youtube.com/watch?v=z3aWjM1rmV0).
+
+Additional video inspiration: [YouTube video shared by the project creator](https://youtu.be/1c9FS5Myn4k?si=qQ2n8p-pZ2wPDhHh).
+
 ## Run locally
 
 You need Node.js 22.13 or newer and npm. From this directory:
