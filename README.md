@@ -1,6 +1,6 @@
 # Overhead
 
-Overhead is a personal flight-watching web app. It finds the nearest recently reported airborne aircraft, shows its flight details in an illustrated sky, looks up a possible origin and destination, and displays local weather. The app is designed for a public, noncommercial hobby site.
+Overhead is a personal flight-watching web app. It finds the nearest recently reported airborne aircraft, shows its flight details in an illustrated sky, plots nearby aircraft on an interactive map, looks up a possible origin and destination, and displays local weather. The app is designed for a public, noncommercial hobby site.
 
 ## Inspiration
 
@@ -33,7 +33,7 @@ No API keys, database, or account setup are required for the current version.
 ## How it works
 
 1. The browser obtains the visitor's location only after they choose the location button. Manual latitude and longitude entry is available if permission is unavailable or declined.
-2. `app/api/sky/route.ts` asks [adsb.fi](https://github.com/adsbfi/opendata) for aircraft within 20 nautical miles. It ignores ground traffic, positions older than 60 seconds, and aircraft below 500 feet; then it selects the nearest remaining aircraft by ground distance.
+2. `app/api/sky/route.ts` asks [adsb.fi](https://github.com/adsbfi/opendata) for aircraft within 20 nautical miles. It ignores ground traffic, positions older than 60 seconds, and aircraft below 500 feet; then it selects the nearest remaining aircraft by ground distance. The filtered positions also appear on an interactive [OpenStreetMap](https://www.openstreetmap.org/copyright) map. Select a plane marker to view its altitude, speed, and distance.
 3. For that aircraft, the server asks [adsbdb](https://github.com/mrjackwills/adsbdb) for a route associated with its callsign. It checks whether the listed route is geographically plausible before displaying it. Missing or implausible routes appear as unavailable.
 4. The server asks [Open-Meteo](https://open-meteo.com/en/terms) for current temperature, cloud cover, wind, and conditions. Weather also appears when no aircraft is nearby.
 
@@ -44,6 +44,7 @@ The browser refreshes its view every 30 seconds. Server requests use short cache
 ## Interface and assets
 
 - `app/page.tsx` contains the location flow, live states, flight hero, and weather details.
+- `app/flight-map.tsx` renders the interactive map and aircraft markers using Leaflet. Map tiles are loaded from OpenStreetMap with attribution visible on the map.
 - `app/globals.css` defines the responsive visual system and reduced-motion behavior.
 - `public/sky-backdrop.png` is an original illustrated sky background.
 - `public/aircraft/` contains three original transparent aircraft illustrations selected by reported aircraft type; unknown types use the regional illustration.
