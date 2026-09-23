@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getDemoSky } from "../../demo-data";
 
 export const runtime = "edge";
 
@@ -65,6 +66,9 @@ async function currentAirLabsRoute(item: RawAircraft, callsign: string) {
 }
 
 export async function GET(request: NextRequest) {
+  if (process.env.FLIGHT_DATA_MODE !== "live") {
+    return NextResponse.json(getDemoSky(request.nextUrl.searchParams.get("preset")), { headers: { "Cache-Control": "no-store" } });
+  }
   const lat = Number(request.nextUrl.searchParams.get("lat"));
   const lon = Number(request.nextUrl.searchParams.get("lon"));
   if (!Number.isFinite(lat) || !Number.isFinite(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180 || request.nextUrl.searchParams.get("lat") === null || request.nextUrl.searchParams.get("lon") === null) {

@@ -26,6 +26,8 @@ type Props = {
   closestHex: string | null;
   loading: boolean;
   unavailable: boolean;
+  demo?: boolean;
+  onSelect?: (hex: string) => void;
 };
 
 const planeShape = '<svg viewBox="0 0 32 32" width="27" height="27" aria-hidden="true"><path d="M16 2.5 19.2 13l9.4 5.1v3l-10.8-3.2-.8 8.2 4 2.3v2.1L16 29l-5 1.5v-2.1l4-2.3-.8-8.2-10.8 3.2v-3L12.8 13 16 2.5Z" fill="currentColor" stroke="white" stroke-width="1.2" stroke-linejoin="round"/></svg>';
@@ -34,7 +36,7 @@ function formatName(plane: MapAircraft) {
   return plane.callsign || plane.registration || plane.hex.toUpperCase();
 }
 
-export default function FlightMap({ lat, lon, aircraft, closestHex, loading, unavailable }: Props) {
+export default function FlightMap({ lat, lon, aircraft, closestHex, loading, unavailable, demo = false, onSelect }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<Leaflet.Map | null>(null);
   const markerLayerRef = useRef<Leaflet.LayerGroup | null>(null);
@@ -57,7 +59,7 @@ export default function FlightMap({ lat, lon, aircraft, closestHex, loading, una
       L.control.zoom({ position: "bottomright" }).addTo(map);
       L.circle([lat, lon], { radius: 32_200, color: "#317f98", weight: 1, dashArray: "5 7", fillColor: "#74adc0", fillOpacity: 0.075, interactive: false }).addTo(map);
       L.circleMarker([lat, lon], { radius: 8, color: "#fff", weight: 3, fillColor: "#1e6e8b", fillOpacity: 1 })
-        .bindTooltip("Your location", { direction: "top" }).addTo(map);
+        .bindTooltip(demo ? "Sample location" : "Your location", { direction: "top" }).addTo(map);
       markerLayerRef.current = L.layerGroup().addTo(map);
       setReady(true);
     });
@@ -68,9 +70,9 @@ export default function FlightMap({ lat, lon, aircraft, closestHex, loading, una
       markerLayerRef.current = null;
       leafletRef.current = null;
     };
-  }, [lat, lon]);
+  }, [lat, lon, demo]);
 
-  const activeHex = selectedHex && aircraft.some((plane) => plane.hex === selectedHex)
+  const activeHex = onSelect ? closestHex : selectedHex && aircraft.some((plane) => plane.hex === selectedHex)
     ? selectedHex : closestHex || aircraft[0]?.hex || null;
 
   useEffect(() => {
@@ -90,10 +92,10 @@ export default function FlightMap({ lat, lon, aircraft, closestHex, loading, una
       const label = document.createElement("span");
       label.textContent = formatName(plane);
       marker.bindTooltip(label, { direction: "top", offset: [0, -18] });
-      marker.on("click", () => setSelectedHex(plane.hex));
+      marker.on("click", () => onSelect ? onSelect(plane.hex) : setSelectedHex(plane.hex));
       marker.addTo(layer);
     }
-  }, [aircraft, ready, activeHex]);
+  }, [aircraft, ready, activeHex, onSelect]);
 
   const selected = aircraft.find((plane) => plane.hex === activeHex) ?? null;
 
@@ -101,18 +103,18 @@ export default function FlightMap({ lat, lon, aircraft, closestHex, loading, una
     <section className="map-section" aria-labelledby="map-title">
       <div className="map-heading">
         <div>
-          <p className="section-eyebrow"><span className="signal-dot" /> LIVE POSITIONS</p>
-          <h2 id="map-title">Flights around you</h2>
-          <p>Aircraft reported within 20 nautical miles. Select a plane to see its details.</p>
+          <p className="section-eyebrow"><span className="signal-dot" /> {demo ? "SIMULATED POSITIONS" : "LIVE POSITIONS"}</p>
+          <h2 id="map-title">{demo ? "The sample sky" : "Flights around you"}</h2>
+          <p>{demo ? "Four fictional aircraft around Chicago. Select a marker or a preset to explore." : "Aircraft reported within 20 nautical miles. Select a plane to see its details."}</p>
         </div>
-        <span className="map-count">{aircraft.length} aircraft nearby</span>
+        <span className="map-count">{aircraft.length} {demo ? "sample aircraft" : "aircraft nearby"}</span>
       </div>
       <div className="map-frame">
-        <div ref={containerRef} className="flight-map" role="application" aria-label="Interactive map of nearby aircraft" />
-        <div className="map-key"><span className="map-key-plane"><Navigation2 size={15} fill="currentColor" /></span> Aircraft <span className="map-key-location" /> Your location</div>
+        <div ref={containerRef} className="flight-map" role="application" aria-label={demo ? "Interactive map of fictional aircraft" : "Interactive map of nearby aircraft"} />
+        <div className="map-key"><span className="map-key-plane"><Navigation2 size={15} fill="currentColor" /></span> Aircraft <span className="map-key-location" /> {demo ? "Sample location" : "Your location"}</div>
         <div className="map-flight-card" aria-live="polite">
           {selected ? <>
-            <span className="map-card-label">{selected.hex === closestHex ? "CLOSEST AIRCRAFT" : "SELECTED AIRCRAFT"}</span>
+            <span className="map-card-label">{demo ? "SAMPLE FLIGHT" : selected.hex === closestHex ? "CLOSEST AIRCRAFT" : "SELECTED AIRCRAFT"}</span>
             <strong>{formatName(selected)}</strong>
             <span className="map-card-type">{selected.aircraftType || "Aircraft type unavailable"}{selected.registration && selected.registration !== selected.callsign ? ` · ${selected.registration}` : ""}</span>
             <div className="map-card-stats">
@@ -120,7 +122,7 @@ export default function FlightMap({ lat, lon, aircraft, closestHex, loading, una
               <span><small>Speed</small>{selected.speedKts == null ? "—" : `${Math.round(selected.speedKts)} kt`}</span>
               <span><small>Distance</small>{selected.distanceKm.toFixed(1)} km</span>
             </div>
-            <span className="map-card-age">Position received {Math.round(selected.seenSeconds)} sec ago</span>
+            <span className="map-card-age">{demo ? "Simulated aircraft position" : `Position received ${Math.round(selected.seenSeconds)} sec ago`}</span>
           </> : <>
             <MapPin size={20} aria-hidden="true" />
             <strong>{unavailable ? "Live positions unavailable" : loading ? "Finding nearby aircraft…" : "No aircraft nearby"}</strong>
@@ -128,7 +130,7 @@ export default function FlightMap({ lat, lon, aircraft, closestHex, loading, una
           </>}
         </div>
       </div>
-      <p className="map-note">Positions are reported by aircraft, so coverage and timing can vary. The dashed circle shows the search area.</p>
+      <p className="map-note">{demo ? "Aircraft markers are fictional. The base map shows real geography." : "Positions are reported by aircraft, so coverage and timing can vary. The dashed circle shows the search area."}</p>
     </section>
   );
 }
