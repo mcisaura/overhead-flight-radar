@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowRight, CloudSun, LocateFixed, MapPin, Navigation2, RefreshCw, Wind } from "lucide-react";
+import FlightMap, { type MapAircraft } from "./flight-map";
 
 type Flight = {
   hex: string;
@@ -14,9 +15,10 @@ type Flight = {
   seenSeconds: number;
   origin: { code: string; city: string } | null;
   destination: { code: string; city: string } | null;
+  routeStatus: "available" | "missing" | "unverified" | "lookup-error" | "no-callsign";
 };
 type Weather = { temperatureF: number; cloudCover: number; windMph: number; code: number; isDay: boolean };
-type Sky = { flight: Flight | null; nearbyCount: number; weather: Weather | null; updatedAt: string; warnings?: string[] };
+type Sky = { flight: Flight | null; aircraft: MapAircraft[]; nearbyCount: number; weather: Weather | null; updatedAt: string; warnings?: string[] };
 type Place = { lat: number; lon: number; label: string };
 
 function weatherDescription(code: number) {
@@ -38,6 +40,16 @@ function aircraftImage(type: string | null) {
 
 function numberOrDash(value: number | null, unit: string) {
   return value == null ? "—" : `${Math.round(value).toLocaleString()} ${unit}`;
+}
+
+function routeNote(status: Flight["routeStatus"]) {
+  switch (status) {
+    case "available": return "Listed route";
+    case "missing": return "No published route found for this flight";
+    case "unverified": return "Listed route did not match this aircraft’s position";
+    case "lookup-error": return "Route lookup temporarily unavailable";
+    case "no-callsign": return "No flight identifier for a route lookup";
+  }
 }
 
 export default function Home() {
@@ -75,9 +87,9 @@ export default function Home() {
 
   useEffect(() => {
     if (!place) return;
-    void loadSky(place);
+    const initial = window.setTimeout(() => void loadSky(place), 0);
     const timer = window.setInterval(() => void loadSky(place), 30_000);
-    return () => { window.clearInterval(timer); requestRef.current?.abort(); };
+    return () => { window.clearTimeout(initial); window.clearInterval(timer); requestRef.current?.abort(); };
   }, [place, loadSky]);
 
   const locate = () => {
@@ -155,7 +167,7 @@ export default function Home() {
               {routeKnown ? <>{flight.origin!.code}<span className="route-arrow"><ArrowRight size={32} strokeWidth={1.3} /></span><em>{flight.destination!.code}</em></> : <>A journey<br /><em>in motion.</em></>}
             </h1>
             {routeKnown && <p className="route-places">{flight.origin!.city} <span>to</span> {flight.destination!.city}</p>}
-            <p className="hero-description">{flightName} is passing {flight.distanceKm < 1 ? "almost directly overhead" : `${flight.distanceKm.toFixed(1)} km from your location`}.{!routeKnown && " Route details aren’t available for this flight."}</p>
+            <p className="hero-description">{flightName} is passing {flight.distanceKm < 1 ? "almost directly overhead" : `${flight.distanceKm.toFixed(1)} km from your location`}.{!routeKnown && ` ${routeNote(flight.routeStatus)}.`}</p>
           </>}
           {phase === "quiet" && <>
             <p className="hero-status"><span className="signal-dot quiet-dot" /> The sky is quiet</p>
@@ -180,6 +192,8 @@ export default function Home() {
         </div>
       </section>
 
+      {place && <FlightMap key={`${place.lat},${place.lon}`} lat={place.lat} lon={place.lon} aircraft={sky?.aircraft ?? []} closestHex={sky?.flight?.hex ?? null} loading={status === "loading"} unavailable={status === "error" || Boolean(flightUnavailable)} />}
+
       <section className="info-section" aria-label="Sky details">
         <div className="info-heading">
           <h2>{flight ? "The flight, at a glance" : "Your sky, at a glance"}</h2>
@@ -202,7 +216,7 @@ export default function Home() {
                 <div><span>Ground speed</span><strong>{numberOrDash(flight.speedKts, "kt")}</strong></div>
                 <div><span>Distance</span><strong>{flight.distanceKm.toFixed(1)} km</strong></div>
               </div>
-              <p className="data-note">{routeKnown ? "Listed route · " : "Route unavailable · "}Position received {Math.round(flight.seenSeconds)} sec ago</p>
+              <p className="data-note">{routeNote(flight.routeStatus)} · Position received {Math.round(flight.seenSeconds)} sec ago</p>
             </> : <p className="empty-copy">{place ? "No nearby aircraft detected. The sky can change in a moment." : "Find your location to meet the flight closest to you."}</p>}
           </article>
 
@@ -228,7 +242,7 @@ export default function Home() {
         </form>}
       </section>
 
-      <footer className="site-footer"><span className="footer-brand">overhead<span className="brand-period">.</span></span><span>Flight positions: adsb.fi · Routes: adsbdb · Weather: Open-Meteo</span></footer>
+      <footer className="site-footer"><span className="footer-brand">overhead<span className="brand-period">.</span></span><span>Flight positions: adsb.fi · Routes: adsbdb · Weather: Open-Meteo · Map: OpenStreetMap</span></footer>
     </main>
   );
 }

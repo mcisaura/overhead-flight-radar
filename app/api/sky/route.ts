@@ -4,7 +4,7 @@ export const runtime = "edge";
 
 type RawAircraft = {
   hex?: string; flight?: string; r?: string; t?: string; lat?: number; lon?: number;
-  alt_baro?: number | "ground"; gs?: number; seen_pos?: number; seen?: number;
+  alt_baro?: number | "ground"; gs?: number; track?: number; seen_pos?: number; seen?: number;
 };
 type Airport = { iata_code?: string | null; icao_code?: string | null; municipality?: string | null; name?: string | null; latitude?: number | null; longitude?: number | null };
 type AircraftResponse = { ac?: RawAircraft[] };
@@ -56,6 +56,7 @@ export async function GET(request: NextRequest) {
 
   let flight = null;
   let nearbyCount = 0;
+  let aircraft: { hex: string; callsign: string | null; registration: string | null; aircraftType: string | null; lat: number; lon: number; heading: number | null; altitudeFt: number; speedKts: number | null; distanceKm: number; seenSeconds: number }[] = [];
   if (aircraftResult.status === "fulfilled") {
     const raw: RawAircraft[] = Array.isArray(aircraftResult.value?.ac) ? aircraftResult.value.ac : [];
     const candidates = raw.filter((item) => typeof item.lat === "number" && typeof item.lon === "number" && item.alt_baro !== "ground" && (item.seen_pos ?? item.seen ?? 999) <= 60)
@@ -68,11 +69,19 @@ export async function GET(request: NextRequest) {
       .filter((entry) => entry.distanceKm <= 32.2 && entry.altitudeFt !== null && entry.altitudeFt > 500)
       .sort((a, b) => a.distanceKm - b.distanceKm || b.elevationDeg - a.elevationDeg);
     nearbyCount = candidates.length;
+    aircraft = candidates.map(({ item, distanceKm, altitudeFt }) => ({
+      hex: item.hex || "unknown", callsign: item.flight?.trim() || null,
+      registration: item.r || null, aircraftType: item.t || null,
+      lat: item.lat!, lon: item.lon!, heading: typeof item.track === "number" && Number.isFinite(item.track) ? item.track : null,
+      altitudeFt: altitudeFt!, speedKts: typeof item.gs === "number" ? item.gs : null,
+      distanceKm, seenSeconds: item.seen_pos ?? item.seen ?? 0,
+    }));
     const selected = candidates[0];
     if (selected) {
       const item = selected.item;
       const callsign = item.flight?.trim() || null;
       let origin = null, destination = null;
+      let routeStatus: "available" | "missing" | "unverified" | "lookup-error" | "no-callsign" = callsign ? "missing" : "no-callsign";
       if (callsign) {
         try {
           const route = await getJson<RouteResponse>(`https://api.adsbdb.com/v0/callsign/${encodeURIComponent(callsign)}`, 3600, 7000);
@@ -80,13 +89,18 @@ export async function GET(request: NextRequest) {
           if (plausibleRoute({ lat: item.lat!, lon: item.lon!, altitudeFt: selected.altitudeFt! }, listed?.origin, listed?.destination)) {
             origin = airport(listed?.origin);
             destination = airport(listed?.destination);
+            routeStatus = "available";
+          } else if (listed?.origin && listed?.destination) {
+            routeStatus = "unverified";
           }
-        } catch { /* Many callsigns have no published route. */ }
+        } catch (error) {
+          routeStatus = error instanceof Error && error.message === "Upstream 404" ? "missing" : "lookup-error";
+        }
       }
       flight = { hex: item.hex || "unknown", callsign, registration: item.r || null, aircraftType: item.t || null,
         altitudeFt: selected.altitudeFt, speedKts: typeof item.gs === "number" ? item.gs : null,
         distanceKm: selected.distanceKm, elevationDeg: selected.elevationDeg,
-        seenSeconds: item.seen_pos ?? item.seen ?? 0, origin, destination };
+        seenSeconds: item.seen_pos ?? item.seen ?? 0, origin, destination, routeStatus };
     }
   } else { console.error("Aircraft lookup failed", aircraftResult.reason); warnings.push("Live aircraft positions are temporarily unavailable."); }
 
@@ -100,5 +114,5 @@ export async function GET(request: NextRequest) {
   } else { console.error("Weather lookup failed", weatherResult.reason); warnings.push("Weather is temporarily unavailable."); }
 
   if (aircraftResult.status === "rejected" && weatherResult.status === "rejected") return NextResponse.json({ error: "Sky data is temporarily unavailable." }, { status: 503 });
-  return NextResponse.json({ flight, nearbyCount, weather, updatedAt: new Date().toISOString(), warnings }, { headers: { "Cache-Control": "public, max-age=15, stale-while-revalidate=15" } });
+  return NextResponse.json({ flight, aircraft, nearbyCount, weather, updatedAt: new Date().toISOString(), warnings }, { headers: { "Cache-Control": "public, max-age=15, stale-while-revalidate=15" } });
 }
