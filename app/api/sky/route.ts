@@ -9,6 +9,11 @@ type RawAircraft = {
 type Airport = { iata_code?: string | null; icao_code?: string | null; municipality?: string | null; name?: string | null; latitude?: number | null; longitude?: number | null };
 type AircraftResponse = { ac?: RawAircraft[] };
 type RouteResponse = { response?: { flightroute?: { origin?: Airport | null; destination?: Airport | null } } };
+type AirLabsResponse = { response?: {
+  hex?: string | null; lat?: number | null; lng?: number | null; updated?: number | null; status?: string | null;
+  dep_iata?: string | null; dep_icao?: string | null; dep_city?: string | null; dep_name?: string | null;
+  arr_iata?: string | null; arr_icao?: string | null; arr_city?: string | null; arr_name?: string | null;
+}; error?: { code?: string; message?: string } };
 type WeatherResponse = { current?: { temperature_2m?: number; cloud_cover?: number; wind_speed_10m?: number; weather_code?: number; is_day?: number } };
 
 function haversine(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -35,6 +40,28 @@ async function getJson<T>(url: string, seconds: number, timeout = 9000): Promise
   const response = await fetch(url, { next: { revalidate: seconds }, signal: AbortSignal.timeout(timeout), headers: { Accept: "application/json" } });
   if (!response.ok) throw new Error(`Upstream ${response.status}`);
   return response.json() as Promise<T>;
+}
+
+async function currentAirLabsRoute(item: RawAircraft, callsign: string) {
+  const key = process.env.AIRLABS_API_KEY;
+  if (!key || !item.hex || item.lat == null || item.lon == null || !/^[A-Z]{2,3}\d[A-Z0-9]*$/i.test(callsign)) return null;
+  const url = new URL("https://airlabs.co/api/v9/flight");
+  url.searchParams.set("flight_icao", callsign);
+  url.searchParams.set("api_key", key);
+  const data = await getJson<AirLabsResponse>(url.toString(), 300, 7000);
+  const match = data.response;
+  if (!match || data.error || match.hex?.toLowerCase() !== item.hex.toLowerCase() ||
+      typeof match.lat !== "number" || typeof match.lng !== "number" ||
+      typeof match.updated !== "number" || match.status !== "en-route" ||
+      Date.now() / 1000 - match.updated > 1200 || match.updated > Date.now() / 1000 + 60 ||
+      haversine(item.lat, item.lon, match.lat, match.lng) > 150) return null;
+  const departure = match.dep_iata || match.dep_icao;
+  const arrival = match.arr_iata || match.arr_icao;
+  if (!departure || !arrival) return null;
+  return {
+    origin: { code: departure, city: match.dep_city || match.dep_name || "Departure airport" },
+    destination: { code: arrival, city: match.arr_city || match.arr_name || "Arrival airport" },
+  };
 }
 
 export async function GET(request: NextRequest) {
@@ -81,6 +108,7 @@ export async function GET(request: NextRequest) {
       const item = selected.item;
       const callsign = item.flight?.trim() || null;
       let origin = null, destination = null;
+      let routeSource: "adsbdb" | "airlabs" | null = null;
       let routeStatus: "available" | "missing" | "unverified" | "lookup-error" | "no-callsign" = callsign ? "missing" : "no-callsign";
       if (callsign) {
         try {
@@ -90,17 +118,29 @@ export async function GET(request: NextRequest) {
             origin = airport(listed?.origin);
             destination = airport(listed?.destination);
             routeStatus = "available";
+            routeSource = "adsbdb";
           } else if (listed?.origin && listed?.destination) {
             routeStatus = "unverified";
           }
         } catch (error) {
           routeStatus = error instanceof Error && error.message === "Upstream 404" ? "missing" : "lookup-error";
         }
+        if (routeStatus !== "available") {
+          try {
+            const liveRoute = await currentAirLabsRoute(item, callsign);
+            if (liveRoute) {
+              origin = liveRoute.origin;
+              destination = liveRoute.destination;
+              routeStatus = "available";
+              routeSource = "airlabs";
+            }
+          } catch (error) { console.error("AirLabs route lookup failed", error instanceof Error ? error.message : error); }
+        }
       }
       flight = { hex: item.hex || "unknown", callsign, registration: item.r || null, aircraftType: item.t || null,
         altitudeFt: selected.altitudeFt, speedKts: typeof item.gs === "number" ? item.gs : null,
         distanceKm: selected.distanceKm, elevationDeg: selected.elevationDeg,
-        seenSeconds: item.seen_pos ?? item.seen ?? 0, origin, destination, routeStatus };
+        seenSeconds: item.seen_pos ?? item.seen ?? 0, origin, destination, routeStatus, routeSource };
     }
   } else { console.error("Aircraft lookup failed", aircraftResult.reason); warnings.push("Live aircraft positions are temporarily unavailable."); }
 

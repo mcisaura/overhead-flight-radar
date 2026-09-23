@@ -16,6 +16,7 @@ type Flight = {
   origin: { code: string; city: string } | null;
   destination: { code: string; city: string } | null;
   routeStatus: "available" | "missing" | "unverified" | "lookup-error" | "no-callsign";
+  routeSource: "adsbdb" | "airlabs" | null;
 };
 type Weather = { temperatureF: number; cloudCover: number; windMph: number; code: number; isDay: boolean };
 type Sky = { flight: Flight | null; aircraft: MapAircraft[]; nearbyCount: number; weather: Weather | null; updatedAt: string; warnings?: string[] };
@@ -42,9 +43,9 @@ function numberOrDash(value: number | null, unit: string) {
   return value == null ? "—" : `${Math.round(value).toLocaleString()} ${unit}`;
 }
 
-function routeNote(status: Flight["routeStatus"]) {
-  switch (status) {
-    case "available": return "Listed route";
+function routeNote(flight: Flight) {
+  switch (flight.routeStatus) {
+    case "available": return flight.routeSource === "airlabs" ? "Live flight route from AirLabs" : "Listed route from adsbdb";
     case "missing": return "No published route found for this flight";
     case "unverified": return "Listed route did not match this aircraft’s position";
     case "lookup-error": return "Route lookup temporarily unavailable";
@@ -167,7 +168,7 @@ export default function Home() {
               {routeKnown ? <>{flight.origin!.code}<span className="route-arrow"><ArrowRight size={32} strokeWidth={1.3} /></span><em>{flight.destination!.code}</em></> : <>A journey<br /><em>in motion.</em></>}
             </h1>
             {routeKnown && <p className="route-places">{flight.origin!.city} <span>to</span> {flight.destination!.city}</p>}
-            <p className="hero-description">{flightName} is passing {flight.distanceKm < 1 ? "almost directly overhead" : `${flight.distanceKm.toFixed(1)} km from your location`}.{!routeKnown && ` ${routeNote(flight.routeStatus)}.`}</p>
+            <p className="hero-description">{flightName} is passing {flight.distanceKm < 1 ? "almost directly overhead" : `${flight.distanceKm.toFixed(1)} km from your location`}.{!routeKnown && ` ${routeNote(flight)}.`}</p>
           </>}
           {phase === "quiet" && <>
             <p className="hero-status"><span className="signal-dot quiet-dot" /> The sky is quiet</p>
@@ -216,7 +217,7 @@ export default function Home() {
                 <div><span>Ground speed</span><strong>{numberOrDash(flight.speedKts, "kt")}</strong></div>
                 <div><span>Distance</span><strong>{flight.distanceKm.toFixed(1)} km</strong></div>
               </div>
-              <p className="data-note">{routeNote(flight.routeStatus)} · Position received {Math.round(flight.seenSeconds)} sec ago</p>
+              <p className="data-note">{routeNote(flight)} · Position received {Math.round(flight.seenSeconds)} sec ago</p>
             </> : <p className="empty-copy">{place ? "No nearby aircraft detected. The sky can change in a moment." : "Find your location to meet the flight closest to you."}</p>}
           </article>
 
@@ -242,7 +243,7 @@ export default function Home() {
         </form>}
       </section>
 
-      <footer className="site-footer"><span className="footer-brand">overhead<span className="brand-period">.</span></span><span>Flight positions: adsb.fi · Routes: adsbdb · Weather: Open-Meteo · Map: OpenStreetMap</span></footer>
+      <footer className="site-footer"><span className="footer-brand">overhead<span className="brand-period">.</span></span><span>Flight positions: adsb.fi · Routes: adsbdb &amp; AirLabs · Weather: Open-Meteo · Map: OpenStreetMap</span></footer>
     </main>
   );
 }
