@@ -1,6 +1,6 @@
 # Overhead
 
-Overhead is a personal flight-watching web app. It finds the nearest recently reported airborne aircraft, shows its flight details in an illustrated sky, plots nearby aircraft on an interactive map, looks up a possible origin and destination, and displays local weather. The app is designed for a public, noncommercial hobby site.
+Overhead is currently a sandbox for a personal flight-watching web app. It shows four fictional aircraft around a sample Chicago location, with preset buttons, an interactive map, illustrative routes, and sample weather. No live flight or weather data is requested in the sandbox interface.
 
 ## Inspiration
 
@@ -19,7 +19,7 @@ npm ci
 npm run dev
 ```
 
-Open the local URL printed by the server, usually `http://localhost:5173/`. Choose **Find the plane above me** and allow location access, or use **Enter coordinates instead**. Browser geolocation works on localhost; a hosted version needs HTTPS. Press `Ctrl+C` in the terminal running `npm run dev` to stop the local server.
+Open the local URL printed by the server, usually `http://localhost:5173/`. Choose any preset flight or its marker on the map. Press `Ctrl+C` in the terminal running `npm run dev` to stop the local server.
 
 To check a production build:
 
@@ -28,22 +28,19 @@ npx tsc --noEmit
 npm run build
 ```
 
-The app runs without API keys. To add live route fallback, put `AIRLABS_API_KEY=your_key` in an ignored `.env.local` file and restart the development server. Set the same secret in the hosting environment when deploying; never use a `NEXT_PUBLIC_` prefix for it.
+The sandbox needs no API keys. The existing live API code remains available for future work but is disabled unless `FLIGHT_DATA_MODE=live` is explicitly set on the server. The sandbox page does not call that live API. A local AirLabs key in `.env.local` is not used in sandbox mode.
 
 ## How it works
 
-1. The browser obtains the visitor's location only after they choose the location button. Manual latitude and longitude entry is available if permission is unavailable or declined.
-2. `app/api/sky/route.ts` asks [adsb.fi](https://github.com/adsbfi/opendata) for aircraft within 20 nautical miles. It ignores ground traffic, positions older than 60 seconds, and aircraft below 500 feet; then it selects the nearest remaining aircraft by ground distance. The filtered positions also appear on an interactive [OpenStreetMap](https://www.openstreetmap.org/copyright) map. Select a plane marker to view its altitude, speed, and distance.
-3. For that aircraft, the server asks [adsbdb](https://github.com/mrjackwills/adsbdb) for a route associated with its callsign. It checks whether the listed route is geographically plausible before displaying it. When a route is missing or implausible and an AirLabs key is configured, it asks [AirLabs](https://airlabs.co/docs/flight) for the current flight. It displays the AirLabs route only when the aircraft identifier, recent position, and live status match. AirLabs requests are cached for five minutes to preserve the free quota.
-4. The server asks [Open-Meteo](https://open-meteo.com/en/terms) for current temperature, cloud cover, wind, and conditions. Weather also appears when no aircraft is nearby.
+1. `app/demo-data.ts` defines the four sample aircraft, their illustrative routes, and sample weather.
+2. The preset buttons select the featured flight. Selecting an aircraft marker on the map selects the same preset.
+3. `app/api/sky/route.ts` returns sample data by default, without contacting flight or weather providers. The legacy live lookup runs only when the server is explicitly configured with `FLIGHT_DATA_MODE=live`.
 
-The browser refreshes its view every 30 seconds. Server requests use short caches. Precise browser coordinates are sent to this app's server, which rounds them to four decimal places for the aircraft and weather requests. The app does not store location or flight history.
-
-**Data limits:** “Nearest” is based on reported position, not confirmed visual sighting. Clouds, coverage gaps, delayed positions, and aircraft without broadcasts can affect the result. Route listings may be missing or outdated even after the plausibility check. The app labels a displayed route as a *listed route* rather than a confirmed itinerary.
+The base map uses real OpenStreetMap geography. Aircraft positions, callsigns, routes, and weather are fictional and clearly marked as sample data.
 
 ## Interface and assets
 
-- `app/page.tsx` contains the location flow, live states, flight hero, and weather details.
+- `app/page.tsx` contains the sandbox presets, featured flight, and sample weather details.
 - `app/flight-map.tsx` renders the interactive map and aircraft markers using Leaflet. Map tiles are loaded from OpenStreetMap with attribution visible on the map.
 - `app/globals.css` defines the responsive visual system and reduced-motion behavior.
 - `public/sky-backdrop.png` is an original illustrated sky background.
@@ -54,4 +51,4 @@ The design refresh follows [Impeccable](https://github.com/pbakaus/impeccable) g
 
 ## Before public hosting
 
-Review the current terms and request limits of [adsb.fi](https://github.com/adsbfi/opendata), [adsbdb](https://github.com/mrjackwills/adsbdb), [AirLabs](https://airlabs.co/terms-of-service), and [Open-Meteo](https://open-meteo.com/en/terms) for your intended use. Keep the provider attribution in the footer. No hosting or deployment is configured by this README.
+If restoring live mode, review the current terms and request limits of [adsb.fi](https://github.com/adsbfi/opendata), [adsbdb](https://github.com/mrjackwills/adsbdb), [AirLabs](https://airlabs.co/terms-of-service), and [Open-Meteo](https://open-meteo.com/en/terms) for your intended use. No hosting or deployment is configured by this README.
