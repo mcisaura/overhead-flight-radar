@@ -28,13 +28,13 @@ npx tsc --noEmit
 npm run build
 ```
 
-No API keys, database, or account setup are required for the current version.
+The app runs without API keys. To add live route fallback, put `AIRLABS_API_KEY=your_key` in an ignored `.env.local` file and restart the development server. Set the same secret in the hosting environment when deploying; never use a `NEXT_PUBLIC_` prefix for it.
 
 ## How it works
 
 1. The browser obtains the visitor's location only after they choose the location button. Manual latitude and longitude entry is available if permission is unavailable or declined.
 2. `app/api/sky/route.ts` asks [adsb.fi](https://github.com/adsbfi/opendata) for aircraft within 20 nautical miles. It ignores ground traffic, positions older than 60 seconds, and aircraft below 500 feet; then it selects the nearest remaining aircraft by ground distance. The filtered positions also appear on an interactive [OpenStreetMap](https://www.openstreetmap.org/copyright) map. Select a plane marker to view its altitude, speed, and distance.
-3. For that aircraft, the server asks [adsbdb](https://github.com/mrjackwills/adsbdb) for a route associated with its callsign. It checks whether the listed route is geographically plausible before displaying it. Missing or implausible routes appear as unavailable.
+3. For that aircraft, the server asks [adsbdb](https://github.com/mrjackwills/adsbdb) for a route associated with its callsign. It checks whether the listed route is geographically plausible before displaying it. When a route is missing or implausible and an AirLabs key is configured, it asks [AirLabs](https://airlabs.co/docs/flight) for the current flight. It displays the AirLabs route only when the aircraft identifier, recent position, and live status match. AirLabs requests are cached for five minutes to preserve the free quota.
 4. The server asks [Open-Meteo](https://open-meteo.com/en/terms) for current temperature, cloud cover, wind, and conditions. Weather also appears when no aircraft is nearby.
 
 The browser refreshes its view every 30 seconds. Server requests use short caches. Precise browser coordinates are sent to this app's server, which rounds them to four decimal places for the aircraft and weather requests. The app does not store location or flight history.
@@ -54,4 +54,4 @@ The design refresh follows [Impeccable](https://github.com/pbakaus/impeccable) g
 
 ## Before public hosting
 
-Review the current terms and request limits of [adsb.fi](https://github.com/adsbfi/opendata), [adsbdb](https://github.com/mrjackwills/adsbdb), and [Open-Meteo](https://open-meteo.com/en/terms) for your intended use. Keep the provider attribution in the footer. No hosting or deployment is configured by this README.
+Review the current terms and request limits of [adsb.fi](https://github.com/adsbfi/opendata), [adsbdb](https://github.com/mrjackwills/adsbdb), [AirLabs](https://airlabs.co/terms-of-service), and [Open-Meteo](https://open-meteo.com/en/terms) for your intended use. Keep the provider attribution in the footer. No hosting or deployment is configured by this README.
