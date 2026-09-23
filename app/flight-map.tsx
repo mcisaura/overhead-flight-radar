@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type * as Leaflet from "leaflet";
 import { MapPin, Navigation2 } from "lucide-react";
+import { ZONE_RADIUS_KM } from "../lib/zone-progress";
 import "leaflet/dist/leaflet.css";
 
 export type MapAircraft = {
@@ -27,6 +28,8 @@ type Props = {
   loading: boolean;
   unavailable: boolean;
   demo?: boolean;
+  showDetails?: boolean;
+  exiting?: boolean;
   onSelect?: (hex: string) => void;
 };
 
@@ -36,10 +39,12 @@ function formatName(plane: MapAircraft) {
   return plane.callsign || plane.registration || plane.hex.toUpperCase();
 }
 
-export default function FlightMap({ lat, lon, aircraft, closestHex, loading, unavailable, demo = false, onSelect }: Props) {
+export default function FlightMap({ lat, lon, aircraft, closestHex, loading, unavailable, demo = false, showDetails = true, exiting = false, onSelect }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<Leaflet.Map | null>(null);
   const markerLayerRef = useRef<Leaflet.LayerGroup | null>(null);
+  const markersRef = useRef<Map<string, Leaflet.Marker>>(new Map());
+  const markerStyleRef = useRef<Map<string, string>>(new Map());
   const leafletRef = useRef<typeof Leaflet | null>(null);
   const [ready, setReady] = useState(false);
   const [selectedHex, setSelectedHex] = useState<string | null>(closestHex);
@@ -47,6 +52,8 @@ export default function FlightMap({ lat, lon, aircraft, closestHex, loading, una
   useEffect(() => {
     let cancelled = false;
     let map: Leaflet.Map | null = null;
+    const markers = markersRef.current;
+    const markerStyles = markerStyleRef.current;
     void import("leaflet").then((L) => {
       if (cancelled || !containerRef.current) return;
       leafletRef.current = L;
@@ -57,7 +64,7 @@ export default function FlightMap({ lat, lon, aircraft, closestHex, loading, una
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       }).addTo(map);
       L.control.zoom({ position: "bottomright" }).addTo(map);
-      L.circle([lat, lon], { radius: 32_200, color: "#317f98", weight: 1, dashArray: "5 7", fillColor: "#74adc0", fillOpacity: 0.075, interactive: false }).addTo(map);
+      L.circle([lat, lon], { radius: ZONE_RADIUS_KM * 1000, color: "#317f98", weight: 1, dashArray: "5 7", fillColor: "#74adc0", fillOpacity: 0.075, interactive: false }).addTo(map);
       L.circleMarker([lat, lon], { radius: 8, color: "#fff", weight: 3, fillColor: "#1e6e8b", fillOpacity: 1 })
         .bindTooltip(demo ? "Sample location" : "Your location", { direction: "top" }).addTo(map);
       markerLayerRef.current = L.layerGroup().addTo(map);
@@ -68,6 +75,8 @@ export default function FlightMap({ lat, lon, aircraft, closestHex, loading, una
       map?.remove();
       mapRef.current = null;
       markerLayerRef.current = null;
+      markers.clear();
+      markerStyles.clear();
       leafletRef.current = null;
     };
   }, [lat, lon, demo]);
@@ -79,40 +88,56 @@ export default function FlightMap({ lat, lon, aircraft, closestHex, loading, una
     const L = leafletRef.current;
     const layer = markerLayerRef.current;
     if (!ready || !L || !layer) return;
-    layer.clearLayers();
+    const visible = new Set(aircraft.map((plane) => plane.hex));
+    for (const [hex, marker] of markersRef.current) {
+      if (!visible.has(hex)) {
+        layer.removeLayer(marker);
+        markersRef.current.delete(hex);
+        markerStyleRef.current.delete(hex);
+      }
+    }
     for (const plane of aircraft) {
       const selected = plane.hex === activeHex;
       const heading = plane.heading ?? 0;
+      const style = `${heading}:${selected}`;
       const icon = L.divIcon({
         className: `plane-marker ${selected ? "plane-marker-selected" : ""}`,
         html: `<span class="plane-marker-icon" style="transform:rotate(${heading}deg)">${planeShape}</span>`,
         iconSize: [38, 38], iconAnchor: [19, 19],
       });
-      const marker = L.marker([plane.lat, plane.lon], { icon, zIndexOffset: selected ? 1000 : 0, keyboard: true, title: formatName(plane) });
+      let marker = markersRef.current.get(plane.hex);
+      if (marker) {
+        marker.setLatLng([plane.lat, plane.lon]);
+        if (markerStyleRef.current.get(plane.hex) !== style) marker.setIcon(icon);
+        marker.setZIndexOffset(selected ? 1000 : 0);
+        marker.off("click");
+      } else {
+        marker = L.marker([plane.lat, plane.lon], { icon, zIndexOffset: selected ? 1000 : 0, keyboard: true, title: formatName(plane) });
+        marker.addTo(layer);
+        markersRef.current.set(plane.hex, marker);
+      }
+      markerStyleRef.current.set(plane.hex, style);
       const label = document.createElement("span");
       label.textContent = formatName(plane);
       marker.bindTooltip(label, { direction: "top", offset: [0, -18] });
       marker.on("click", () => onSelect ? onSelect(plane.hex) : setSelectedHex(plane.hex));
-      marker.addTo(layer);
     }
   }, [aircraft, ready, activeHex, onSelect]);
 
   const selected = aircraft.find((plane) => plane.hex === activeHex) ?? null;
 
   return (
-    <section className="map-section" aria-labelledby="map-title">
+    <section className={`map-section ${exiting ? "map-exiting" : selected ? "map-active" : "map-empty"}`} aria-labelledby="map-title">
       <div className="map-heading">
         <div>
-          <p className="section-eyebrow"><span className="signal-dot" /> {demo ? "SIMULATED POSITIONS" : "LIVE POSITIONS"}</p>
-          <h2 id="map-title">{demo ? "The sample sky" : "Flights around you"}</h2>
-          <p>{demo ? "Four fictional aircraft around Chicago. Select a marker or a preset to explore." : "Aircraft reported within 20 nautical miles. Select a plane to see its details."}</p>
+          <h2 id="map-title">Flights around you</h2>
         </div>
-        <span className="map-count">{aircraft.length} {demo ? "sample aircraft" : "aircraft nearby"}</span>
+        <span className="map-count">{aircraft.length} aircraft in zone</span>
       </div>
       <div className="map-frame">
         <div ref={containerRef} className="flight-map" role="application" aria-label={demo ? "Interactive map of fictional aircraft" : "Interactive map of nearby aircraft"} />
         <div className="map-key"><span className="map-key-plane"><Navigation2 size={15} fill="currentColor" /></span> Aircraft <span className="map-key-location" /> {demo ? "Sample location" : "Your location"}</div>
-        <div className="map-flight-card" aria-live="polite">
+        {showDetails && <div className="map-flight-card" aria-live="polite">
           {selected ? <>
             <span className="map-card-label">{demo ? "SAMPLE FLIGHT" : selected.hex === closestHex ? "CLOSEST AIRCRAFT" : "SELECTED AIRCRAFT"}</span>
             <strong>{formatName(selected)}</strong>
@@ -125,12 +150,12 @@ export default function FlightMap({ lat, lon, aircraft, closestHex, loading, una
             <span className="map-card-age">{demo ? "Simulated aircraft position" : `Position received ${Math.round(selected.seenSeconds)} sec ago`}</span>
           </> : <>
             <MapPin size={20} aria-hidden="true" />
-            <strong>{unavailable ? "Live positions unavailable" : loading ? "Finding nearby aircraft…" : "No aircraft nearby"}</strong>
-            <span className="map-card-type">{unavailable ? "Try refreshing in a moment." : loading ? "Updating the live map." : "Try again in a moment as the sky changes."}</span>
+            <strong>{unavailable ? "Live positions unavailable" : loading ? "Finding nearby aircraft…" : demo ? "No plane in the zone" : "No aircraft nearby"}</strong>
+            <span className="map-card-type">{unavailable ? "Try refreshing in a moment." : loading ? "Updating the live map." : demo ? "Choose a sample flight to begin the crossing." : "Try again in a moment as the sky changes."}</span>
           </>}
-        </div>
+        </div>}
       </div>
-      <p className="map-note">{demo ? "Aircraft markers are fictional. The base map shows real geography." : "Positions are reported by aircraft, so coverage and timing can vary. The dashed circle shows the search area."}</p>
+      <p className="map-note">{demo ? "The dashed circle marks the 20 nautical mile zone." : "Positions are reported by aircraft, so coverage and timing can vary. The dashed circle shows the 20 nautical mile zone."}</p>
     </section>
   );
 }

@@ -1,4 +1,5 @@
 import type { MapAircraft } from "./flight-map";
+import { zoneProgress } from "../lib/zone-progress";
 
 export const demoPlace = { lat: 41.8781, lon: -87.6298, label: "Chicago · sample sky" };
 
@@ -11,7 +12,7 @@ type DemoFlight = {
   destination: { code: string; city: string } | null;
 };
 
-function distanceKm(lat: number, lon: number) {
+export function distanceFromDemoPlace(lat: number, lon: number) {
   const rad = Math.PI / 180;
   const dLat = (lat - demoPlace.lat) * rad;
   const dLon = (lon - demoPlace.lon) * rad;
@@ -20,7 +21,7 @@ function distanceKm(lat: number, lon: number) {
 }
 
 function plane(hex: string, callsign: string, registration: string, aircraftType: string, lat: number, lon: number, heading: number, altitudeFt: number, speedKts: number): MapAircraft {
-  return { hex, callsign, registration, aircraftType, lat, lon, heading, altitudeFt, speedKts, distanceKm: distanceKm(lat, lon), seenSeconds: 0 };
+  return { hex, callsign, registration, aircraftType, lat, lon, heading, altitudeFt, speedKts, distanceKm: distanceFromDemoPlace(lat, lon), seenSeconds: 0 };
 }
 
 export const demoFlights: DemoFlight[] = [
@@ -49,18 +50,19 @@ export const demoFlights: DemoFlight[] = [
 export const demoWeather = { temperatureF: 72, cloudCover: 28, windMph: 9, code: 2, isDay: true };
 
 export function getDemoSky(presetId?: string | null) {
-  const selected = demoFlights.find((item) => item.id === presetId) ?? demoFlights[0];
+  const selected = demoFlights.find((item) => item.id === presetId) ?? null;
   return {
     mode: "demo",
-    flight: {
+    flight: selected ? {
       ...selected.aircraft,
       origin: selected.origin,
       destination: selected.destination,
       routeStatus: selected.origin && selected.destination ? "available" : "missing",
       routeSource: null,
-    },
-    aircraft: demoFlights.map((item) => item.aircraft),
-    nearbyCount: demoFlights.length,
+      zoneProgress: zoneProgress(demoPlace, selected.aircraft),
+    } : null,
+    aircraft: selected ? [selected.aircraft] : [],
+    nearbyCount: selected ? 1 : 0,
     weather: demoWeather,
     updatedAt: new Date().toISOString(),
     warnings: [],

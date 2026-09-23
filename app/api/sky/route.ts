@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDemoSky } from "../../demo-data";
+import { ZONE_RADIUS_KM, zoneProgress } from "../../../lib/zone-progress";
 
 export const runtime = "edge";
 
@@ -97,7 +98,7 @@ export async function GET(request: NextRequest) {
         const elevationDeg = altitudeFt == null ? 0 : Math.atan2(altitudeFt * 0.0003048, Math.max(distanceKm, 0.1)) * 180 / Math.PI;
         return { item, distanceKm, altitudeFt, elevationDeg };
       })
-      .filter((entry) => entry.distanceKm <= 32.2 && entry.altitudeFt !== null && entry.altitudeFt > 500)
+      .filter((entry) => entry.distanceKm <= ZONE_RADIUS_KM && entry.altitudeFt !== null && entry.altitudeFt > 500)
       .sort((a, b) => a.distanceKm - b.distanceKm || b.elevationDeg - a.elevationDeg);
     nearbyCount = candidates.length;
     aircraft = candidates.map(({ item, distanceKm, altitudeFt }) => ({
@@ -144,7 +145,8 @@ export async function GET(request: NextRequest) {
       flight = { hex: item.hex || "unknown", callsign, registration: item.r || null, aircraftType: item.t || null,
         altitudeFt: selected.altitudeFt, speedKts: typeof item.gs === "number" ? item.gs : null,
         distanceKm: selected.distanceKm, elevationDeg: selected.elevationDeg,
-        seenSeconds: item.seen_pos ?? item.seen ?? 0, origin, destination, routeStatus, routeSource };
+        seenSeconds: item.seen_pos ?? item.seen ?? 0, origin, destination, routeStatus, routeSource,
+        zoneProgress: zoneProgress({ lat, lon }, { lat: item.lat!, lon: item.lon!, heading: typeof item.track === "number" ? item.track : null }) };
     }
   } else { console.error("Aircraft lookup failed", aircraftResult.reason); warnings.push("Live aircraft positions are temporarily unavailable."); }
 
