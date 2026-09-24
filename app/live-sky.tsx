@@ -9,10 +9,11 @@ import { demoPlace } from "./demo-data";
 type Place = { lat: number; lon: number; label: string; sample: boolean };
 type LiveFlight = {
   hex: string; callsign: string | null; registration: string | null; aircraftType: string | null;
-  altitudeFt: number; speedKts: number | null; distanceKm: number; elevationDeg: number;
+  altitudeFt: number | null; speedKts: number | null; distanceKm: number; elevationDeg: number | null;
   seenSeconds: number; origin: { code: string; city: string } | null;
   destination: { code: string; city: string } | null;
   routeStatus: string;
+  zoneProgress: { percent: number; remainingKm: number; crossingKm: number; closestKm: number } | null;
 };
 type SkyResponse = {
   flight: LiveFlight | null;
@@ -52,29 +53,27 @@ export default function LiveSky({ onModeChange }: { onModeChange: (mode: "live" 
 
   useEffect(() => {
     let active = true;
-    let controller: AbortController | null = null;
+    let latestRequest = 0;
     async function refresh() {
-      if (controller) controller.abort();
-      controller = new AbortController();
-      const signal = controller.signal;
+      const requestId = ++latestRequest;
       try {
         const params = new URLSearchParams({ mode: "live", lat: String(place.lat), lon: String(place.lon) });
         if (selectedHex) params.set("selected", selectedHex);
-        const response = await fetch(`/api/sky?${params}`, { signal, cache: "no-store" });
+        const response = await fetch(`/api/sky?${params}`, { cache: "no-store" });
         if (!response.ok) throw new Error("Live sky is temporarily unavailable.");
         const result = await response.json() as SkyResponse;
-        if (!active) return;
+        if (!active || requestId !== latestRequest) return;
         setData(result);
         setError(result.warnings.find((warning) => warning.includes("aircraft")) ?? null);
       } catch (reason) {
-        if (active && !signal.aborted) setError(reason instanceof Error ? reason.message : "Live sky is temporarily unavailable.");
+        if (active && requestId === latestRequest) setError(reason instanceof Error ? reason.message : "Live sky is temporarily unavailable.");
       } finally {
-        if (active && !signal.aborted) setLoading(false);
+        if (active && requestId === latestRequest) setLoading(false);
       }
     }
     void refresh();
     const timer = window.setInterval(() => void refresh(), 30_000);
-    return () => { active = false; window.clearInterval(timer); controller?.abort(); };
+    return () => { active = false; window.clearInterval(timer); };
   }, [place, selectedHex, refreshKey]);
 
   const useLocation = useCallback(() => {
@@ -98,6 +97,10 @@ export default function LiveSky({ onModeChange }: { onModeChange: (mode: "live" 
   const aircraft = data?.aircraft ?? [];
   const routeKnown = Boolean(flight?.origin && flight?.destination);
   const flightName = flight?.callsign || flight?.registration || flight?.hex.toUpperCase() || "Aircraft";
+  const crossing = flight?.zoneProgress ?? null;
+  const progress = crossing?.percent ?? null;
+  const aircraftOffset = progress == null ? 0 : (progress - 50) * 0.6;
+  const aircraftScale = progress == null ? 1 : 1 + 0.08 * Math.sin(Math.PI * progress / 100) ** 2;
 
   return <main className="app-shell live-shell">
     <header className="topbar">
@@ -113,13 +116,19 @@ export default function LiveSky({ onModeChange }: { onModeChange: (mode: "live" 
         {flight ? <>
           <div className="hero-flight-identity"><strong>{flightName}</strong><span>{flight.aircraftType || "Aircraft type unknown"}</span></div>
           <p className="hero-route">{routeKnown ? <>{flight.origin!.code}<ArrowRight size={16} aria-hidden="true" />{flight.destination!.code}<span>{flight.origin!.city} to {flight.destination!.city}</span></> : <>Route unavailable <span>Flight path could not be confirmed</span></>}</p>
-          <p className="hero-description hero-flight-description">{flight.distanceKm.toFixed(1)} km from {place.sample ? "central Chicago" : "your location"} · {Math.round(flight.altitudeFt).toLocaleString()} ft altitude. Position received {Math.round(flight.seenSeconds)} sec ago.</p>
-        </> : <p className="hero-description">{error || (loading ? "Finding aircraft in the 20 nautical mile zone." : `No aircraft currently reported within 20 nautical miles of ${place.sample ? "central Chicago" : "your location"}.`)}</p>}
+          <p className="hero-description hero-flight-description">{flight.distanceKm.toFixed(1)} km from {place.sample ? "central Chicago" : "your location"} · {flight.altitudeFt == null ? "Altitude unavailable" : `${Math.round(flight.altitudeFt).toLocaleString()} ft altitude`}. Position received {Math.round(flight.seenSeconds)} sec ago.</p>
+          {progress != null ? <div className="hero-crossing live-crossing" role="progressbar" aria-label={`${flightName} crossing the 10 nautical mile zone`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress)} aria-valuetext={`${Math.round(progress)}% through the zone, estimated from the latest reported position and heading`}>
+            <div className="hero-crossing-heading"><span>Through your sky</span><strong>{Math.round(progress)}%</strong></div>
+            <div className="hero-crossing-track"><span style={{ width: `${progress}%` }} /></div>
+            <div className="hero-crossing-ends"><span>Entered zone</span><span>Leaves zone</span></div>
+            <p>Estimated from the latest reported position and heading.</p>
+          </div> : <div className="hero-crossing live-crossing"><div className="hero-crossing-heading"><span>Through your sky</span><strong>—</strong></div><p>Crossing progress is unavailable until a heading is reported.</p></div>}
+        </> : <p className="hero-description">{error || (loading ? "Finding aircraft in the 10 nautical mile zone." : `No aircraft currently reported within 10 nautical miles of ${place.sample ? "central Chicago" : "your location"}.`)}</p>}
         <div className="live-actions"><button type="button" className="primary-button" onClick={useLocation} disabled={locating}><LocateFixed size={17} />{locating ? "Finding your location…" : "Use my location"}</button><button type="button" className="refresh-button" onClick={() => setRefreshKey((key) => key + 1)}><RefreshCw size={15} />Refresh</button></div>
         {locationError && <p className="live-location-error" role="status">{locationError}</p>}
         {place.sample && <p className="live-place-note">Showing real flights over Chicago until you choose your location.</p>}
       </div>
-      {flight ? <div className="live-aircraft-scene" aria-hidden="true"><img src={aircraftImage(flight.aircraftType ?? "")} alt="" /><span>Illustration · position shown on map</span></div> : <div className="quiet-orbit" aria-hidden="true"><span /><span /><span /><i /></div>}
+      {flight ? <div className="live-aircraft-scene" aria-hidden="true" style={{ transform: `translateX(${aircraftOffset}px) scale(${aircraftScale})` }}><img src={aircraftImage(flight.aircraftType ?? "")} alt="" /><span>Illustration · position shown on map</span></div> : <div className="quiet-orbit" aria-hidden="true"><span /><span /><span /><i /></div>}
       <div className="hero-baseline"><span>{data ? `${data.nearbyCount} aircraft reported nearby` : "Waiting for live data"}</span><span>Updates every 30 seconds</span></div>
     </section>
 
@@ -128,7 +137,7 @@ export default function LiveSky({ onModeChange }: { onModeChange: (mode: "live" 
       <aside className="flight-sidebar" aria-label="Live flight details"><article className="detail-panel flight-panel">
         <div className="detail-title"><Navigation2 size={18} strokeWidth={1.8} /><h3>{flightName}</h3></div>
         {flight ? <><div className="airport-row"><div><strong className="airport-code">{flight.origin?.code ?? "···"}</strong><span className="airport-city">{flight.origin?.city ?? "Origin unknown"}</span></div><ArrowRight className="airport-connector" size={25} strokeWidth={1.3} aria-hidden="true" /><div><strong className="airport-code">{flight.destination?.code ?? "···"}</strong><span className="airport-city">{flight.destination?.city ?? "Destination unknown"}</span></div></div>
-          <div className="stat-row"><div><span>Altitude</span><strong>{Math.round(flight.altitudeFt).toLocaleString()} ft</strong></div><div><span>Ground speed</span><strong>{flight.speedKts == null ? "—" : `${Math.round(flight.speedKts)} kt`}</strong></div><div><span>Distance</span><strong>{flight.distanceKm.toFixed(1)} km</strong></div></div><p className="data-note">{routeKnown ? "Route matched with ADSBdb" : "Route unavailable or could not be confirmed"} · Position {Math.round(flight.seenSeconds)} sec old</p></> : <p className="empty-copy">{loading ? "Checking for nearby flights…" : error || "No aircraft reported in this zone right now."}</p>}
+          <div className="stat-row"><div><span>Altitude</span><strong>{flight.altitudeFt == null ? "—" : `${Math.round(flight.altitudeFt).toLocaleString()} ft`}</strong></div><div><span>Ground speed</span><strong>{flight.speedKts == null ? "—" : `${Math.round(flight.speedKts)} kt`}</strong></div><div><span>Distance</span><strong>{flight.distanceKm.toFixed(1)} km</strong></div></div><p className="data-note">{routeKnown ? "Route reported by AirLabs" : "Route unavailable"} · Position {Math.round(flight.seenSeconds)} sec old</p></> : <p className="empty-copy">{loading ? "Checking for nearby flights…" : error || "No aircraft reported in this zone right now."}</p>}
       </article></aside>
     </div>
 
@@ -136,6 +145,6 @@ export default function LiveSky({ onModeChange }: { onModeChange: (mode: "live" 
       <div className="detail-title"><CloudSun size={19} strokeWidth={1.8} /><h3>Current weather</h3></div>
       {data?.weather ? <><div className="weather-main"><strong className="weather-temp">{Math.round(data.weather.temperatureF)}°</strong><div><strong>{weatherLabel(data.weather.code)}</strong><span>{place.sample ? "Central Chicago" : "Near your location"}</span></div></div><div className="weather-stats"><span><CloudSun size={17} /> Cloud cover <strong>{data.weather.cloudCover}%</strong></span><span><Wind size={17} /> Wind <strong>{Math.round(data.weather.windMph)} mph</strong></span></div></> : <p className="live-weather-empty">{loading ? "Loading current conditions…" : "Current weather unavailable."}</p>}
     </article></section>
-    <footer className="site-footer"><span className="footer-brand">overhead<span className="brand-period">.</span></span><span className="live-attribution">Data: <a href="https://github.com/adsbfi/opendata">ADSB.fi</a> · <a href="https://github.com/mrjackwills/adsbdb">ADSBdb</a> · <a href="https://open-meteo.com/">Open-Meteo</a> · Map: <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a></span></footer>
+    <footer className="site-footer"><span className="footer-brand">overhead<span className="brand-period">.</span></span><span className="live-attribution">Data: <a href="https://airlabs.co/">AirLabs</a> · <a href="https://open-meteo.com/">Open-Meteo</a> · Map: <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a></span></footer>
   </main>;
 }

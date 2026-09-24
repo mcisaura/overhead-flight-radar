@@ -4,16 +4,18 @@ import { ZONE_RADIUS_KM, zoneProgress } from "../../../lib/zone-progress";
 
 export const runtime = "edge";
 
-type RawAircraft = {
-  hex?: string; flight?: string; r?: string; t?: string; lat?: number; lon?: number;
-  alt_baro?: number | "ground"; gs?: number; track?: number; seen_pos?: number; seen?: number;
+type AirLabsFlight = {
+  hex?: string; reg_number?: string | null; flight_icao?: string | null; flight_iata?: string | null;
+  lat?: number | null; lng?: number | null; alt?: number | null; dir?: number | null;
+  speed?: number | null; aircraft_icao?: string | null; dep_iata?: string | null;
+  arr_iata?: string | null; updated?: number | null; status?: string | null;
 };
-type Airport = { iata_code?: string | null; icao_code?: string | null; municipality?: string | null; name?: string | null; latitude?: number | null; longitude?: number | null };
-type AircraftResponse = { ac?: RawAircraft[] };
-type RouteResponse = { response?: { flightroute?: { origin?: Airport | null; destination?: Airport | null } } };
+type AirLabsAirport = { iata_code?: string | null; city?: string | null; name?: string | null };
+type AirLabsResponse<T> = { response?: T; error?: { code?: string; message?: string } };
 type WeatherResponse = { current?: { temperature_2m?: number; cloud_cover?: number; wind_speed_10m?: number; weather_code?: number; is_day?: number } };
 
 const upstreamCache = new Map<string, { expiresAt: number; value: Promise<unknown> }>();
+const flightFields = "hex,reg_number,flight_icao,flight_iata,lat,lng,alt,dir,speed,aircraft_icao,dep_iata,arr_iata,updated,status";
 
 function haversine(lat1: number, lon1: number, lat2: number, lon2: number) {
   const rad = Math.PI / 180;
@@ -21,27 +23,27 @@ function haversine(lat1: number, lon1: number, lat2: number, lon2: number) {
   const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * rad) * Math.cos(lat2 * rad) * Math.sin(dLon / 2) ** 2;
   return 6371 * 2 * Math.asin(Math.sqrt(a));
 }
-function airport(value: Airport | null | undefined) {
-  if (!value) return null;
-  return { code: value.iata_code || value.icao_code || "···", city: value.municipality || value.name || "Unknown" };
+
+function airLabsUrl(endpoint: string, apiKey: string, params: Record<string, string>) {
+  const url = new URL(`https://airlabs.co/api/v9/${endpoint}`);
+  for (const [name, value] of Object.entries(params)) url.searchParams.set(name, value);
+  url.searchParams.set("api_key", apiKey);
+  return url.toString();
 }
-function plausibleRoute(position: { lat: number; lon: number; altitudeFt: number }, origin?: Airport | null, destination?: Airport | null) {
-  if (origin?.latitude == null || origin.longitude == null || destination?.latitude == null || destination.longitude == null) return false;
-  const toOrigin = haversine(position.lat, position.lon, origin.latitude, origin.longitude);
-  const toDestination = haversine(position.lat, position.lon, destination.latitude, destination.longitude);
-  // Near takeoff or landing, the listed route should touch an airport near the aircraft.
-  if (position.altitudeFt < 12_000) return Math.min(toOrigin, toDestination) < 120;
-  // At cruise, allow a generous detour from the shortest path, but reject clearly unrelated routes.
-  const routeLength = haversine(origin.latitude, origin.longitude, destination.latitude, destination.longitude);
-  return toOrigin + toDestination - routeLength < 350;
+
+function bounds(lat: number, lon: number) {
+  const latDelta = ZONE_RADIUS_KM / 111.32;
+  const lonDelta = Math.min(180, ZONE_RADIUS_KM / Math.max(0.001, 111.32 * Math.cos(lat * Math.PI / 180)));
+  return [Math.max(-90, lat - latDelta), Math.max(-180, lon - lonDelta), Math.min(90, lat + latDelta), Math.min(180, lon + lonDelta)]
+    .map((coordinate) => coordinate.toFixed(4)).join(",");
 }
-async function getJson<T>(url: string, seconds: number, timeout = 9000, cacheNotFound = false): Promise<T> {
+
+async function getJson<T>(url: string, seconds: number, timeout = 9000): Promise<T> {
   const cached = upstreamCache.get(url);
   if (cached && cached.expiresAt > Date.now()) return cached.value as Promise<T>;
 
   const value = fetch(url, { signal: AbortSignal.timeout(timeout), headers: { Accept: "application/json" } })
     .then((response) => {
-      if (cacheNotFound && response.status === 404) return null as T;
       if (!response.ok) throw new Error(`Upstream ${response.status}`);
       return response.json() as Promise<T>;
     })
@@ -59,6 +61,22 @@ async function getJson<T>(url: string, seconds: number, timeout = 9000, cacheNot
   return value;
 }
 
+async function getAirLabs<T>(endpoint: string, apiKey: string, params: Record<string, string>, cacheSeconds: number) {
+  const result = await getJson<AirLabsResponse<T>>(airLabsUrl(endpoint, apiKey, params), cacheSeconds);
+  if (result.error) throw new Error(`AirLabs ${result.error.code || "error"}`);
+  if (result.response == null) throw new Error("AirLabs response unavailable");
+  return result.response;
+}
+
+async function getAirport(apiKey: string, code: string) {
+  try {
+    const airports = await getAirLabs<AirLabsAirport[]>("airports", apiKey, { iata_code: code, _fields: "iata_code,city,name" }, 86_400);
+    return { code, city: airports[0]?.city || airports[0]?.name || code };
+  } catch {
+    return { code, city: code };
+  }
+}
+
 export async function GET(request: NextRequest) {
   if (request.nextUrl.searchParams.get("mode") !== "live") {
     return NextResponse.json(getDemoSky(request.nextUrl.searchParams.get("preset")), { headers: { "Cache-Control": "no-store" } });
@@ -68,70 +86,67 @@ export async function GET(request: NextRequest) {
   if (!Number.isFinite(lat) || !Number.isFinite(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180 || request.nextUrl.searchParams.get("lat") === null || request.nextUrl.searchParams.get("lon") === null) {
     return NextResponse.json({ error: "Valid latitude and longitude are required." }, { status: 400 });
   }
+  const apiKey = process.env.AIRLABS_API_KEY;
+  if (!apiKey) return NextResponse.json({ error: "AirLabs is not configured." }, { status: 503 });
 
   const warnings: string[] = [];
-  const nearbyUrl = `https://opendata.adsb.fi/api/v3/lat/${lat.toFixed(4)}/lon/${lon.toFixed(4)}/dist/20`;
+  const flights = getAirLabs<AirLabsFlight[]>("flights", apiKey, { bbox: bounds(lat, lon), _fields: flightFields }, 30);
   const weatherUrl = new URL("https://api.open-meteo.com/v1/forecast");
   weatherUrl.searchParams.set("latitude", lat.toFixed(4));
   weatherUrl.searchParams.set("longitude", lon.toFixed(4));
   weatherUrl.searchParams.set("current", "temperature_2m,weather_code,cloud_cover,wind_speed_10m,is_day");
   weatherUrl.searchParams.set("temperature_unit", "fahrenheit");
   weatherUrl.searchParams.set("wind_speed_unit", "mph");
-  const [aircraftResult, weatherResult] = await Promise.allSettled([getJson<AircraftResponse>(nearbyUrl, 30), getJson<WeatherResponse>(weatherUrl.toString(), 600)]);
+  const [aircraftResult, weatherResult] = await Promise.allSettled([flights, getJson<WeatherResponse>(weatherUrl.toString(), 600)]);
 
   let flight = null;
   let nearbyCount = 0;
-  let aircraft: { hex: string; callsign: string | null; registration: string | null; aircraftType: string | null; lat: number; lon: number; heading: number | null; altitudeFt: number; speedKts: number | null; distanceKm: number; seenSeconds: number }[] = [];
-  if (aircraftResult.status === "fulfilled") {
-    const raw: RawAircraft[] = Array.isArray(aircraftResult.value?.ac) ? aircraftResult.value.ac : [];
-    const candidates = raw.filter((item) => typeof item.lat === "number" && typeof item.lon === "number" && item.alt_baro !== "ground" && (item.seen_pos ?? item.seen ?? 999) <= 60)
+  let aircraft: { hex: string; callsign: string | null; registration: string | null; aircraftType: string | null; lat: number; lon: number; heading: number | null; altitudeFt: number | null; speedKts: number | null; distanceKm: number; seenSeconds: number }[] = [];
+  if (aircraftResult.status === "fulfilled" && Array.isArray(aircraftResult.value)) {
+    const candidates = aircraftResult.value
+      .filter((item) => item.hex && typeof item.lat === "number" && typeof item.lng === "number" && (item.status === "en-route" || item.status === "active"))
       .map((item) => {
-        const distanceKm = haversine(lat, lon, item.lat!, item.lon!);
-        const altitudeFt = typeof item.alt_baro === "number" ? item.alt_baro : null;
-        const elevationDeg = altitudeFt == null ? 0 : Math.atan2(altitudeFt * 0.0003048, Math.max(distanceKm, 0.1)) * 180 / Math.PI;
-        return { item, distanceKm, altitudeFt, elevationDeg };
+        const distanceKm = haversine(lat, lon, item.lat!, item.lng!);
+        const altitudeFt = typeof item.alt === "number" ? item.alt * 3.28084 : null;
+        const seenSeconds = typeof item.updated === "number" ? Math.max(0, Math.round(Date.now() / 1000 - item.updated)) : null;
+        return { item, distanceKm, altitudeFt, seenSeconds };
       })
-      .filter((entry) => entry.distanceKm <= ZONE_RADIUS_KM && entry.altitudeFt !== null && entry.altitudeFt > 500)
-      .sort((a, b) => a.distanceKm - b.distanceKm || b.elevationDeg - a.elevationDeg);
+      .filter((entry) => entry.distanceKm <= ZONE_RADIUS_KM && (entry.altitudeFt === null || entry.altitudeFt > 500) && entry.seenSeconds !== null && entry.seenSeconds <= 60)
+      .sort((a, b) => a.distanceKm - b.distanceKm);
     nearbyCount = candidates.length;
-    aircraft = candidates.map(({ item, distanceKm, altitudeFt }) => ({
-      hex: item.hex || "unknown", callsign: item.flight?.trim() || null,
-      registration: item.r || null, aircraftType: item.t || null,
-      lat: item.lat!, lon: item.lon!, heading: typeof item.track === "number" && Number.isFinite(item.track) ? item.track : null,
-      altitudeFt: altitudeFt!, speedKts: typeof item.gs === "number" ? item.gs : null,
-      distanceKm, seenSeconds: item.seen_pos ?? item.seen ?? 0,
+    aircraft = candidates.map(({ item, distanceKm, altitudeFt, seenSeconds }) => ({
+      hex: item.hex!, callsign: item.flight_icao || item.flight_iata || null,
+      registration: item.reg_number || null, aircraftType: item.aircraft_icao || null,
+      lat: item.lat!, lon: item.lng!, heading: typeof item.dir === "number" && Number.isFinite(item.dir) ? item.dir : null,
+      altitudeFt, speedKts: typeof item.speed === "number" ? item.speed / 1.852 : null,
+      distanceKm, seenSeconds: seenSeconds!,
     }));
     const selectedHex = request.nextUrl.searchParams.get("selected")?.toLowerCase();
     const selected = candidates.find(({ item }) => item.hex?.toLowerCase() === selectedHex) ?? candidates[0];
     if (selected) {
       const item = selected.item;
-      const callsign = item.flight?.trim() || null;
-      let origin = null, destination = null;
-      let routeSource: "adsbdb" | null = null;
-      let routeStatus: "available" | "missing" | "unverified" | "lookup-error" | "no-callsign" = callsign ? "missing" : "no-callsign";
-      if (callsign) {
-        try {
-          const route = await getJson<RouteResponse | null>(`https://api.adsbdb.com/v0/callsign/${encodeURIComponent(callsign)}`, 3600, 7000, true);
-          const listed = route?.response?.flightroute;
-          if (plausibleRoute({ lat: item.lat!, lon: item.lon!, altitudeFt: selected.altitudeFt! }, listed?.origin, listed?.destination)) {
-            origin = airport(listed?.origin);
-            destination = airport(listed?.destination);
-            routeStatus = "available";
-            routeSource = "adsbdb";
-          } else if (listed?.origin && listed?.destination) {
-            routeStatus = "unverified";
-          }
-        } catch (error) {
-          routeStatus = "lookup-error";
-        }
-      }
-      flight = { hex: item.hex || "unknown", callsign, registration: item.r || null, aircraftType: item.t || null,
-        altitudeFt: selected.altitudeFt, speedKts: typeof item.gs === "number" ? item.gs : null,
-        distanceKm: selected.distanceKm, elevationDeg: selected.elevationDeg,
-        seenSeconds: item.seen_pos ?? item.seen ?? 0, origin, destination, routeStatus, routeSource,
-        zoneProgress: zoneProgress({ lat, lon }, { lat: item.lat!, lon: item.lon!, heading: typeof item.track === "number" ? item.track : null }) };
+      const originCode = item.dep_iata?.trim() || null;
+      const destinationCode = item.arr_iata?.trim() || null;
+      const [origin, destination] = await Promise.all([
+        originCode ? getAirport(apiKey, originCode) : Promise.resolve(null),
+        destinationCode ? getAirport(apiKey, destinationCode) : Promise.resolve(null),
+      ]);
+      const altitudeKm = selected.altitudeFt === null ? null : selected.altitudeFt * 0.0003048;
+      flight = {
+        hex: item.hex!, callsign: item.flight_icao || item.flight_iata || null,
+        registration: item.reg_number || null, aircraftType: item.aircraft_icao || null,
+        altitudeFt: selected.altitudeFt, speedKts: typeof item.speed === "number" ? item.speed / 1.852 : null,
+        distanceKm: selected.distanceKm,
+        elevationDeg: altitudeKm === null ? null : Math.atan2(altitudeKm, Math.max(selected.distanceKm, 0.1)) * 180 / Math.PI,
+        seenSeconds: selected.seenSeconds, origin, destination,
+        routeStatus: origin && destination ? "available" : "missing", routeSource: "airlabs",
+        zoneProgress: zoneProgress({ lat, lon }, { lat: item.lat!, lon: item.lng!, heading: typeof item.dir === "number" ? item.dir : null }),
+      };
     }
-  } else { console.error("Aircraft lookup failed", aircraftResult.reason); warnings.push("Live aircraft positions are temporarily unavailable."); }
+  } else {
+    console.error("AirLabs flight lookup failed");
+    warnings.push("Live aircraft positions are temporarily unavailable.");
+  }
 
   let weather = null;
   if (weatherResult.status === "fulfilled") {

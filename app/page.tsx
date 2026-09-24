@@ -154,7 +154,7 @@ function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox"
           <button type="button" className="primary-button" onClick={() => document.getElementById("presets-title")?.scrollIntoView({ behavior: "smooth", block: "start" })}>Simulate an arrival <ArrowRight size={18} /></button>
         </div>}
         {!flight && <div className="quiet-orbit" aria-hidden="true"><span /><span /><span /><i /></div>}
-        <div className="hero-baseline"><span>{flight ? `${flight.callsign} · ${flight.aircraftType}` : "No aircraft in the zone"}</span><span>20 nautical mile zone</span></div>
+        <div className="hero-baseline"><span>{flight ? `${flight.callsign} · ${flight.aircraftType}` : "No aircraft in the zone"}</span><span>10 nautical mile zone</span></div>
       </section>
 
       <section className="presets-section compact-presets" aria-labelledby="presets-title">

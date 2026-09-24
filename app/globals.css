@@ -472,14 +472,18 @@ button:disabled { opacity: .6; cursor: wait; }
 .mode-toggle button { min-height: 32px; padding: 0 12px; border: 0; border-radius: 999px; background: transparent; color: var(--ink-soft); font-size: 11px; font-weight: 750; }
 .mode-toggle button[aria-pressed="true"] { background: var(--ocean-deep); color: white; box-shadow: 0 2px 7px #17374624; }
 .mode-toggle button:not([aria-pressed="true"]):hover { background: #dcebea; }
+.live-stage { height: auto; min-height: 790px; padding-bottom: 90px; }
 .live-stage .hero-inner { width: min(570px, 52vw); }
 .live-stage .hero-flight { padding-top: clamp(88px, 12vh, 130px); }
 .live-stage .hero-flight-description { margin-bottom: 22px; }
+.live-crossing { margin-bottom: 16px; }
+.live-crossing .hero-crossing-track span { transition: width .8s ease-out; }
+.live-crossing p { margin: 8px 0 0; color: var(--ink-soft); font-size: 10px; line-height: 1.4; }
 .live-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
 .live-actions .refresh-button { min-height: 56px; background: #fffefaad; }
 .live-place-note, .live-location-error { max-width: 430px; margin: 13px 0 0; color: var(--ink-soft); font-size: 12px; line-height: 1.45; }
 .live-location-error { color: #8a4e35; font-weight: 700; }
-.live-aircraft-scene { position: absolute; z-index: 2; top: 22%; right: 4%; width: 45%; pointer-events: none; text-align: center; }
+.live-aircraft-scene { position: absolute; z-index: 2; top: 22%; right: 4%; width: 45%; pointer-events: none; text-align: center; transition: transform .8s ease-out; }
 .live-aircraft-scene img { display: block; width: 100%; height: auto; filter: drop-shadow(0 31px 20px #28546a29); }
 .live-aircraft-scene span { color: var(--ink-soft); font-size: 11px; font-weight: 650; }
 .live-shell .flight-sidebar { min-height: 430px; }

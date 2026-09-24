@@ -14,7 +14,7 @@ export type MapAircraft = {
   lat: number;
   lon: number;
   heading: number | null;
-  altitudeFt: number;
+  altitudeFt: number | null;
   speedKts: number | null;
   distanceKm: number;
   seenSeconds: number;
@@ -145,7 +145,7 @@ export default function FlightMap({ lat, lon, aircraft, closestHex, selectedAirc
             <strong>{formatName(selected)}</strong>
             <span className="map-card-type">{selected.aircraftType || "Aircraft type unavailable"}{selected.registration && selected.registration !== selected.callsign ? ` · ${selected.registration}` : ""}</span>
             <div className="map-card-stats">
-              <span><small>Altitude</small>{Math.round(selected.altitudeFt).toLocaleString()} ft</span>
+              <span><small>Altitude</small>{selected.altitudeFt == null ? "—" : `${Math.round(selected.altitudeFt).toLocaleString()} ft`}</span>
               <span><small>Speed</small>{selected.speedKts == null ? "—" : `${Math.round(selected.speedKts)} kt`}</span>
               <span><small>Distance</small>{selected.distanceKm.toFixed(1)} km</span>
             </div>
@@ -157,7 +157,7 @@ export default function FlightMap({ lat, lon, aircraft, closestHex, selectedAirc
           </>}
         </div>}
       </div>
-      <p className="map-note">{demo ? "The dashed circle marks the 20 nautical mile zone." : "Positions are reported by aircraft, so coverage and timing can vary. The dashed circle shows the 20 nautical mile zone."}</p>
+      <p className="map-note">{demo ? "The dashed circle marks the 10 nautical mile zone." : "Positions are reported by aircraft, so coverage and timing can vary. The dashed circle shows the 10 nautical mile zone."}</p>
     </section>
   );
 }

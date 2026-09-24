@@ -7,7 +7,7 @@ type DemoFlight = {
   id: string;
   label: string;
   description: string;
-  aircraft: MapAircraft;
+  aircraft: MapAircraft & { altitudeFt: number };
   origin: { code: string; city: string } | null;
   destination: { code: string; city: string } | null;
 };
@@ -20,7 +20,7 @@ export function distanceFromDemoPlace(lat: number, lon: number) {
   return 6371 * 2 * Math.asin(Math.sqrt(a));
 }
 
-function plane(hex: string, callsign: string, registration: string, aircraftType: string, lat: number, lon: number, heading: number, altitudeFt: number, speedKts: number): MapAircraft {
+function plane(hex: string, callsign: string, registration: string, aircraftType: string, lat: number, lon: number, heading: number, altitudeFt: number, speedKts: number): MapAircraft & { altitudeFt: number } {
   return { hex, callsign, registration, aircraftType, lat, lon, heading, altitudeFt, speedKts, distanceKm: distanceFromDemoPlace(lat, lon), seenSeconds: 0 };
 }
 
