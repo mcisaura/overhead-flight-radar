@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight, CloudSun, MapPin, Navigation2, Pause, Play, RotateCcw, Wind } from "lucide-react";
 import FlightMap from "./flight-map";
+import LiveSky from "./live-sky";
+import ModeToggle from "./mode-toggle";
 import { demoFlights, demoPlace, demoWeather, distanceFromDemoPlace } from "./demo-data";
 import { positionAtZoneProgress, zoneProgress } from "../lib/zone-progress";
 
@@ -13,6 +15,11 @@ function aircraftImage(type: string) {
 }
 
 export default function Home() {
+  const [mode, setMode] = useState<"live" | "sandbox">("live");
+  return mode === "live" ? <LiveSky onModeChange={setMode} /> : <SandboxHome onModeChange={setMode} />;
+}
+
+function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox") => void }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [phase, setPhase] = useState<"empty" | "active" | "exiting">("empty");
   const [flightRun, setFlightRun] = useState(0);
@@ -29,12 +36,14 @@ export default function Home() {
   const crossing = flight ? zoneProgress(demoPlace, flight) : null;
   const routeKnown = Boolean(selected?.origin && selected?.destination);
   const mapAircraft = flight ? [flight] : [];
-  const closestMoment = phase === "active" && progress >= 43 && progress <= 57;
-  const directlyOverhead = (crossing?.closestKm ?? Infinity) <= 1;
-  const aircraftScale = .88 + .24 * Math.sin(Math.PI * progress / 100) ** 2;
   const pathLength = selected ? zoneProgress(demoPlace, selected.aircraft)?.crossingKm ?? 74.08 : 74.08;
   const crossingDurationMs = pathLength / ((selected?.aircraft.speedKts ?? 200) * 1.852) * 3_600_000 / 30;
-  const crossingStatus = phase === "exiting" || progress >= 90 ? "Leaving your sky" : progress < 10 ? "Entering your sky" : closestMoment ? "Look up now" : "Crossing your sky";
+  const closestMoment = phase === "active" && progress >= 43 && progress <= 57;
+  const closestCardEnd = Math.max(57, 43 + 5_000 / crossingDurationMs * 100);
+  const showClosestCard = phase === "active" && progress >= 43 && progress <= closestCardEnd;
+  const directlyOverhead = (crossing?.closestKm ?? Infinity) <= 1;
+  const aircraftScale = .88 + .24 * Math.sin(Math.PI * progress / 100) ** 2;
+  const crossingStatus = phase === "exiting" ? `Goodbye, ${flight?.callsign ?? "plane"}.` : progress >= 90 ? "Leaving your sky" : progress < 10 ? "Entering your sky" : closestMoment ? "Look up now" : "Crossing your sky";
 
   useEffect(() => {
     if (!playing) return;
@@ -61,7 +70,7 @@ export default function Home() {
       setPhase("empty");
       progressRef.current = 0;
       setProgress(0);
-    }, 2600);
+    }, 2000);
     return () => window.clearTimeout(timer);
   }, [phase]);
 
@@ -86,7 +95,10 @@ export default function Home() {
 
   function clearSky() {
     setPlaying(false);
-    setPhase("exiting");
+    setSelectedId(null);
+    progressRef.current = 0;
+    setProgress(0);
+    setPhase("empty");
   }
 
   return (
@@ -94,7 +106,7 @@ export default function Home() {
       <header className="topbar">
         <div className="brand"><span className="brand-mark"><Navigation2 size={19} strokeWidth={1.9} /></span><span>overhead<span className="brand-period">.</span></span></div>
         <div className="topbar-right">
-          <span className="live-indicator demo-indicator"><span className="signal-dot" /> SANDBOX</span>
+          <ModeToggle mode="sandbox" onChange={onModeChange} />
           <span className="top-divider" />
           <span className="topbar-place"><MapPin size={15} />{demoPlace.label}</span>
         </div>
@@ -105,7 +117,7 @@ export default function Home() {
         <div className="sky-overlay" aria-hidden="true" />
         {flight && selected ? <>
           <div className="hero-inner hero-flight" key={`flight-${selected.id}-${flightRun}`}>
-            <p className="hero-status"><span className="signal-dot" /> {crossingStatus}</p>
+            <p className="hero-status" role="status"><span className="signal-dot" /> {crossingStatus}</p>
             <h1 id="hero-title">A plane is<br /><em>passing by.</em></h1>
             <div className="hero-flight-identity"><strong>{flight.callsign}</strong><span>{flight.aircraftType || "Aircraft"}</span></div>
             <p className="hero-route">{routeKnown ? <>{selected.origin!.code}<ArrowRight size={16} aria-hidden="true" />{selected.destination!.code}<span>{selected.origin!.city} to {selected.destination!.city}</span></> : <>Local flight <span>No published route in this scenario</span></>}</p>
@@ -129,10 +141,9 @@ export default function Home() {
               <img src={aircraftImage(flight.aircraftType ?? "")} alt="" className="aircraft-image" style={{ transform: `scale(${aircraftScale})` }} />
             </div>
           </div>
-          {phase === "exiting" && <div className="hero-departure" role="status"><Navigation2 size={24} /><strong>{progress >= 100 ? `${flight.callsign} has left your sky` : "Your sky is clear"}</strong><span>Until the next passing flight.</span><button type="button" className="zone-reset" onClick={() => selectFlight(selected.id)}><RotateCcw size={15} />Replay flight</button></div>}
-          <div className={`hero-closest-card ${closestMoment ? "is-visible" : ""}`} aria-hidden={!closestMoment} role={closestMoment ? "status" : undefined}>
-            <span className="hero-closest-eyebrow"><MapPin size={14} /> LOOK UP NOW</span>
-            <strong>{directlyOverhead ? "Passing overhead" : "Closest approach"}</strong>
+          <div className={`hero-closest-card ${showClosestCard ? "is-visible" : ""}`} aria-hidden={!showClosestCard} role={showClosestCard ? "status" : undefined}>
+            <span className="hero-closest-eyebrow"><MapPin size={14} /> {progress <= 57 ? "LOOK UP NOW" : "JUST PASSED"}</span>
+            <strong>{directlyOverhead ? progress <= 57 ? "Passing overhead" : "Passed overhead" : "Closest approach"}</strong>
             <span>{flight.callsign} · {Math.round(flight.altitudeFt).toLocaleString()} ft</span>
             <small>{directlyOverhead ? "Path passes within 1 km of your location" : `Path passes ${crossing?.closestKm.toFixed(1)} km from your location`}</small>
           </div>

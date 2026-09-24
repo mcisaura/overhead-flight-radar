@@ -132,9 +132,6 @@ button:disabled { opacity: .6; cursor: wait; }
 .hero-location::before { content: ""; position: absolute; bottom: calc(100% + 10px); height: 75px; border-left: 1px dashed #568d9e66; }
 .hero-playback { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
 .hero-playback > span { color: var(--ink-soft); font-size: 11px; }
-.hero-departure { position: absolute; z-index: 5; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 15px; text-align: center; padding: 30px; background: #e7f2f566; animation: departure-note 2.6s ease both; }
-.hero-departure > strong { font-family: var(--display); font-size: clamp(28px, 4vw, 48px); font-weight: 500; }
-.hero-departure > span { color: var(--ink-soft); font-size: 15px; }
 .sky-exiting .hero-location, .sky-exiting .proximity-pulse { opacity: 0; transition: opacity .4s; }
 .proximity-pulse.is-visible { opacity: 1; }
 .proximity-pulse span { position: absolute; left: 50%; top: 50%; width: 100%; height: 100%; border: 2px solid #4b9db5b0; border-radius: 50%; animation: proximity-ring 1.9s ease-out infinite; }
@@ -155,7 +152,6 @@ button:disabled { opacity: .6; cursor: wait; }
 .night .hero-baseline { border-color: #e1f4f466; color: #e5f3f1; }
 .hero-empty { animation: flight-content-in .7s ease both; }
 .hero-flight { animation: flight-content-in .7s cubic-bezier(.2,.75,.22,1) both; }
-.sky-exiting .hero-flight { animation: flight-content-out .8s ease both; }
 .sky-exiting .aircraft-wrap { animation: aircraft-exit 1.1s ease-in-out both; }
 .sky-exiting .hero-closest-card { opacity: 0; }
 
@@ -203,7 +199,6 @@ button:disabled { opacity: .6; cursor: wait; }
 .zone-clear { margin-left: 2px; padding: 8px 4px; border: 0; background: transparent; color: var(--ink-soft); font-size: 12px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
 .zone-clear:hover { color: var(--ocean-deep); }
 .zone-empty .zone-panel { animation: flight-content-in .7s ease both; }
-.zone-exiting .zone-panel { animation: flight-content-out .8s ease both; }
 
 .map-section { max-width: 1320px; margin: 0 auto; padding: 46px 36px 0; }
 .map-heading { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin-bottom: 26px; }
@@ -222,7 +217,6 @@ button:disabled { opacity: .6; cursor: wait; }
 .plane-marker-selected { background: #205b70; color: #fff; box-shadow: 0 0 0 5px #205b7040, 0 5px 15px #17374655; }
 .plane-marker { animation: marker-enter .6s ease both; }
 .map-exiting .plane-marker { animation: marker-exit .8s ease both; }
-.map-exiting .map-flight-card { animation: flight-content-out .8s ease both; }
 .map-empty .map-flight-card, .map-active .map-flight-card { animation: flight-content-in .7s ease both; }
 .plane-marker-icon { display: grid; place-items: center; width: 100%; height: 100%; }
 .plane-marker-icon svg { display: block; }
@@ -265,7 +259,6 @@ button:disabled { opacity: .6; cursor: wait; }
 .empty-copy { max-width: 370px; min-height: 137px; display: flex; align-items: center; margin: 10px 0 0; color: var(--ink-soft); font-family: var(--display); font-size: 25px; line-height: 1.35; }
 .info-active .flight-panel { animation: flight-content-in .7s ease both; }
 .info-empty .flight-panel { animation: flight-content-in .7s ease both; }
-.info-exiting .flight-panel { animation: flight-content-out .8s ease both; }
 .weather-main { display: flex; align-items: center; gap: 20px; margin: 19px 0 28px; }
 .weather-temp { font-family: var(--display); font-size: clamp(72px, 7vw, 104px); font-weight: 430; letter-spacing: -.055em; line-height: 1; font-variant-numeric: tabular-nums; }
 .weather-main > div { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
@@ -294,11 +287,9 @@ button:disabled { opacity: .6; cursor: wait; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes aircraft-fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes aircraft-exit { from { opacity: 1; transform: translate(-50%, -50%); } to { opacity: 0; transform: translate(70%, -60%); } }
-@keyframes departure-note { 0%, 15% { opacity: 0; } 32%, 80% { opacity: 1; } 100% { opacity: 0; } }
 @keyframes quiet-pulse { 50% { box-shadow: 0 0 0 18px #4a8fa508; } }
 @keyframes proximity-ring { from { opacity: .85; transform: translate(-50%, -50%) scale(.2); } to { opacity: 0; transform: translate(-50%, -50%) scale(1.25); } }
 @keyframes flight-content-in { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes flight-content-out { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-18px); } }
 @keyframes marker-enter { from { opacity: 0; } to { opacity: 1; } }
 @keyframes marker-exit { from { opacity: 1; } to { opacity: 0; } }
 .spinning { animation: spin 1s linear infinite; }
@@ -412,7 +403,6 @@ button:disabled { opacity: .6; cursor: wait; }
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
   .aircraft-wrap { left: 50% !important; }
   .aircraft-image { transform: none !important; }
-  .hero-departure { animation: none !important; }
 }
 
 /* Consolidated sky layout. */
@@ -476,4 +466,41 @@ button:disabled { opacity: .6; cursor: wait; }
   .sky-dashboard .map-frame { height: 350px; }
   .hero-closest-card { width: calc(100% - 46px); margin: 0 23px; }
   .weather-section { padding: 24px 18px 30px; }
+}
+
+.mode-toggle { display: inline-flex; align-items: center; gap: 2px; padding: 3px; border: 1px solid #bfd3d6; border-radius: 999px; background: #edf4f2; white-space: nowrap; }
+.mode-toggle button { min-height: 32px; padding: 0 12px; border: 0; border-radius: 999px; background: transparent; color: var(--ink-soft); font-size: 11px; font-weight: 750; }
+.mode-toggle button[aria-pressed="true"] { background: var(--ocean-deep); color: white; box-shadow: 0 2px 7px #17374624; }
+.mode-toggle button:not([aria-pressed="true"]):hover { background: #dcebea; }
+.live-stage .hero-inner { width: min(570px, 52vw); }
+.live-stage .hero-flight { padding-top: clamp(88px, 12vh, 130px); }
+.live-stage .hero-flight-description { margin-bottom: 22px; }
+.live-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.live-actions .refresh-button { min-height: 56px; background: #fffefaad; }
+.live-place-note, .live-location-error { max-width: 430px; margin: 13px 0 0; color: var(--ink-soft); font-size: 12px; line-height: 1.45; }
+.live-location-error { color: #8a4e35; font-weight: 700; }
+.live-aircraft-scene { position: absolute; z-index: 2; top: 22%; right: 4%; width: 45%; pointer-events: none; text-align: center; }
+.live-aircraft-scene img { display: block; width: 100%; height: auto; filter: drop-shadow(0 31px 20px #28546a29); }
+.live-aircraft-scene span { color: var(--ink-soft); font-size: 11px; font-weight: 650; }
+.live-shell .flight-sidebar { min-height: 430px; }
+.live-shell .flight-sidebar .empty-copy { min-height: 190px; }
+.live-weather-empty { margin: 0; color: var(--ink-soft); font-size: 13px; }
+.live-attribution a { color: var(--ocean-deep); text-underline-offset: 2px; }
+@media (max-width: 760px) {
+  .live-stage { min-height: 690px; height: auto; padding-bottom: 80px; }
+  .live-stage .hero-inner { width: auto; max-width: 590px; }
+  .live-stage .hero-flight { padding-top: 75px; }
+  .live-aircraft-scene { position: relative; inset: auto; width: min(420px, 75%); margin: 15px auto 0; }
+  .live-shell .flight-sidebar { min-height: 0; }
+  .site-footer { flex-wrap: wrap; }
+}
+@media (max-width: 520px) {
+  .topbar-place { display: none; }
+  .mode-toggle button { padding: 0 9px; font-size: 10px; }
+  .live-stage .hero-inner { margin: 0 23px; }
+  .live-stage .hero-flight { padding-top: 60px; }
+  .live-stage .hero-inner h1 { font-size: clamp(46px, 11vw, 58px); }
+  .live-stage .hero-description { font-size: 14px; }
+  .live-aircraft-scene { width: 90%; }
+  .live-shell .map-key { font-size: 10px; }
 }

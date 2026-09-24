@@ -25,9 +25,11 @@ type Props = {
   lon: number;
   aircraft: MapAircraft[];
   closestHex: string | null;
+  selectedAircraftHex?: string | null;
   loading: boolean;
   unavailable: boolean;
   demo?: boolean;
+  locationLabel?: string;
   showDetails?: boolean;
   exiting?: boolean;
   onSelect?: (hex: string) => void;
@@ -39,7 +41,7 @@ function formatName(plane: MapAircraft) {
   return plane.callsign || plane.registration || plane.hex.toUpperCase();
 }
 
-export default function FlightMap({ lat, lon, aircraft, closestHex, loading, unavailable, demo = false, showDetails = true, exiting = false, onSelect }: Props) {
+export default function FlightMap({ lat, lon, aircraft, closestHex, selectedAircraftHex, loading, unavailable, demo = false, locationLabel, showDetails = true, exiting = false, onSelect }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<Leaflet.Map | null>(null);
   const markerLayerRef = useRef<Leaflet.LayerGroup | null>(null);
@@ -66,7 +68,7 @@ export default function FlightMap({ lat, lon, aircraft, closestHex, loading, una
       L.control.zoom({ position: "bottomright" }).addTo(map);
       L.circle([lat, lon], { radius: ZONE_RADIUS_KM * 1000, color: "#317f98", weight: 1, dashArray: "5 7", fillColor: "#74adc0", fillOpacity: 0.075, interactive: false }).addTo(map);
       L.circleMarker([lat, lon], { radius: 8, color: "#fff", weight: 3, fillColor: "#1e6e8b", fillOpacity: 1 })
-        .bindTooltip(demo ? "Sample location" : "Your location", { direction: "top" }).addTo(map);
+        .bindTooltip(locationLabel ?? (demo ? "Sample location" : "Your location"), { direction: "top" }).addTo(map);
       markerLayerRef.current = L.layerGroup().addTo(map);
       setReady(true);
     });
@@ -79,9 +81,9 @@ export default function FlightMap({ lat, lon, aircraft, closestHex, loading, una
       markerStyles.clear();
       leafletRef.current = null;
     };
-  }, [lat, lon, demo]);
+  }, [lat, lon, demo, locationLabel]);
 
-  const activeHex = onSelect ? closestHex : selectedHex && aircraft.some((plane) => plane.hex === selectedHex)
+  const activeHex = onSelect ? selectedAircraftHex ?? closestHex : selectedHex && aircraft.some((plane) => plane.hex === selectedHex)
     ? selectedHex : closestHex || aircraft[0]?.hex || null;
 
   useEffect(() => {
@@ -136,7 +138,7 @@ export default function FlightMap({ lat, lon, aircraft, closestHex, loading, una
       </div>
       <div className="map-frame">
         <div ref={containerRef} className="flight-map" role="application" aria-label={demo ? "Interactive map of fictional aircraft" : "Interactive map of nearby aircraft"} />
-        <div className="map-key"><span className="map-key-plane"><Navigation2 size={15} fill="currentColor" /></span> Aircraft <span className="map-key-location" /> {demo ? "Sample location" : "Your location"}</div>
+        <div className="map-key"><span className="map-key-plane"><Navigation2 size={15} fill="currentColor" /></span> Aircraft <span className="map-key-location" /> {locationLabel ?? (demo ? "Sample location" : "Your location")}</div>
         {showDetails && <div className="map-flight-card" aria-live="polite">
           {selected ? <>
             <span className="map-card-label">{demo ? "SAMPLE FLIGHT" : selected.hex === closestHex ? "CLOSEST AIRCRAFT" : "SELECTED AIRCRAFT"}</span>
