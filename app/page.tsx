@@ -7,8 +7,10 @@ import LiveSky from "./live-sky";
 import ModeToggle from "./mode-toggle";
 import { demoFlights, demoPlace, demoWeather, distanceFromDemoPlace } from "./demo-data";
 import { positionAtZoneProgress, zoneProgress, ZONE_RADIUS_KM } from "../lib/zone-progress";
+import { closestApproachCue } from "../lib/closest-approach";
 import FlightIdentity, { flightIdentityText } from "./flight-identity";
 import BoardingRoute from "./boarding-route";
+import { BoardingPassStats, BoardingPassStub } from "./boarding-pass-extras";
 
 function aircraftImage(type: string) {
   if (/^(B7[4-8]|A3[0-2]|BCS)/.test(type)) return "/aircraft/narrowbody.png";
@@ -41,11 +43,9 @@ function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox"
   const pathLength = selected ? zoneProgress(demoPlace, selected.aircraft)?.crossingKm ?? ZONE_RADIUS_KM * 2 : ZONE_RADIUS_KM * 2;
   const crossingDurationMs = pathLength / ((selected?.aircraft.speedKts ?? 200) * 1.852) * 3_600_000 / 30;
   const closestMoment = phase === "active" && progress >= 43 && progress <= 57;
-  const closestCardEnd = Math.max(57, 43 + 5_000 / crossingDurationMs * 100);
-  const showClosestCard = phase === "active" && progress >= 43 && progress <= closestCardEnd;
-  const directlyOverhead = (crossing?.closestKm ?? Infinity) <= 1;
+  const closestCue = closestApproachCue(progress, crossing?.closestKm ?? null);
   const aircraftScale = .88 + .24 * Math.sin(Math.PI * progress / 100) ** 2;
-  const crossingStatus = phase === "exiting" ? `Goodbye, ${flight?.callsign ?? "plane"}.` : progress >= 90 ? "Leaving your sky" : progress < 10 ? "Entering your sky" : closestMoment ? "Look up now" : "Crossing your sky";
+  const crossingStatus = phase === "exiting" ? "Leaving your sky" : crossing?.motion === "approaching" ? "Coming closer" : crossing?.motion === "leaving" ? "Moving away" : "Crossing your sky";
 
   useEffect(() => {
     if (!playing) return;
@@ -120,7 +120,7 @@ function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox"
         {flight && selected ? <>
           <div className="hero-inner hero-flight boarding-pass" key={`flight-${selected.id}-${flightRun}`}>
             <div className="boarding-pass-main">
-              <div className="boarding-pass-topline"><p className="hero-status" role="status"><span className="signal-dot" /> {crossingStatus}</p><span>SAMPLE FLIGHT</span></div>
+              <div className="boarding-pass-topline"><p className={`hero-status boarding-pass-motion ${phase === "exiting" ? "leaving" : crossing?.motion ?? "nearby"}`} role="status"><span className="signal-dot" /> {crossingStatus}</p><span>OVERHEAD</span></div>
               <h1 id="hero-title" className="boarding-pass-heading">Flight in your sky</h1>
               <FlightIdentity {...flight} />
               <div className="boarding-pass-divider" aria-hidden="true" />
@@ -128,13 +128,15 @@ function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox"
               {!routeKnown && <p className="boarding-pass-route-note">No published route in this scenario</p>}
             </div>
             <div className="boarding-pass-footer">
-              <p className="hero-description hero-flight-description">{flight.distanceKm.toFixed(1)} km from the sample location.</p>
+              <BoardingPassStats altitudeFt={flight.altitudeFt} speedKts={flight.speedKts} distanceKm={flight.distanceKm} />
+              <p className="boarding-pass-freshness">Sample data · position updates during playback</p>
               <div className="hero-playback">
                 <button type="button" className="zone-play" disabled={phase === "exiting"} onClick={() => setPlaying((value) => !value)}>{playing ? <Pause size={15} /> : <Play size={15} />}{playing ? "Pause" : "Resume"}</button>
                 <button type="button" className="zone-reset" onClick={() => selectFlight(selected.id)}><RotateCcw size={15} />Replay</button>
                 <span>30× speed · {Math.round(crossingDurationMs / 1000)} sec crossing</span>
               </div>
             </div>
+            <BoardingPassStub callsign={flight.callsign} mode="sample" />
           </div>
           <div className="aircraft-scene" aria-hidden="true">
             <div className="hero-location"><MapPin size={19} /><span>You are here</span><small>Illustrated crossing</small></div>
@@ -144,16 +146,11 @@ function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox"
               <img src={aircraftImage(flight.aircraftType ?? "")} alt="" className="aircraft-image" style={{ transform: `scale(${aircraftScale})` }} />
             </div>
           </div>
-          <div className="hero-crossing sky-plane-progress" role="progressbar" aria-label={`${flight.callsign} crossing the zone`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress)} aria-valuetext={`${Math.round(progress)}%, ${crossingStatus.toLowerCase()}`}>
-            <div className="hero-crossing-heading"><span>Through your sky</span><strong>{Math.round(progress)}%</strong></div>
-            <div className="hero-crossing-track"><span style={{ width: `${progress}%` }} /></div>
+          <div className={`hero-crossing sky-plane-progress ${closestCue ? "is-closest" : ""}`}>
+            <div className="hero-crossing-heading"><span className={closestCue ? "closest-cue" : undefined} role={closestCue ? "status" : undefined}>{closestCue ? <><MapPin size={13} aria-hidden="true" />{closestCue}</> : "Through your sky"}</span><strong>{Math.round(progress)}%</strong></div>
+            <div className="hero-crossing-track" role="progressbar" aria-label={`${flight.callsign} crossing the zone`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress)} aria-valuetext={`${Math.round(progress)}%, ${crossingStatus.toLowerCase()}`}><span style={{ width: `${progress}%` }} /></div>
             <div className="hero-crossing-ends"><span>Entered zone</span><span>Leaves zone</span></div>
-          </div>
-          <div className={`hero-closest-card ${showClosestCard ? "is-visible" : ""}`} aria-hidden={!showClosestCard} role={showClosestCard ? "status" : undefined}>
-            <span className="hero-closest-eyebrow"><MapPin size={14} /> {progress <= 57 ? "LOOK UP NOW" : "JUST PASSED"}</span>
-            <strong>{directlyOverhead ? progress <= 57 ? "Passing overhead" : "Passed overhead" : "Closest approach"}</strong>
-            <span>{flightIdentityText(flight)} · {Math.round(flight.altitudeFt).toLocaleString()} ft</span>
-            <small>{directlyOverhead ? "Path passes within 1 km of your location" : `Path passes ${crossing?.closestKm.toFixed(1)} km from your location`}</small>
+            {closestCue && crossing && <p className="closest-distance">Closest distance in this simulation: {crossing.closestKm.toFixed(1)} km from the sample location.</p>}
           </div>
         </> : <div className="hero-inner hero-empty">
           <p className="hero-status"><span className="signal-dot quiet-dot" /> Waiting for a plane</p>

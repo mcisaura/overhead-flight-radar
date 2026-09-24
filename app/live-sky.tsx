@@ -7,8 +7,10 @@ import ModeToggle from "./mode-toggle";
 import { demoPlace } from "./demo-data";
 import { distanceKm, estimatePosition } from "../lib/flight-estimate";
 import { ZONE_RADIUS_KM, zoneProgress } from "../lib/zone-progress";
+import { closestApproachCue } from "../lib/closest-approach";
 import FlightIdentity, { flightIdentityText } from "./flight-identity";
 import BoardingRoute from "./boarding-route";
+import { BoardingPassStats, BoardingPassStub } from "./boarding-pass-extras";
 import type { AirlineIdentity } from "../lib/flight-display";
 
 type Place = { lat: number; lon: number; label: string; sample: boolean };
@@ -59,9 +61,7 @@ export default function LiveSky({ onModeChange }: { onModeChange: (mode: "live" 
   const [receivedAt, setReceivedAt] = useState(0);
   const [clockMs, setClockMs] = useState(0);
   const [departure, setDeparture] = useState<{ flight: LiveFlight; lastReportAge: number; at: number } | null>(null);
-  const [closestNotice, setClosestNotice] = useState<{ hex: string; until: number } | null>(null);
   const latestSkyRef = useRef<{ response: SkyResponse; receivedAt: number; place: Place } | null>(null);
-  const previousProgressRef = useRef<{ hex: string; percent: number } | null>(null);
 
   useEffect(() => {
     const tick = () => { if (!document.hidden) setClockMs(Date.now()); };
@@ -159,9 +159,7 @@ export default function LiveSky({ onModeChange }: { onModeChange: (mode: "live" 
   const flightName = flight ? flightIdentityText(flight) : "Aircraft";
   const crossing = selectedAircraft ? zoneProgress(place, selectedAircraft) : flight?.zoneProgress ?? null;
   const progress = departure ? 100 : crossing?.percent ?? null;
-  const showClosestNotice = !departure && !!flight && !!crossing
-    && (progress != null && progress >= 43 && progress <= 57
-      || closestNotice?.hex === flight.hex && clockMs < closestNotice.until);
+  const closestCue = closestApproachCue(progress, crossing?.closestKm ?? null);
   const shownDistanceKm = selectedAircraft?.distanceKm ?? flight?.distanceKm ?? 0;
   const shownAgeSeconds = departure
     ? departure.lastReportAge + Math.max(0, (clockMs - departure.at) / 1000)
@@ -175,18 +173,6 @@ export default function LiveSky({ onModeChange }: { onModeChange: (mode: "live" 
       ? place.sample ? "Coming closer to Chicago" : "Coming closer to you"
       : "Live aircraft nearby";
 
-  useEffect(() => {
-    if (!flight || departure || progress == null) {
-      previousProgressRef.current = null;
-      return;
-    }
-    const previous = previousProgressRef.current;
-    if (previous?.hex === flight.hex && previous.percent < 50 && progress >= 50) {
-      setClosestNotice({ hex: flight.hex, until: Date.now() + 10_000 });
-    }
-    previousProgressRef.current = { hex: flight.hex, percent: progress };
-  }, [flight, departure, progress]);
-
   return <main className="app-shell live-shell">
     <header className="topbar">
       <div className="brand"><span className="brand-mark"><Navigation2 size={19} strokeWidth={1.9} /></span><span>overhead<span className="brand-period">.</span></span></div>
@@ -197,7 +183,7 @@ export default function LiveSky({ onModeChange }: { onModeChange: (mode: "live" 
       <div className="sky-art" aria-hidden="true" /><div className="sky-overlay" aria-hidden="true" />
       {flight ? <div className="hero-inner hero-flight boarding-pass" key={flight.hex}>
         <div className="boarding-pass-main">
-          <div className="boarding-pass-topline"><p className="hero-status" role="status"><span className={`signal-dot ${error ? "quiet-dot" : ""}`} /> {departure ? `Goodbye, ${flightName}.` : error ? "Live feed interrupted" : motionStatus}</p><span>LIVE FLIGHT</span></div>
+          <div className="boarding-pass-topline"><p className={`hero-status boarding-pass-motion ${error ? "unavailable" : departure ? "leaving" : crossing?.motion ?? "nearby"}`} role="status"><span className={`signal-dot ${error ? "quiet-dot" : ""}`} /> {departure ? "Moved beyond your sky" : error ? "Live feed interrupted" : motionStatus}</p><span>OVERHEAD</span></div>
           <h1 id="hero-title" className="boarding-pass-heading">{departure ? "Just passed by" : crossing?.motion === "approaching" ? "Coming closer" : crossing?.motion === "leaving" ? "Moving away" : "Flight in your sky"}</h1>
           <FlightIdentity {...flight} />
           <div className="boarding-pass-divider" aria-hidden="true" />
@@ -205,11 +191,13 @@ export default function LiveSky({ onModeChange }: { onModeChange: (mode: "live" 
           {!routeKnown && <p className="boarding-pass-route-note">Flight path could not be confirmed</p>}
         </div>
         <div className="boarding-pass-footer">
-          <p className="hero-description hero-flight-description">{departure ? "Last reported" : positionEstimated ? "Estimated" : "Reported"} distance {shownDistanceKm.toFixed(1)} km from {place.sample ? "central Chicago" : "your location"} · {flight.altitudeFt == null ? "Altitude unavailable" : `${Math.round(flight.altitudeFt).toLocaleString()} ft altitude`}. Last report {Math.round(shownAgeSeconds)} sec ago.</p>
+          <BoardingPassStats altitudeFt={flight.altitudeFt} speedKts={flight.speedKts} distanceKm={shownDistanceKm} />
+          <p className="boarding-pass-freshness">Last reported {Math.round(shownAgeSeconds)} sec ago · {departure ? "Aircraft left the zone" : positionEstimated ? "Position estimated between reports" : "Reported position"}</p>
           <div className="live-actions"><button type="button" className="primary-button" onClick={useLocation} disabled={locating}><LocateFixed size={17} />{locating ? "Finding your location…" : "Use my location"}</button><button type="button" className="refresh-button" onClick={() => setRefreshKey((key) => key + 1)}><RefreshCw size={15} />Refresh</button></div>
           {locationError && <p className="live-location-error" role="status">{locationError}</p>}
           {place.sample && <p className="live-place-note">Showing real flights over Chicago until you choose your location.</p>}
         </div>
+        <BoardingPassStub callsign={flight.callsign} flightNumber={flight.flightNumber} mode="live" />
       </div> : <div className="hero-inner hero-empty">
         <p className="hero-status" role="status"><span className={`signal-dot ${error ? "quiet-dot" : ""}`} /> {error ? "Live feed interrupted" : loading && !data ? "Checking the sky" : "Live sky"}</p>
         <h1 id="hero-title">Look up.<br /><em>See what&apos;s there.</em></h1>
@@ -220,19 +208,14 @@ export default function LiveSky({ onModeChange }: { onModeChange: (mode: "live" 
       </div>}
       {flight ? <div className="live-aircraft-column">
         <div className={`live-aircraft-scene ${departure ? "is-departing" : ""}`} style={{ transform: `translateX(${aircraftOffset}px) scale(${aircraftScale})` }}><img src={aircraftImage(flight.aircraftType ?? "")} alt="" aria-hidden="true" /><span>Illustration · position shown on map</span></div>
-        {progress != null ? <div className="hero-crossing live-crossing sky-plane-progress" role="progressbar" aria-label={`${flightName} crossing the 5 nautical mile zone`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Number(progress.toFixed(1))} aria-valuetext={departure ? "100%, aircraft no longer reported in the zone" : `${progress.toFixed(1)}% through the zone, estimated from the latest reported position and heading`}>
-          <div className="hero-crossing-heading"><span>Through your sky</span><strong>{progress.toFixed(1)}%</strong></div>
-          <div className="hero-crossing-track"><span style={{ width: `${progress}%` }} /></div>
+        {progress != null ? <div className={`hero-crossing live-crossing sky-plane-progress ${closestCue ? "is-closest" : ""}`}>
+          <div className="hero-crossing-heading"><span className={closestCue ? "closest-cue" : undefined} role={closestCue ? "status" : undefined}>{closestCue ? <><MapPin size={13} aria-hidden="true" />{closestCue}</> : "Through your sky"}</span><strong>{progress.toFixed(1)}%</strong></div>
+          <div className="hero-crossing-track" role="progressbar" aria-label={`${flightName} crossing the 5 nautical mile zone`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Number(progress.toFixed(1))} aria-valuetext={departure ? "100%, aircraft no longer reported in the zone" : `${progress.toFixed(1)}% through the zone, estimated from the latest reported position and heading`}><span style={{ width: `${progress}%` }} /></div>
           <div className="hero-crossing-ends"><span>Entered zone</span><span>Leaves zone</span></div>
+          {closestCue && crossing && <p className="closest-distance">Estimated closest distance: {crossing.closestKm.toFixed(1)} km from {place.sample ? "central Chicago" : "your location"}.</p>}
           <p>{departure ? "No longer reported in the zone. Exit timing is estimated." : "Estimated between reports from the latest position, heading, and speed. May jump when a new report arrives."}</p>
         </div> : <div className="hero-crossing live-crossing sky-plane-progress"><div className="hero-crossing-heading"><span>Through your sky</span><strong>—</strong></div><p>Crossing progress is unavailable until a heading is reported.</p></div>}
       </div> : <div className="quiet-orbit" aria-hidden="true"><span /><span /><span /><i /></div>}
-      {showClosestNotice && flight && crossing && <div className="hero-closest-card is-visible" role="status">
-        <span className="hero-closest-eyebrow"><MapPin size={14} /> {progress != null && progress < 50 ? "CLOSEST APPROACH SOON" : "JUST PASSED"}</span>
-        <strong>{crossing.closestKm <= 1 ? progress != null && progress < 50 ? "Passing overhead soon" : "Passed overhead" : "Closest approach"}</strong>
-        <span>{flightName}{flight.altitudeFt == null ? "" : ` · ${Math.round(flight.altitudeFt).toLocaleString()} ft`}</span>
-        <small>Projected to pass {crossing.closestKm.toFixed(1)} km from {place.sample ? "central Chicago" : "your location"}.</small>
-      </div>}
       <div className="hero-baseline"><span>{data ? `${data.nearbyCount} aircraft reported nearby` : "Waiting for live data"}</span><span>Updates every 30 seconds</span></div>
     </section>
 
