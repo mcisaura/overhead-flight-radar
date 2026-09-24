@@ -10,10 +10,11 @@ Requires Node.js 22.13 or newer and npm:
 
 ```bash
 npm ci
+echo 'AIRLABS_API_KEY=your_key' > .env.local
 npm run dev
 ```
 
-Open `http://localhost:5173/`. Live data requires internet access and an AirLabs API key in `.env.local`. To verify the project:
+Replace `your_key` with your AirLabs API key. Open `http://localhost:5173/`. Live data requires internet access. To verify the project:
 
 ```bash
 npx tsc --noEmit
@@ -33,21 +34,27 @@ The live flight feed no longer calls ADSB.fi or ADSBdb.
 
 ## Sandbox
 
-The Sandbox contains four fictional flights near a sample Chicago location. Select a preset to watch an accelerated crossing, pause, resume, replay, or scrub its position. The brief goodbye message appears in the existing status line at the end. Sandbox flights and weather are local fixtures; switching to Sandbox does not request live flight or weather data. Map tiles still come from OpenStreetMap.
+The Sandbox contains four fictional flights near a sample Chicago location. Select a preset to watch an accelerated crossing, pause, resume, replay, or scrub its position. The boarding pass status changes from coming closer to moving away as the sample aircraft crosses the zone. Sandbox flights and weather are local fixtures; switching to Sandbox does not request live flight or weather data. Map tiles still come from OpenStreetMap.
+
+## Boarding pass
+
+When a flight is present, the left side becomes a boarding pass style card; the original welcome view returns when no flight is selected. The card shows the reported airline and aircraft, origin and destination, a small plane on the route line, current altitude, ground speed, distance from the reference location, a movement status chip, and a perforated flight-number stub marked **LIVE** or **SAMPLE**. Aircraft details such as winglets appear in italics after the base model name. Hover or focus the flight name and aircraft model to see their raw codes. Live cards also show the age of the last report and whether the displayed position is estimated. The card does not invent a seat, gate, or departure time when these are not confirmed by the data source.
 
 ## Motion and progress
 
-Sandbox flights have accelerated playback controls. Live mode estimates map positions and crossing progress four times per second between 30-second AirLabs polls using the last reported position, heading, and ground speed. Heading determines whether the aircraft is coming closer to or moving away from the chosen location, and the live headline changes between “Coming closer” and “Moving away.” When heading is unavailable, it says “A plane is nearby.” Progress follows the aircraft's projected crossing of the 5-nautical-mile circle, so an off-center pass can reach 100% when it leaves the circle; it does not need to fly directly overhead. A closest-approach notice appears around the predicted midpoint of the crossing. If a flight disappears from the feed near the edge while heading away, the interface briefly shows an estimated 100% exit.
+Sandbox flights have accelerated playback controls. Live mode estimates map positions and crossing progress four times per second between 30-second AirLabs polls using the last reported position, heading, and ground speed. Heading determines whether the aircraft is coming closer to or moving away from the chosen location, and the live headline changes between “Coming closer” and “Moving away.” When heading is unavailable, the headline says “Flight in your sky” and the status says “Live aircraft nearby”; crossing progress is unavailable until a heading is reported. Progress follows the aircraft's projected crossing of the 5-nautical-mile circle, so an off-center pass can reach 100% when it leaves the circle; it does not need to fly directly overhead. The progress card beneath the aircraft illustration also carries the closest-approach message and estimated distance. It changes from “Look up soon” to “Passing overhead” to “Just passed overhead” for a near-overhead pass, or shows corresponding “Closest approach” messages for an off-center pass. There is no separate notification panel. If a flight disappears from the feed near the edge while heading away, the interface briefly shows an estimated 100% exit.
 
-Projection stops 90 seconds after the underlying report so it can continue throughout the 30-second polling interval even when the source position is already delayed; if heading or speed is missing, the position stays at the last report. These are straight-line estimates, not confirmed flight tracks: turns, climbs, speed changes, delayed reports, and coverage gaps can make the displayed position wrong. The marker, progress, and closest-approach notice may shift when a new report corrects the estimate. A flight that disappears because of a coverage gap may not reach 100%. The interface labels estimates, and reduced-motion preferences turn off transitions.
+Projection stops 90 seconds after the underlying report so it can continue throughout the 30-second polling interval even when the source position is already delayed; if heading or speed is missing, the position stays at the last report. These are straight-line estimates, not confirmed flight tracks: turns, climbs, speed changes, delayed reports, and coverage gaps can make the displayed position wrong. The marker, progress, and closest-approach message may shift when a new report corrects the estimate. A flight that disappears because of a coverage gap may not reach 100%. The interface labels estimates, and reduced-motion preferences turn off transitions.
 
 ## Main files
 
 - `app/live-sky.tsx`: live hero, polling, location choice, details, and weather.
 - `app/page.tsx`: mode toggle and Sandbox experience.
+- `app/boarding-route.tsx`, `app/boarding-pass-extras.tsx`: boarding pass route, stats, and stub.
+- `app/flight-identity.tsx`, `app/aircraft-model-label.tsx`, `lib/flight-display.ts`: readable flight and aircraft labels, codes, and airline presentation.
 - `app/api/sky/route.ts`: server-side live API aggregation and caching.
 - `app/flight-map.tsx`: interactive Leaflet map.
 - `app/demo-data.ts`: Sandbox flights and weather.
-- `lib/zone-progress.ts`: shared crossing calculations.
+- `lib/zone-progress.ts`, `lib/flight-estimate.ts`, `lib/closest-approach.ts`: crossing calculations, movement estimates, and closest-approach messages.
 
 Before public hosting, review the source terms and request limits for [AirLabs](https://airlabs.co/docs/flights), [Open-Meteo](https://open-meteo.com/en/terms), and [OpenStreetMap tiles](https://operations.osmfoundation.org/policies/tiles/). No deployment is configured here.
