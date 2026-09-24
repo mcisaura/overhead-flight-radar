@@ -106,9 +106,14 @@ button:disabled { opacity: .6; cursor: wait; }
 .quiet-dot { background: #ac8360; box-shadow: 0 0 0 4px #ac836023; }
 .hero-flight { padding-top: clamp(82px, 11vh, 115px); }
 .hero-flight h1 { margin-bottom: 20px; font-size: clamp(58px, 5.6vw, 82px); }
-.hero-flight-identity { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px 15px; margin-bottom: 13px; }
-.hero-flight-identity strong { color: var(--ocean-deep); font-size: 26px; font-weight: 800; letter-spacing: -.03em; }
-.hero-flight-identity span { color: var(--ink-soft); font-size: 12px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; }
+.hero-flight-identity { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 13px; }
+.flight-identity-copy { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; }
+.hero-flight-identity strong { color: var(--ocean-deep); font-size: 26px; font-weight: 800; letter-spacing: -.03em; line-height: 1.2; }
+.flight-identity-copy > span { color: var(--ink-soft); font-size: 13px; font-weight: 650; line-height: 1.35; }
+.flight-identity-copy em, .map-card-type em { font-style: italic; font-weight: 500; }
+.airline-badge { flex: none; width: 63px; height: 52px; padding: 6px 7px 10px; border: 2px solid; border-radius: 10px; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #fff; }
+.airline-badge img { display: block; width: 100%; height: 100%; min-width: 0; min-height: 0; object-fit: contain; }
+.airline-badge-fallback { color: inherit !important; font-size: 17px !important; font-weight: 850 !important; letter-spacing: .02em !important; }
 .hero-route { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; margin: 0 0 13px; color: var(--ocean-deep); font-size: 16px; font-weight: 800; }
 .hero-route svg { color: #528ca1; }
 .hero-route span { flex-basis: 100%; color: var(--ink-soft); font-size: 13px; font-weight: 500; }
@@ -226,6 +231,7 @@ button:disabled { opacity: .6; cursor: wait; }
 .map-flight-card { position: absolute; left: 18px; bottom: 18px; z-index: 500; display: flex; flex-direction: column; width: min(330px, calc(100% - 36px)); min-height: 144px; padding: 18px 20px; border: 1px solid #e5e8df; border-radius: 11px; background: #fffefaef; box-shadow: 0 12px 32px #17374629; backdrop-filter: blur(10px); }
 .map-card-label { margin-bottom: 5px; color: var(--ocean); font-size: 10px; font-weight: 800; letter-spacing: .13em; }
 .map-flight-card > strong { color: var(--ink); font-family: var(--display); font-size: 29px; font-weight: 550; letter-spacing: -.025em; line-height: 1.1; }
+.map-flight-card > strong { overflow-wrap: anywhere; }
 .map-card-type { margin-top: 5px; color: var(--ink-soft); font-size: 12px; }
 .map-card-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 17px; padding-top: 13px; border-top: 1px solid #dce5e2; color: var(--ink); font-size: 13px; font-weight: 700; white-space: nowrap; }
 .map-card-stats span { display: flex; flex-direction: column; gap: 3px; }
@@ -479,14 +485,17 @@ button:disabled { opacity: .6; cursor: wait; }
 .live-crossing { margin-bottom: 16px; }
 .live-crossing .hero-crossing-track span { transition: width .25s linear; }
 .live-crossing p { margin: 8px 0 0; color: var(--ink-soft); font-size: 10px; line-height: 1.4; }
+.sky-plane-progress { position: absolute; z-index: 4; top: 59%; right: clamp(26px, 7vw, 100px); width: min(430px, 36vw); margin: 0; }
 .live-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
 .live-actions .refresh-button { min-height: 56px; background: #fffefaad; }
 .live-place-note, .live-location-error { max-width: 430px; margin: 13px 0 0; color: var(--ink-soft); font-size: 12px; line-height: 1.45; }
 .live-location-error { color: #8a4e35; font-weight: 700; }
-.live-aircraft-scene { position: absolute; z-index: 2; top: 22%; right: 4%; width: 45%; pointer-events: none; text-align: center; transition: transform .25s linear; }
+.live-aircraft-column { position: absolute; z-index: 4; top: 22%; right: 4%; width: 45%; pointer-events: none; }
+.live-aircraft-scene { text-align: center; transition: transform .25s linear; }
 .live-aircraft-scene.is-departing { opacity: .35; transition: opacity 1.2s ease-out, transform .8s ease-out; }
 .live-aircraft-scene img { display: block; width: 100%; height: auto; filter: drop-shadow(0 31px 20px #28546a29); }
-.live-aircraft-scene span { color: var(--ink-soft); font-size: 11px; font-weight: 650; }
+.live-aircraft-scene span { display: table; margin: 7px auto 0; padding: 4px 9px; border-radius: 99px; background: #f7fcfae6; color: var(--ink-soft); font-size: 11px; font-weight: 650; white-space: nowrap; }
+.live-stage .sky-plane-progress { position: relative; inset: auto; width: min(430px, 100%); max-width: none; margin: 18px auto 0; pointer-events: auto; }
 .live-shell .flight-sidebar { min-height: 430px; }
 .live-shell .flight-sidebar .empty-copy { min-height: 190px; }
 .live-weather-empty { margin: 0; color: var(--ink-soft); font-size: 13px; }
@@ -495,7 +504,10 @@ button:disabled { opacity: .6; cursor: wait; }
   .live-stage { min-height: 690px; height: auto; padding-bottom: 80px; }
   .live-stage .hero-inner { width: auto; max-width: 590px; }
   .live-stage .hero-flight { padding-top: 75px; }
-  .live-aircraft-scene { position: relative; inset: auto; width: min(420px, 75%); margin: 15px auto 0; }
+  .live-aircraft-column { position: relative; inset: auto; width: min(430px, calc(100% - 56px)); margin: 15px auto 0; }
+  .live-aircraft-scene { width: 75%; margin: 0 auto; }
+  .live-stage .sky-plane-progress { width: 100%; margin: 14px 0 0; }
+  .sky-plane-progress { position: relative; inset: auto; width: min(430px, calc(100% - 56px)); max-width: none; margin: 14px 28px 0 auto; }
   .live-stage .hero-closest-card { position: relative; inset: auto; width: min(265px, calc(100% - 56px)); margin: 18px 28px 0 auto; }
   .live-shell .flight-sidebar { min-height: 0; }
   .site-footer { flex-wrap: wrap; }
@@ -507,6 +519,62 @@ button:disabled { opacity: .6; cursor: wait; }
   .live-stage .hero-flight { padding-top: 60px; }
   .live-stage .hero-inner h1 { font-size: clamp(46px, 11vw, 58px); }
   .live-stage .hero-description { font-size: 14px; }
+  .live-aircraft-column { width: calc(100% - 46px); }
   .live-aircraft-scene { width: 90%; }
+  .sky-plane-progress { width: calc(100% - 46px); margin: 12px 23px 0; }
   .live-shell .map-key { font-size: 10px; }
+}
+
+/* The active flight replaces the open hero copy with a simple boarding pass. */
+.boarding-pass, .live-stage .boarding-pass {
+  width: min(500px, 42vw);
+  margin: clamp(45px, 7vh, 74px) 0 0 clamp(26px, 6vw, 100px);
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid #b9d1d6;
+  border-radius: 18px;
+  background: #fffefbec;
+  box-shadow: 0 24px 60px #19465b25;
+  backdrop-filter: blur(14px);
+  animation: boarding-pass-enter .55s cubic-bezier(.2,.75,.22,1) both;
+}
+.boarding-pass-main { padding: 23px 27px 24px; }
+.boarding-pass-topline { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+.boarding-pass-topline .hero-status { margin: 0; min-width: 0; font-size: 11px; line-height: 1.35; }
+.boarding-pass-topline > span { flex: none; color: #63808b; font-size: 9px; font-weight: 800; letter-spacing: .15em; }
+.boarding-pass .boarding-pass-heading, .live-stage .boarding-pass .boarding-pass-heading { margin: 14px 0 20px; color: var(--ocean-deep); font-family: var(--display); font-size: clamp(27px, 2.8vw, 36px); font-weight: 520; letter-spacing: -.025em; line-height: 1.15; }
+.boarding-pass .hero-flight-identity { margin-bottom: 0; align-items: center; }
+.boarding-pass .hero-flight-identity strong { font-size: 18px; letter-spacing: -.015em; }
+.boarding-pass-divider { margin: 23px 0 20px; border-top: 2px dashed #b8cfd4; }
+.boarding-route { display: grid; grid-template-columns: minmax(0, 1fr) 60px minmax(0, 1fr); align-items: start; gap: 8px; }
+.boarding-route-stop { display: flex; flex-direction: column; min-width: 0; }
+.boarding-route-destination { text-align: right; align-items: flex-end; }
+.boarding-route-label { color: #5a7c8a; font-size: 10px; font-weight: 850; letter-spacing: .13em; }
+.boarding-route-stop strong { margin: 1px 0 0; color: var(--ink); font-family: var(--body); font-size: clamp(48px, 5vw, 64px); font-weight: 750; letter-spacing: -.065em; line-height: 1; }
+.boarding-route-city { margin-top: 5px; color: var(--ink-soft); font-size: 12px; font-weight: 700; line-height: 1.2; overflow-wrap: anywhere; }
+.boarding-route-connector { align-self: center; margin-top: -5px; border-top: 3px dotted #c58178; }
+.boarding-pass-route-note { margin: 13px 0 0; color: var(--ink-soft); font-size: 11px; }
+.boarding-pass-footer { padding: 17px 27px 19px; border-top: 1px solid #d5e3e3; background: #f2f8f7c9; }
+.boarding-pass-footer .hero-flight-description, .live-stage .boarding-pass-footer .hero-flight-description { margin: 0; max-width: none; color: var(--ink-soft); font-size: 12px; line-height: 1.45; }
+.boarding-pass-footer .hero-playback { margin-top: 13px; }
+.boarding-pass-footer .live-actions { margin-top: 14px; }
+.boarding-pass-footer .primary-button, .boarding-pass-footer .refresh-button, .boarding-pass-footer .live-actions .refresh-button { min-height: 42px; }
+.boarding-pass-footer .primary-button { padding: 0 14px; }
+.boarding-pass-footer .refresh-button { width: auto; padding: 0 12px; font-size: 12px; }
+.boarding-pass-footer .live-place-note, .boarding-pass-footer .live-location-error { margin-top: 9px; font-size: 10px; }
+@keyframes boarding-pass-enter { from { opacity: 0; transform: translateY(22px) scale(.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@media (max-width: 760px) {
+  .boarding-pass, .live-stage .boarding-pass { width: calc(100% - 56px); max-width: 590px; margin: 28px 28px 0; padding: 0; }
+  .boarding-pass .boarding-pass-heading, .live-stage .boarding-pass .boarding-pass-heading { font-size: 32px; }
+}
+@media (max-width: 520px) {
+  .boarding-pass, .live-stage .boarding-pass { width: calc(100% - 46px); margin: 24px 23px 0; }
+  .boarding-pass-main { padding: 19px 19px 21px; }
+  .boarding-pass-footer { padding: 16px 19px 18px; }
+  .boarding-pass .boarding-pass-heading, .live-stage .boarding-pass .boarding-pass-heading { font-size: 29px; }
+  .boarding-pass .hero-flight-identity strong { font-size: 16px; }
+  .boarding-route { grid-template-columns: minmax(0, 1fr) 28px minmax(0, 1fr); gap: 4px; }
+  .boarding-route-stop strong { font-size: clamp(42px, 12vw, 55px); }
+  .boarding-route-city { font-size: 10px; }
+  .boarding-pass-topline > span { font-size: 8px; }
 }

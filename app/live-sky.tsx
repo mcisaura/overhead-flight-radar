@@ -7,10 +7,14 @@ import ModeToggle from "./mode-toggle";
 import { demoPlace } from "./demo-data";
 import { distanceKm, estimatePosition } from "../lib/flight-estimate";
 import { ZONE_RADIUS_KM, zoneProgress } from "../lib/zone-progress";
+import FlightIdentity, { flightIdentityText } from "./flight-identity";
+import BoardingRoute from "./boarding-route";
+import type { AirlineIdentity } from "../lib/flight-display";
 
 type Place = { lat: number; lon: number; label: string; sample: boolean };
 type LiveFlight = {
   hex: string; callsign: string | null; registration: string | null; aircraftType: string | null;
+  airline?: AirlineIdentity | null; flightNumber?: string | null; aircraftModel?: string | null;
   altitudeFt: number | null; speedKts: number | null; distanceKm: number; elevationDeg: number | null;
   seenSeconds: number; origin: { code: string; city: string } | null;
   destination: { code: string; city: string } | null;
@@ -152,7 +156,7 @@ export default function LiveSky({ onModeChange }: { onModeChange: (mode: "live" 
   });
   const selectedAircraft = departure ? null : aircraft.find((plane) => plane.hex === flight?.hex);
   const routeKnown = Boolean(flight?.origin && flight?.destination);
-  const flightName = flight?.callsign || flight?.registration || flight?.hex.toUpperCase() || "Aircraft";
+  const flightName = flight ? flightIdentityText(flight) : "Aircraft";
   const crossing = selectedAircraft ? zoneProgress(place, selectedAircraft) : flight?.zoneProgress ?? null;
   const progress = departure ? 100 : crossing?.percent ?? null;
   const showClosestNotice = !departure && !!flight && !!crossing
@@ -191,25 +195,38 @@ export default function LiveSky({ onModeChange }: { onModeChange: (mode: "live" 
 
     <section className={`sky-stage live-stage ${flight ? "sky-active" : "sky-empty"}`} aria-labelledby="hero-title">
       <div className="sky-art" aria-hidden="true" /><div className="sky-overlay" aria-hidden="true" />
-      <div className={`hero-inner ${flight ? "hero-flight" : "hero-empty"}`}>
-        <p className="hero-status" role="status"><span className={`signal-dot ${error ? "quiet-dot" : ""}`} /> {departure ? `Goodbye, ${flightName}.` : error ? "Live feed interrupted" : loading && !data ? "Checking the sky" : flight ? motionStatus : "Live sky"}</p>
-        <h1 id="hero-title">{departure ? <>A plane just<br /><em>passed by.</em></> : flight ? crossing?.motion === "approaching" ? <>Coming<br /><em>closer.</em></> : crossing?.motion === "leaving" ? <>Moving<br /><em>away.</em></> : <>A plane is<br /><em>nearby.</em></> : <>Look up.<br /><em>See what&apos;s there.</em></>}</h1>
-        {flight ? <>
-          <div className="hero-flight-identity"><strong>{flightName}</strong><span>{flight.aircraftType || "Aircraft type unknown"}</span></div>
-          <p className="hero-route">{routeKnown ? <>{flight.origin!.code}<ArrowRight size={16} aria-hidden="true" />{flight.destination!.code}<span>{flight.origin!.city} to {flight.destination!.city}</span></> : <>Route unavailable <span>Flight path could not be confirmed</span></>}</p>
+      {flight ? <div className="hero-inner hero-flight boarding-pass" key={flight.hex}>
+        <div className="boarding-pass-main">
+          <div className="boarding-pass-topline"><p className="hero-status" role="status"><span className={`signal-dot ${error ? "quiet-dot" : ""}`} /> {departure ? `Goodbye, ${flightName}.` : error ? "Live feed interrupted" : motionStatus}</p><span>LIVE FLIGHT</span></div>
+          <h1 id="hero-title" className="boarding-pass-heading">{departure ? "Just passed by" : crossing?.motion === "approaching" ? "Coming closer" : crossing?.motion === "leaving" ? "Moving away" : "Flight in your sky"}</h1>
+          <FlightIdentity {...flight} />
+          <div className="boarding-pass-divider" aria-hidden="true" />
+          <BoardingRoute origin={flight.origin} destination={flight.destination} />
+          {!routeKnown && <p className="boarding-pass-route-note">Flight path could not be confirmed</p>}
+        </div>
+        <div className="boarding-pass-footer">
           <p className="hero-description hero-flight-description">{departure ? "Last reported" : positionEstimated ? "Estimated" : "Reported"} distance {shownDistanceKm.toFixed(1)} km from {place.sample ? "central Chicago" : "your location"} · {flight.altitudeFt == null ? "Altitude unavailable" : `${Math.round(flight.altitudeFt).toLocaleString()} ft altitude`}. Last report {Math.round(shownAgeSeconds)} sec ago.</p>
-          {progress != null ? <div className="hero-crossing live-crossing" role="progressbar" aria-label={`${flightName} crossing the 5 nautical mile zone`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Number(progress.toFixed(1))} aria-valuetext={departure ? "100%, aircraft no longer reported in the zone" : `${progress.toFixed(1)}% through the zone, estimated from the latest reported position and heading`}>
-            <div className="hero-crossing-heading"><span>Through your sky</span><strong>{progress.toFixed(1)}%</strong></div>
-            <div className="hero-crossing-track"><span style={{ width: `${progress}%` }} /></div>
-            <div className="hero-crossing-ends"><span>Entered zone</span><span>Leaves zone</span></div>
-            <p>{departure ? "No longer reported in the zone. Exit timing is estimated." : "Estimated between reports from the latest position, heading, and speed. May jump when a new report arrives."}</p>
-          </div> : <div className="hero-crossing live-crossing"><div className="hero-crossing-heading"><span>Through your sky</span><strong>—</strong></div><p>Crossing progress is unavailable until a heading is reported.</p></div>}
-        </> : <p className="hero-description">{error || (loading ? "Finding aircraft in the 5 nautical mile zone." : `No aircraft currently reported within 5 nautical miles of ${place.sample ? "central Chicago" : "your location"}.`)}</p>}
+          <div className="live-actions"><button type="button" className="primary-button" onClick={useLocation} disabled={locating}><LocateFixed size={17} />{locating ? "Finding your location…" : "Use my location"}</button><button type="button" className="refresh-button" onClick={() => setRefreshKey((key) => key + 1)}><RefreshCw size={15} />Refresh</button></div>
+          {locationError && <p className="live-location-error" role="status">{locationError}</p>}
+          {place.sample && <p className="live-place-note">Showing real flights over Chicago until you choose your location.</p>}
+        </div>
+      </div> : <div className="hero-inner hero-empty">
+        <p className="hero-status" role="status"><span className={`signal-dot ${error ? "quiet-dot" : ""}`} /> {error ? "Live feed interrupted" : loading && !data ? "Checking the sky" : "Live sky"}</p>
+        <h1 id="hero-title">Look up.<br /><em>See what&apos;s there.</em></h1>
+        <p className="hero-description">{error || (loading ? "Finding aircraft in the 5 nautical mile zone." : `No aircraft currently reported within 5 nautical miles of ${place.sample ? "central Chicago" : "your location"}.`)}</p>
         <div className="live-actions"><button type="button" className="primary-button" onClick={useLocation} disabled={locating}><LocateFixed size={17} />{locating ? "Finding your location…" : "Use my location"}</button><button type="button" className="refresh-button" onClick={() => setRefreshKey((key) => key + 1)}><RefreshCw size={15} />Refresh</button></div>
         {locationError && <p className="live-location-error" role="status">{locationError}</p>}
         {place.sample && <p className="live-place-note">Showing real flights over Chicago until you choose your location.</p>}
-      </div>
-      {flight ? <div className={`live-aircraft-scene ${departure ? "is-departing" : ""}`} aria-hidden="true" style={{ transform: `translateX(${aircraftOffset}px) scale(${aircraftScale})` }}><img src={aircraftImage(flight.aircraftType ?? "")} alt="" /><span>Illustration · position shown on map</span></div> : <div className="quiet-orbit" aria-hidden="true"><span /><span /><span /><i /></div>}
+      </div>}
+      {flight ? <div className="live-aircraft-column">
+        <div className={`live-aircraft-scene ${departure ? "is-departing" : ""}`} style={{ transform: `translateX(${aircraftOffset}px) scale(${aircraftScale})` }}><img src={aircraftImage(flight.aircraftType ?? "")} alt="" aria-hidden="true" /><span>Illustration · position shown on map</span></div>
+        {progress != null ? <div className="hero-crossing live-crossing sky-plane-progress" role="progressbar" aria-label={`${flightName} crossing the 5 nautical mile zone`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Number(progress.toFixed(1))} aria-valuetext={departure ? "100%, aircraft no longer reported in the zone" : `${progress.toFixed(1)}% through the zone, estimated from the latest reported position and heading`}>
+          <div className="hero-crossing-heading"><span>Through your sky</span><strong>{progress.toFixed(1)}%</strong></div>
+          <div className="hero-crossing-track"><span style={{ width: `${progress}%` }} /></div>
+          <div className="hero-crossing-ends"><span>Entered zone</span><span>Leaves zone</span></div>
+          <p>{departure ? "No longer reported in the zone. Exit timing is estimated." : "Estimated between reports from the latest position, heading, and speed. May jump when a new report arrives."}</p>
+        </div> : <div className="hero-crossing live-crossing sky-plane-progress"><div className="hero-crossing-heading"><span>Through your sky</span><strong>—</strong></div><p>Crossing progress is unavailable until a heading is reported.</p></div>}
+      </div> : <div className="quiet-orbit" aria-hidden="true"><span /><span /><span /><i /></div>}
       {showClosestNotice && flight && crossing && <div className="hero-closest-card is-visible" role="status">
         <span className="hero-closest-eyebrow"><MapPin size={14} /> {progress != null && progress < 50 ? "CLOSEST APPROACH SOON" : "JUST PASSED"}</span>
         <strong>{crossing.closestKm <= 1 ? progress != null && progress < 50 ? "Passing overhead soon" : "Passed overhead" : "Closest approach"}</strong>
@@ -222,7 +239,7 @@ export default function LiveSky({ onModeChange }: { onModeChange: (mode: "live" 
     <div className="sky-dashboard">
       <FlightMap lat={place.lat} lon={place.lon} aircraft={aircraft} closestHex={aircraft[0]?.hex ?? null} selectedAircraftHex={departure ? data?.flight?.hex ?? null : flight?.hex ?? null} loading={loading && !data} unavailable={Boolean(error)} locationLabel={place.sample ? "Central Chicago" : "Your location"} onSelect={setSelectedHex} />
       <aside className="flight-sidebar" aria-label="Live flight details"><article className="detail-panel flight-panel">
-        <div className="detail-title"><Navigation2 size={18} strokeWidth={1.8} /><h3>{flightName}</h3></div>
+        <div className="detail-title"><Navigation2 size={18} strokeWidth={1.8} /><h3 title={flight?.callsign || undefined}>{flightName}</h3></div>
         {flight ? <><div className="airport-row"><div><strong className="airport-code">{flight.origin?.code ?? "···"}</strong><span className="airport-city">{flight.origin?.city ?? "Origin unknown"}</span></div><ArrowRight className="airport-connector" size={25} strokeWidth={1.3} aria-hidden="true" /><div><strong className="airport-code">{flight.destination?.code ?? "···"}</strong><span className="airport-city">{flight.destination?.city ?? "Destination unknown"}</span></div></div>
           <div className="stat-row"><div><span>Altitude</span><strong>{flight.altitudeFt == null ? "—" : `${Math.round(flight.altitudeFt).toLocaleString()} ft`}</strong></div><div><span>Ground speed</span><strong>{flight.speedKts == null ? "—" : `${Math.round(flight.speedKts)} kt`}</strong></div><div><span>Distance</span><strong>{shownDistanceKm.toFixed(1)} km</strong></div></div><p className="data-note">{routeKnown ? "Route reported by AirLabs" : "Route unavailable"} · Last report {Math.round(shownAgeSeconds)} sec ago{positionEstimated ? " · Position estimated" : ""}</p></> : <p className="empty-copy">{loading ? "Checking for nearby flights…" : error || "No aircraft reported in this zone right now."}</p>}
       </article></aside>

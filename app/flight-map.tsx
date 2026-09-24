@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import type * as Leaflet from "leaflet";
 import { MapPin, Navigation2 } from "lucide-react";
 import { ZONE_RADIUS_KM } from "../lib/zone-progress";
+import { airlineIdentity, displayAircraftType, displayFlightName, type AirlineIdentity } from "../lib/flight-display";
+import AircraftModelLabel from "./aircraft-model-label";
 import "leaflet/dist/leaflet.css";
 
 export type MapAircraft = {
@@ -11,6 +13,13 @@ export type MapAircraft = {
   callsign: string | null;
   registration: string | null;
   aircraftType: string | null;
+  airlineIcao?: string | null;
+  airlineIata?: string | null;
+  flightNumber?: string | null;
+  airline?: AirlineIdentity | null;
+  displayName?: string | null;
+  displayType?: string | null;
+  aircraftModel?: string | null;
   lat: number;
   lon: number;
   heading: number | null;
@@ -39,7 +48,9 @@ type Props = {
 const planeShape = '<svg viewBox="0 0 32 32" width="27" height="27" aria-hidden="true"><path d="M16 2.5 19.2 13l9.4 5.1v3l-10.8-3.2-.8 8.2 4 2.3v2.1L16 29l-5 1.5v-2.1l4-2.3-.8-8.2-10.8 3.2v-3L12.8 13 16 2.5Z" fill="currentColor" stroke="white" stroke-width="1.2" stroke-linejoin="round"/></svg>';
 
 function formatName(plane: MapAircraft) {
-  return plane.callsign || plane.registration || plane.hex.toUpperCase();
+  const icao = plane.airlineIcao || plane.callsign?.match(/^([A-Z]{3})\d/)?.[1];
+  const airline = plane.airline ?? airlineIdentity(icao, plane.airlineIata);
+  return plane.displayName || displayFlightName(plane.callsign, airline, plane.flightNumber) || plane.registration || plane.hex.toUpperCase();
 }
 
 export default function FlightMap({ lat, lon, aircraft, closestHex, selectedAircraftHex, loading, unavailable, demo = false, locationLabel, showDetails = true, exiting = false, onSelect }: Props) {
@@ -143,8 +154,8 @@ export default function FlightMap({ lat, lon, aircraft, closestHex, selectedAirc
         {showDetails && <div className="map-flight-card" aria-live="polite">
           {selected ? <>
             <span className="map-card-label">{demo ? "SAMPLE FLIGHT" : selected.hex === closestHex ? "CLOSEST AIRCRAFT" : "SELECTED AIRCRAFT"}</span>
-            <strong>{formatName(selected)}</strong>
-            <span className="map-card-type">{selected.aircraftType || "Aircraft type unavailable"}{selected.registration && selected.registration !== selected.callsign ? ` · ${selected.registration}` : ""}</span>
+            <strong title={selected.callsign || undefined} tabIndex={selected.callsign ? 0 : undefined}>{formatName(selected)}</strong>
+            <span className="map-card-type"><span title={selected.aircraftType || undefined} tabIndex={selected.aircraftType ? 0 : undefined}><AircraftModelLabel label={selected.displayType || displayAircraftType(selected.aircraftType, selected.aircraftModel)} /></span>{selected.registration && selected.registration !== selected.callsign ? ` · ${selected.registration}` : ""}</span>
             <div className="map-card-stats">
               <span><small>Altitude</small>{selected.altitudeFt == null ? "—" : `${Math.round(selected.altitudeFt).toLocaleString()} ft`}</span>
               <span><small>Speed</small>{selected.speedKts == null ? "—" : `${Math.round(selected.speedKts)} kt`}</span>

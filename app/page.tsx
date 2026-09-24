@@ -7,6 +7,8 @@ import LiveSky from "./live-sky";
 import ModeToggle from "./mode-toggle";
 import { demoFlights, demoPlace, demoWeather, distanceFromDemoPlace } from "./demo-data";
 import { positionAtZoneProgress, zoneProgress, ZONE_RADIUS_KM } from "../lib/zone-progress";
+import FlightIdentity, { flightIdentityText } from "./flight-identity";
+import BoardingRoute from "./boarding-route";
 
 function aircraftImage(type: string) {
   if (/^(B7[4-8]|A3[0-2]|BCS)/.test(type)) return "/aircraft/narrowbody.png";
@@ -116,21 +118,22 @@ function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox"
         <div className="sky-art" aria-hidden="true" />
         <div className="sky-overlay" aria-hidden="true" />
         {flight && selected ? <>
-          <div className="hero-inner hero-flight" key={`flight-${selected.id}-${flightRun}`}>
-            <p className="hero-status" role="status"><span className="signal-dot" /> {crossingStatus}</p>
-            <h1 id="hero-title">A plane is<br /><em>passing by.</em></h1>
-            <div className="hero-flight-identity"><strong>{flight.callsign}</strong><span>{flight.aircraftType || "Aircraft"}</span></div>
-            <p className="hero-route">{routeKnown ? <>{selected.origin!.code}<ArrowRight size={16} aria-hidden="true" />{selected.destination!.code}<span>{selected.origin!.city} to {selected.destination!.city}</span></> : <>Local flight <span>No published route in this scenario</span></>}</p>
-            <p className="hero-description hero-flight-description">{flight.distanceKm.toFixed(1)} km from the sample location.</p>
-            <div className="hero-crossing" role="progressbar" aria-label={`${flight.callsign} crossing the zone`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress)} aria-valuetext={`${Math.round(progress)}%, ${crossingStatus.toLowerCase()}`}>
-              <div className="hero-crossing-heading"><span>Through your sky</span><strong>{Math.round(progress)}%</strong></div>
-              <div className="hero-crossing-track"><span style={{ width: `${progress}%` }} /></div>
-              <div className="hero-crossing-ends"><span>Entered zone</span><span>Leaves zone</span></div>
+          <div className="hero-inner hero-flight boarding-pass" key={`flight-${selected.id}-${flightRun}`}>
+            <div className="boarding-pass-main">
+              <div className="boarding-pass-topline"><p className="hero-status" role="status"><span className="signal-dot" /> {crossingStatus}</p><span>SAMPLE FLIGHT</span></div>
+              <h1 id="hero-title" className="boarding-pass-heading">Flight in your sky</h1>
+              <FlightIdentity {...flight} />
+              <div className="boarding-pass-divider" aria-hidden="true" />
+              <BoardingRoute origin={selected.origin} destination={selected.destination} />
+              {!routeKnown && <p className="boarding-pass-route-note">No published route in this scenario</p>}
             </div>
-            <div className="hero-playback">
-              <button type="button" className="zone-play" disabled={phase === "exiting"} onClick={() => setPlaying((value) => !value)}>{playing ? <Pause size={15} /> : <Play size={15} />}{playing ? "Pause" : "Resume"}</button>
-              <button type="button" className="zone-reset" onClick={() => selectFlight(selected.id)}><RotateCcw size={15} />Replay</button>
-              <span>30× speed · {Math.round(crossingDurationMs / 1000)} sec crossing</span>
+            <div className="boarding-pass-footer">
+              <p className="hero-description hero-flight-description">{flight.distanceKm.toFixed(1)} km from the sample location.</p>
+              <div className="hero-playback">
+                <button type="button" className="zone-play" disabled={phase === "exiting"} onClick={() => setPlaying((value) => !value)}>{playing ? <Pause size={15} /> : <Play size={15} />}{playing ? "Pause" : "Resume"}</button>
+                <button type="button" className="zone-reset" onClick={() => selectFlight(selected.id)}><RotateCcw size={15} />Replay</button>
+                <span>30× speed · {Math.round(crossingDurationMs / 1000)} sec crossing</span>
+              </div>
             </div>
           </div>
           <div className="aircraft-scene" aria-hidden="true">
@@ -141,10 +144,15 @@ function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox"
               <img src={aircraftImage(flight.aircraftType ?? "")} alt="" className="aircraft-image" style={{ transform: `scale(${aircraftScale})` }} />
             </div>
           </div>
+          <div className="hero-crossing sky-plane-progress" role="progressbar" aria-label={`${flight.callsign} crossing the zone`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress)} aria-valuetext={`${Math.round(progress)}%, ${crossingStatus.toLowerCase()}`}>
+            <div className="hero-crossing-heading"><span>Through your sky</span><strong>{Math.round(progress)}%</strong></div>
+            <div className="hero-crossing-track"><span style={{ width: `${progress}%` }} /></div>
+            <div className="hero-crossing-ends"><span>Entered zone</span><span>Leaves zone</span></div>
+          </div>
           <div className={`hero-closest-card ${showClosestCard ? "is-visible" : ""}`} aria-hidden={!showClosestCard} role={showClosestCard ? "status" : undefined}>
             <span className="hero-closest-eyebrow"><MapPin size={14} /> {progress <= 57 ? "LOOK UP NOW" : "JUST PASSED"}</span>
             <strong>{directlyOverhead ? progress <= 57 ? "Passing overhead" : "Passed overhead" : "Closest approach"}</strong>
-            <span>{flight.callsign} · {Math.round(flight.altitudeFt).toLocaleString()} ft</span>
+            <span>{flightIdentityText(flight)} · {Math.round(flight.altitudeFt).toLocaleString()} ft</span>
             <small>{directlyOverhead ? "Path passes within 1 km of your location" : `Path passes ${crossing?.closestKm.toFixed(1)} km from your location`}</small>
           </div>
         </> : <div className="hero-inner hero-empty">
@@ -154,7 +162,7 @@ function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox"
           <button type="button" className="primary-button" onClick={() => document.getElementById("presets-title")?.scrollIntoView({ behavior: "smooth", block: "start" })}>Simulate an arrival <ArrowRight size={18} /></button>
         </div>}
         {!flight && <div className="quiet-orbit" aria-hidden="true"><span /><span /><span /><i /></div>}
-        <div className="hero-baseline"><span>{flight ? `${flight.callsign} · ${flight.aircraftType}` : "No aircraft in the zone"}</span><span>5 nautical mile zone</span></div>
+        <div className="hero-baseline"><span>{flight ? flightIdentityText(flight) : "No aircraft in the zone"}</span><span>5 nautical mile zone</span></div>
       </section>
 
       <section className="presets-section compact-presets" aria-labelledby="presets-title">
@@ -163,7 +171,7 @@ function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox"
           {demoFlights.map((item) => (
             <button key={item.id} type="button" className={`preset-button ${selectedId === item.id ? "active" : ""}`} aria-pressed={selectedId === item.id} onClick={() => selectFlight(item.id)}>
               <span className="preset-icon"><Navigation2 size={18} /></span>
-              <span><strong>{item.label}</strong><small>{item.aircraft.callsign}</small></span>
+              <span><strong>{item.label}</strong><small title={item.aircraft.callsign || undefined}>{flightIdentityText(item.aircraft)}</small></span>
             </button>
           ))}
         </div>
@@ -177,7 +185,7 @@ function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox"
 
         <aside className={`flight-sidebar info-${phase}`} aria-label="Flight details and preview controls">
           <article className="detail-panel flight-panel">
-            <div className="detail-title"><Navigation2 size={18} strokeWidth={1.8} /><h3>{flight?.callsign ?? "Flight details"}</h3></div>
+            <div className="detail-title"><Navigation2 size={18} strokeWidth={1.8} /><h3 title={flight?.callsign || undefined}>{flight ? flightIdentityText(flight) : "Flight details"}</h3></div>
             {flight && selected ? <>
             <div className="airport-row">
               <div><strong className="airport-code">{selected.origin?.code ?? "···"}</strong><span className="airport-city">{selected.origin?.city ?? "Local departure"}</span></div>

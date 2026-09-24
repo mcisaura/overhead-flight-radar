@@ -1,21 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDemoSky } from "../../demo-data";
 import { ZONE_RADIUS_KM, zoneProgress } from "../../../lib/zone-progress";
+import { airlineIdentity, displayAircraftType, displayFlightName } from "../../../lib/flight-display";
 
 export const runtime = "edge";
 
 type AirLabsFlight = {
   hex?: string; reg_number?: string | null; flight_icao?: string | null; flight_iata?: string | null;
   lat?: number | null; lng?: number | null; alt?: number | null; dir?: number | null;
-  speed?: number | null; aircraft_icao?: string | null; dep_iata?: string | null;
+  speed?: number | null; aircraft_icao?: string | null; airline_icao?: string | null; airline_iata?: string | null; flight_number?: string | null; dep_iata?: string | null;
   arr_iata?: string | null; updated?: number | null; status?: string | null;
 };
 type AirLabsAirport = { iata_code?: string | null; city?: string | null; name?: string | null };
+type AirLabsAirline = { name?: string | null; iata_code?: string | null; icao_code?: string | null };
+type AirLabsFleet = { model?: string | null; icao?: string | null };
 type AirLabsResponse<T> = { response?: T; error?: { code?: string; message?: string } };
 type WeatherResponse = { current?: { temperature_2m?: number; cloud_cover?: number; wind_speed_10m?: number; weather_code?: number; is_day?: number } };
 
 const upstreamCache = new Map<string, { expiresAt: number; value: Promise<unknown> }>();
-const flightFields = "hex,reg_number,flight_icao,flight_iata,lat,lng,alt,dir,speed,aircraft_icao,dep_iata,arr_iata,updated,status";
+const flightFields = "hex,reg_number,flight_icao,flight_iata,flight_number,airline_icao,airline_iata,lat,lng,alt,dir,speed,aircraft_icao,dep_iata,arr_iata,updated,status";
 
 function haversine(lat1: number, lon1: number, lat2: number, lon2: number) {
   const rad = Math.PI / 180;
@@ -77,6 +80,23 @@ async function getAirport(apiKey: string, code: string) {
   }
 }
 
+async function getAirline(apiKey: string, icao: string | null, iata: string | null) {
+  if (!icao && !iata) return null;
+  try {
+    const params: Record<string, string> = iata ? { iata_code: iata } : { icao_code: icao! };
+    const rows = await getAirLabs<AirLabsAirline[]>("airlines", apiKey, { ...params, _fields: "name,iata_code,icao_code" }, 86_400);
+    const row = rows[0];
+    return row ? airlineIdentity(row.icao_code || icao, row.iata_code || iata, row.name) : null;
+  } catch { return null; }
+}
+
+async function getAircraftModel(apiKey: string, hex: string) {
+  try {
+    const rows = await getAirLabs<AirLabsFleet[]>("fleets", apiKey, { hex, _fields: "model,icao" }, 86_400);
+    return rows[0]?.model || null;
+  } catch { return null; }
+}
+
 export async function GET(request: NextRequest) {
   if (request.nextUrl.searchParams.get("mode") !== "live") {
     return NextResponse.json(getDemoSky(request.nextUrl.searchParams.get("preset")), { headers: { "Cache-Control": "no-store" } });
@@ -101,7 +121,7 @@ export async function GET(request: NextRequest) {
 
   let flight = null;
   let nearbyCount = 0;
-  let aircraft: { hex: string; callsign: string | null; registration: string | null; aircraftType: string | null; lat: number; lon: number; heading: number | null; altitudeFt: number | null; speedKts: number | null; distanceKm: number; seenSeconds: number }[] = [];
+  let aircraft: { hex: string; callsign: string | null; registration: string | null; aircraftType: string | null; airlineIcao: string | null; airlineIata: string | null; flightNumber: string | null; lat: number; lon: number; heading: number | null; altitudeFt: number | null; speedKts: number | null; distanceKm: number; seenSeconds: number }[] = [];
   if (aircraftResult.status === "fulfilled" && Array.isArray(aircraftResult.value)) {
     const candidates = aircraftResult.value
       .filter((item) => item.hex && typeof item.lat === "number" && typeof item.lng === "number" && (item.status === "en-route" || item.status === "active"))
@@ -117,6 +137,7 @@ export async function GET(request: NextRequest) {
     aircraft = candidates.map(({ item, distanceKm, altitudeFt, seenSeconds }) => ({
       hex: item.hex!, callsign: item.flight_icao || item.flight_iata || null,
       registration: item.reg_number || null, aircraftType: item.aircraft_icao || null,
+      airlineIcao: item.airline_icao || null, airlineIata: item.airline_iata || null, flightNumber: item.flight_number || null,
       lat: item.lat!, lon: item.lng!, heading: typeof item.dir === "number" && Number.isFinite(item.dir) ? item.dir : null,
       altitudeFt, speedKts: typeof item.speed === "number" ? item.speed / 1.852 : null,
       distanceKm, seenSeconds: seenSeconds!,
@@ -127,14 +148,24 @@ export async function GET(request: NextRequest) {
       const item = selected.item;
       const originCode = item.dep_iata?.trim() || null;
       const destinationCode = item.arr_iata?.trim() || null;
-      const [origin, destination] = await Promise.all([
+      const airlineIcao = item.airline_icao || item.flight_icao?.match(/^([A-Z]{3})\d/)?.[1] || null;
+      const [origin, destination, airlineLookup, aircraftModel] = await Promise.all([
         originCode ? getAirport(apiKey, originCode) : Promise.resolve(null),
         destinationCode ? getAirport(apiKey, destinationCode) : Promise.resolve(null),
+        getAirline(apiKey, airlineIcao, item.airline_iata || null),
+        getAircraftModel(apiKey, item.hex!),
       ]);
+      const airline = airlineLookup ?? airlineIdentity(airlineIcao, item.airline_iata);
+      const callsign = item.flight_icao || item.flight_iata || null;
+      const displayName = displayFlightName(callsign, airline, item.flight_number);
+      const displayType = displayAircraftType(item.aircraft_icao, aircraftModel);
+      const selectedAircraft = aircraft.find((plane) => plane.hex === item.hex);
+      if (selectedAircraft) Object.assign(selectedAircraft, { airline, displayName, displayType, aircraftModel });
       const altitudeKm = selected.altitudeFt === null ? null : selected.altitudeFt * 0.0003048;
       flight = {
-        hex: item.hex!, callsign: item.flight_icao || item.flight_iata || null,
+        hex: item.hex!, callsign,
         registration: item.reg_number || null, aircraftType: item.aircraft_icao || null,
+        airline, flightNumber: item.flight_number || null, aircraftModel,
         altitudeFt: selected.altitudeFt, speedKts: typeof item.speed === "number" ? item.speed / 1.852 : null,
         distanceKm: selected.distanceKm,
         elevationDeg: altitudeKm === null ? null : Math.atan2(altitudeKm, Math.max(selected.distanceKm, 0.1)) * 180 / Math.PI,
