@@ -18,6 +18,7 @@ export type MapAircraft = {
   speedKts: number | null;
   distanceKm: number;
   seenSeconds: number;
+  estimated?: boolean;
 };
 
 type Props = {
@@ -59,7 +60,7 @@ export default function FlightMap({ lat, lon, aircraft, closestHex, selectedAirc
     void import("leaflet").then((L) => {
       if (cancelled || !containerRef.current) return;
       leafletRef.current = L;
-      map = L.map(containerRef.current, { scrollWheelZoom: false, zoomControl: false }).setView([lat, lon], 10);
+      map = L.map(containerRef.current, { scrollWheelZoom: false, zoomControl: false }).setView([lat, lon], 11);
       mapRef.current = map;
       L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
         maxZoom: 18,
@@ -149,7 +150,7 @@ export default function FlightMap({ lat, lon, aircraft, closestHex, selectedAirc
               <span><small>Speed</small>{selected.speedKts == null ? "—" : `${Math.round(selected.speedKts)} kt`}</span>
               <span><small>Distance</small>{selected.distanceKm.toFixed(1)} km</span>
             </div>
-            <span className="map-card-age">{demo ? "Simulated aircraft position" : `Position received ${Math.round(selected.seenSeconds)} sec ago`}</span>
+            <span className="map-card-age">{demo ? "Simulated aircraft position" : `${selected.estimated ? "Estimated position" : "Reported position"} · last report ${Math.round(selected.seenSeconds)} sec ago`}</span>
           </> : <>
             <MapPin size={20} aria-hidden="true" />
             <strong>{unavailable ? "Live positions unavailable" : loading ? "Finding nearby aircraft…" : demo ? "No plane in the zone" : "No aircraft nearby"}</strong>
@@ -157,7 +158,7 @@ export default function FlightMap({ lat, lon, aircraft, closestHex, selectedAirc
           </>}
         </div>}
       </div>
-      <p className="map-note">{demo ? "The dashed circle marks the 10 nautical mile zone." : "Positions are reported by aircraft, so coverage and timing can vary. The dashed circle shows the 10 nautical mile zone."}</p>
+      <p className="map-note">{demo ? "The dashed circle marks the 5 nautical mile zone." : "Between reports, markers estimate movement from the last position, heading, and speed for up to 90 seconds after the last report. They may jump when new data arrives. The dashed circle shows the 5 nautical mile zone."}</p>
     </section>
   );
 }

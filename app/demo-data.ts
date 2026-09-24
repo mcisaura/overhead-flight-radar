@@ -27,17 +27,17 @@ function plane(hex: string, callsign: string, registration: string, aircraftType
 export const demoFlights: DemoFlight[] = [
   {
     id: "arrival", label: "O’Hare arrival", description: "An airliner on approach",
-    aircraft: plane("d0a001", "UAL4827", "N742UV", "B738", 41.951, -87.818, 295, 3500, 205),
+    aircraft: plane("d0a001", "UAL4827", "N742UV", "B738", 41.91455, -87.7239, 295, 3500, 205),
     origin: { code: "FLL", city: "Ft Lauderdale" }, destination: { code: "ORD", city: "Chicago" },
   },
   {
     id: "cross-country", label: "Cross-country", description: "A jet crossing the city",
-    aircraft: plane("d0a002", "AAL3184", "N836AX", "A321", 42.026, -87.532, 82, 33000, 458),
+    aircraft: plane("d0a002", "AAL3184", "N836AX", "A321", 41.95205, -87.5809, 82, 33000, 458),
     origin: { code: "LAX", city: "Los Angeles" }, destination: { code: "JFK", city: "New York" },
   },
   {
     id: "cargo", label: "Cargo flight", description: "A freighter heading in",
-    aircraft: plane("d0a003", "FDX6204", "N623FX", "B763", 41.752, -87.617, 346, 5700, 225),
+    aircraft: plane("d0a003", "FDX6204", "N623FX", "B763", 41.81505, -87.6234, 346, 5700, 225),
     origin: { code: "MEM", city: "Memphis" }, destination: { code: "ORD", city: "Chicago" },
   },
   {

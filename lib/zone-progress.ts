@@ -1,4 +1,4 @@
-export const ZONE_RADIUS_KM = 18.52; // 10 nautical miles, matching the live aircraft search.
+export const ZONE_RADIUS_KM = 9.26; // 5 nautical miles, matching the live aircraft search.
 
 type Point = { lat: number; lon: number };
 type AircraftPosition = Point & { heading: number | null };
@@ -24,7 +24,7 @@ export function zoneProgress(center: Point, aircraft: AircraftPosition, radiusKm
   const path = track(center, aircraft, radiusKm);
   if (!path) return null;
   const percent = Math.max(0, Math.min(100, (path.alongKm + path.halfChordKm) / (2 * path.halfChordKm) * 100));
-  return { percent, remainingKm: Math.max(0, path.halfChordKm - path.alongKm), crossingKm: 2 * path.halfChordKm, closestKm: Math.abs(path.crossKm) };
+  return { percent, remainingKm: Math.max(0, path.halfChordKm - path.alongKm), crossingKm: 2 * path.halfChordKm, closestKm: Math.abs(path.crossKm), motion: path.alongKm < 0 ? "approaching" as const : "leaving" as const };
 }
 
 export function positionAtZoneProgress(center: Point, aircraft: AircraftPosition, percent: number, radiusKm = ZONE_RADIUS_KM) {

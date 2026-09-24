@@ -6,7 +6,7 @@ import FlightMap from "./flight-map";
 import LiveSky from "./live-sky";
 import ModeToggle from "./mode-toggle";
 import { demoFlights, demoPlace, demoWeather, distanceFromDemoPlace } from "./demo-data";
-import { positionAtZoneProgress, zoneProgress } from "../lib/zone-progress";
+import { positionAtZoneProgress, zoneProgress, ZONE_RADIUS_KM } from "../lib/zone-progress";
 
 function aircraftImage(type: string) {
   if (/^(B7[4-8]|A3[0-2]|BCS)/.test(type)) return "/aircraft/narrowbody.png";
@@ -36,7 +36,7 @@ function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox"
   const crossing = flight ? zoneProgress(demoPlace, flight) : null;
   const routeKnown = Boolean(selected?.origin && selected?.destination);
   const mapAircraft = flight ? [flight] : [];
-  const pathLength = selected ? zoneProgress(demoPlace, selected.aircraft)?.crossingKm ?? 74.08 : 74.08;
+  const pathLength = selected ? zoneProgress(demoPlace, selected.aircraft)?.crossingKm ?? ZONE_RADIUS_KM * 2 : ZONE_RADIUS_KM * 2;
   const crossingDurationMs = pathLength / ((selected?.aircraft.speedKts ?? 200) * 1.852) * 3_600_000 / 30;
   const closestMoment = phase === "active" && progress >= 43 && progress <= 57;
   const closestCardEnd = Math.max(57, 43 + 5_000 / crossingDurationMs * 100);
@@ -154,7 +154,7 @@ function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox"
           <button type="button" className="primary-button" onClick={() => document.getElementById("presets-title")?.scrollIntoView({ behavior: "smooth", block: "start" })}>Simulate an arrival <ArrowRight size={18} /></button>
         </div>}
         {!flight && <div className="quiet-orbit" aria-hidden="true"><span /><span /><span /><i /></div>}
-        <div className="hero-baseline"><span>{flight ? `${flight.callsign} · ${flight.aircraftType}` : "No aircraft in the zone"}</span><span>10 nautical mile zone</span></div>
+        <div className="hero-baseline"><span>{flight ? `${flight.callsign} · ${flight.aircraftType}` : "No aircraft in the zone"}</span><span>5 nautical mile zone</span></div>
       </section>
 
       <section className="presets-section compact-presets" aria-labelledby="presets-title">
