@@ -1,6 +1,6 @@
 # Overhead
 
-Overhead shows aircraft currently reported within 10 nautical miles of a chosen location. Live mode opens on central Chicago, labeled as a reference location. Select **Use my location** to see the sky near you. The header toggle switches to a separate Sandbox with four fictional flights and sample weather.
+Overhead shows aircraft currently reported within 5 nautical miles of a chosen location. Live mode opens on central Chicago, labeled as a reference location. Select **Use my location** to see the sky near you. The header toggle switches to a separate Sandbox with four fictional flights and sample weather.
 
 The project was inspired by British Airways' 2013 **#LookUp** campaign, which connected planes in the sky to information shown on a billboard.
 
@@ -13,7 +13,7 @@ npm ci
 npm run dev
 ```
 
-Open `http://localhost:5173/`. Live data requires internet access. No API key is needed. To verify the project:
+Open `http://localhost:5173/`. Live data requires internet access and an AirLabs API key in `.env.local`. To verify the project:
 
 ```bash
 npx tsc --noEmit
@@ -27,7 +27,7 @@ npm run build
 - **Open-Meteo:** current weather, cached for ten minutes.
 - **OpenStreetMap:** map tiles, with attribution on the map.
 
-The hero aircraft image is an illustration. Actual aircraft positions appear on the map. Reported positions can be delayed or missing, and the nearest reported aircraft can change between refreshes. Live mode does not request browser location until the user selects **Use my location**. If location is unavailable, central Chicago remains the reference location.
+The hero aircraft image is an illustration. Map markers show the latest reported aircraft positions with a short estimated movement between reports. Reported positions can be delayed or missing, and the nearest reported aircraft can change between refreshes. Live mode does not request browser location until the user selects **Use my location**. If location is unavailable, central Chicago remains the reference location.
 
 The live flight feed no longer calls ADSB.fi or ADSBdb.
 
@@ -37,7 +37,9 @@ The Sandbox contains four fictional flights near a sample Chicago location. Sele
 
 ## Motion and progress
 
-Sandbox flights have accelerated playback controls. Live flights show an estimated crossing percentage based on the latest reported position and heading; the progress bar and hero illustration move when a new report arrives. They do not predict a continuous flight path between reports. Reduced-motion preferences turn off transitions.
+Sandbox flights have accelerated playback controls. Live mode estimates map positions and crossing progress four times per second between 30-second AirLabs polls using the last reported position, heading, and ground speed. Heading determines whether the aircraft is coming closer to or moving away from the chosen location, and the live headline changes between “Coming closer” and “Moving away.” When heading is unavailable, it says “A plane is nearby.” Progress follows the aircraft's projected crossing of the 5-nautical-mile circle, so an off-center pass can reach 100% when it leaves the circle; it does not need to fly directly overhead. A closest-approach notice appears around the predicted midpoint of the crossing. If a flight disappears from the feed near the edge while heading away, the interface briefly shows an estimated 100% exit.
+
+Projection stops 90 seconds after the underlying report so it can continue throughout the 30-second polling interval even when the source position is already delayed; if heading or speed is missing, the position stays at the last report. These are straight-line estimates, not confirmed flight tracks: turns, climbs, speed changes, delayed reports, and coverage gaps can make the displayed position wrong. The marker, progress, and closest-approach notice may shift when a new report corrects the estimate. A flight that disappears because of a coverage gap may not reach 100%. The interface labels estimates, and reduced-motion preferences turn off transitions.
 
 ## Main files
 
