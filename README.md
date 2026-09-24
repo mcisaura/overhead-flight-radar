@@ -23,7 +23,7 @@ npm run build
 
 ## Live data
 
-- **AirLabs:** nearby aircraft positions and their reported origin and destination, refreshed through the app every 30 seconds. The server caches each area query for 30 seconds and airport names for one day. The API key stays on the server in `.env.local` as `AIRLABS_API_KEY`. Missing altitude or route details are shown as unavailable.
+- **AirLabs:** nearby aircraft positions and their reported origin and destination, refreshed through the app every 30 seconds. The server caches each area query for 30 seconds and airport, airline, and fleet lookups for one day. Airline names and aircraft models come from AirLabs where available; common codes have local fallbacks. The selected airline's logo uses AirLabs' logo URL, and known airlines get brand color badges. Missing logos fall back to initials; unknown airlines use a neutral color. Hover or focus a flight name or aircraft model to see its raw code. The API key stays on the server in `.env.local` as `AIRLABS_API_KEY`. Missing altitude or route details are shown as unavailable.
 - **Open-Meteo:** current weather, cached for ten minutes.
 - **OpenStreetMap:** map tiles, with attribution on the map.
 
