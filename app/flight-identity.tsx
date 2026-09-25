@@ -23,7 +23,7 @@ export default function FlightIdentity(props: Props) {
   const parsedIcao = props.callsign?.trim().toUpperCase().match(/^([A-Z]{3})\d/)?.[1];
   const airline = props.airline ?? airlineIdentity(parsedIcao);
   const logo = airlineLogoUrl(airline?.iata);
-  const name = flightIdentityText({ ...props, airline });
+  const name = airline?.name || flightIdentityText({ ...props, airline });
   const model = displayAircraftType(props.aircraftType, props.aircraftModel);
   return <div className="hero-flight-identity">
     {airline && <span className="airline-badge" style={{ color: airline.color, borderColor: airline.color, boxShadow: `inset 0 -5px 0 ${airline.accent}, 0 4px 11px #17374622` }} title={airline.name}>

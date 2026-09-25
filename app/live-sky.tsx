@@ -166,30 +166,37 @@ export default function LiveSky({ onModeChange }: { onModeChange: (mode: "live" 
   const positionEstimated = Boolean(selectedAircraft?.estimated);
   const aircraftOffset = progress == null ? 0 : (progress - 50) * 0.6;
   const aircraftScale = progress == null ? 1 : 1 + 0.08 * Math.sin(Math.PI * progress / 100) ** 2;
-  const motionStatus = crossing?.motion === "leaving"
-    ? place.sample ? "Moving away from Chicago" : "Moving away from you"
-    : crossing?.motion === "approaching"
-      ? place.sample ? "Coming closer to Chicago" : "Coming closer to you"
-      : "Live aircraft nearby";
-
   return <main className="app-shell live-shell">
     <header className="topbar">
-      <div className="brand"><span className="brand-mark"><Navigation2 size={19} strokeWidth={1.9} /></span><span>overhead<span className="brand-period">.</span></span></div>
-      <div className="topbar-right"><ModeToggle mode="live" onChange={onModeChange} /><span className="top-divider" /><span className="topbar-place"><MapPin size={15} />{place.label}</span></div>
+      <div className="topbar-main">
+        <div className="brand"><span className="brand-mark"><Navigation2 size={19} strokeWidth={1.9} /></span><span>overhead<span className="brand-period">.</span></span></div>
+        <div className="topbar-right"><ModeToggle mode="live" onChange={onModeChange} /><span className="top-divider" /><span className="topbar-place"><MapPin size={15} />{place.label}</span></div>
+      </div>
+      <section className="weather-section header-weather" aria-label="Current weather"><article className="detail-panel weather-panel">
+        <div className="detail-title"><CloudSun size={19} strokeWidth={1.8} /><h3>Current weather</h3></div>
+        {data?.weather ? <><div className="weather-main"><strong className="weather-temp">{Math.round(data.weather.temperatureF)}°</strong><div><strong>{weatherLabel(data.weather.code)}</strong><span>{place.sample ? "Central Chicago" : "Near your location"}</span></div></div><div className="weather-stats"><span><CloudSun size={17} /> Cloud cover <strong>{data.weather.cloudCover}%</strong></span><span><Wind size={17} /> Wind <strong>{Math.round(data.weather.windMph)} mph</strong></span></div></> : <p className="live-weather-empty">{loading ? "Loading current conditions…" : "Current weather unavailable."}</p>}
+      </article></section>
     </header>
 
     <section className={`sky-stage live-stage ${flight ? "sky-active has-flight" : "sky-empty"}`} aria-labelledby="hero-title">
       <div className="sky-art" aria-hidden="true" /><div className="sky-overlay" aria-hidden="true" />
       {flight ? <div className="hero-inner hero-flight boarding-pass" key={flight.hex}>
         <div className="boarding-pass-main">
-          <div className="boarding-pass-topline"><p className={`hero-status boarding-pass-motion ${error ? "unavailable" : departure ? "leaving" : crossing?.motion ?? "nearby"}`} role="status"><span className={`signal-dot ${error ? "quiet-dot" : ""}`} /> {departure ? "Moved beyond your sky" : error ? "Live feed interrupted" : motionStatus}</p><span>OVERHEAD</span></div>
-          <h1 id="hero-title" className="boarding-pass-heading">{departure ? "Just passed by" : crossing?.motion === "approaching" ? "Coming closer" : crossing?.motion === "leaving" ? "Moving away" : "Flight in your sky"}</h1>
+          <div className="boarding-pass-topline"><span>OVERHEAD</span></div>
+          <h1 id="hero-title" className="boarding-pass-heading">{departure ? "Moved beyond your sky" : error ? "Live feed interrupted" : crossing?.motion === "approaching" ? "Drawing closer" : crossing?.motion === "leaving" ? "Heading away" : "Live aircraft nearby"}</h1>
           <FlightIdentity {...flight} />
           <div className="boarding-pass-divider" aria-hidden="true" />
           <BoardingRoute origin={flight.origin} destination={flight.destination} />
           {!routeKnown && <p className="boarding-pass-route-note">Flight path could not be confirmed</p>}
         </div>
-        <BoardingPassStub callsign={flight.callsign} flightNumber={flight.flightNumber} flightIata={flight.flightIata} airline={flight.airline} aircraftType={flight.aircraftType} aircraftModel={flight.aircraftModel} mode="live" />
+        <BoardingPassStub callsign={flight.callsign} flightNumber={flight.flightNumber} flightIata={flight.flightIata} airline={flight.airline} aircraftType={flight.aircraftType}>
+          <div className="hero-flight-details">
+            <BoardingPassStats altitudeFt={flight.altitudeFt} speedKts={flight.speedKts} distanceKm={shownDistanceKm} />
+            <p className="boarding-pass-freshness">Last reported {Math.round(shownAgeSeconds)} sec ago · {departure ? "Aircraft left the zone" : positionEstimated ? "Position estimated between reports" : "Reported position"}</p>
+            <div className="live-actions"><button type="button" className="primary-button" onClick={useLocation} disabled={locating}><LocateFixed size={17} />{locating ? "Finding your location…" : "Use my location"}</button><button type="button" className="refresh-button" onClick={() => setRefreshKey((key) => key + 1)}><RefreshCw size={15} />Refresh</button></div>
+            {locationError && <p className="live-location-error" role="status">{locationError}</p>}
+          </div>
+        </BoardingPassStub>
       </div> : <div className="hero-inner hero-empty">
         <p className="hero-status" role="status"><span className={`signal-dot ${error ? "quiet-dot" : ""}`} /> {error ? "Live feed interrupted" : loading && !data ? "Checking the sky" : "Live sky"}</p>
         <h1 id="hero-title">A quiet sky.<br /><em>For now.</em></h1>
@@ -199,14 +206,8 @@ export default function LiveSky({ onModeChange }: { onModeChange: (mode: "live" 
         {place.sample && <p className="live-place-note">Showing real flights over Chicago until you choose your location.</p>}
       </div>}
       {flight ? <div className="live-aircraft-column">
-        <div className={`live-aircraft-scene ${departure ? "is-departing" : ""}`} style={{ transform: `translateX(${aircraftOffset}px) scale(${aircraftScale})` }}><img src={aircraftImage(flight.aircraftType ?? "")} alt="" aria-hidden="true" /><span>Illustration · position shown on map</span></div>
+        <div className={`live-aircraft-scene ${departure ? "is-departing" : ""}`} style={{ transform: `translateX(${aircraftOffset}px) scale(${aircraftScale})` }}><img src={aircraftImage(flight.aircraftType ?? "")} alt="" aria-hidden="true" /></div>
       </div> : <div className="quiet-orbit" aria-hidden="true"><span /><span /><span /><i /></div>}
-      {flight && <div className="hero-flight-details">
-          <BoardingPassStats altitudeFt={flight.altitudeFt} speedKts={flight.speedKts} distanceKm={shownDistanceKm} />
-          <p className="boarding-pass-freshness">Last reported {Math.round(shownAgeSeconds)} sec ago · {departure ? "Aircraft left the zone" : positionEstimated ? "Position estimated between reports" : "Reported position"}</p>
-          <div className="live-actions"><button type="button" className="primary-button" onClick={useLocation} disabled={locating}><LocateFixed size={17} />{locating ? "Finding your location…" : "Use my location"}</button><button type="button" className="refresh-button" onClick={() => setRefreshKey((key) => key + 1)}><RefreshCw size={15} />Refresh</button></div>
-          {locationError && <p className="live-location-error" role="status">{locationError}</p>}
-        </div>}
       {flight ? <HeroProgressLine progress={progress} label={`${flightName} crossing the 5 nautical mile zone`} valueText={departure ? "100%, aircraft no longer reported in the zone" : progress == null ? "Progress unavailable" : `${progress.toFixed(1)}% through the zone, estimated from the latest reported position and heading`} live /> : <div className="hero-baseline"><span>{data ? `${data.nearbyCount} aircraft reported nearby` : "Waiting for live data"}</span><span>Updates every 30 seconds</span></div>}
     </section>
 
@@ -219,10 +220,6 @@ export default function LiveSky({ onModeChange }: { onModeChange: (mode: "live" 
       </article></aside>
     </div>
 
-    <section className="weather-section" aria-label="Current weather"><article className="detail-panel weather-panel">
-      <div className="detail-title"><CloudSun size={19} strokeWidth={1.8} /><h3>Current weather</h3></div>
-      {data?.weather ? <><div className="weather-main"><strong className="weather-temp">{Math.round(data.weather.temperatureF)}°</strong><div><strong>{weatherLabel(data.weather.code)}</strong><span>{place.sample ? "Central Chicago" : "Near your location"}</span></div></div><div className="weather-stats"><span><CloudSun size={17} /> Cloud cover <strong>{data.weather.cloudCover}%</strong></span><span><Wind size={17} /> Wind <strong>{Math.round(data.weather.windMph)} mph</strong></span></div></> : <p className="live-weather-empty">{loading ? "Loading current conditions…" : "Current weather unavailable."}</p>}
-    </article></section>
     <footer className="site-footer"><span className="footer-brand">overhead<span className="brand-period">.</span></span><span className="live-attribution">Data: <a href="https://airlabs.co/">AirLabs</a> · <a href="https://open-meteo.com/">Open-Meteo</a> · Map: <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a></span></footer>
   </main>;
 }

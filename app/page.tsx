@@ -42,9 +42,8 @@ function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox"
   const mapAircraft = flight ? [flight] : [];
   const pathLength = selected ? zoneProgress(demoPlace, selected.aircraft)?.crossingKm ?? ZONE_RADIUS_KM * 2 : ZONE_RADIUS_KM * 2;
   const crossingDurationMs = pathLength / ((selected?.aircraft.speedKts ?? 200) * 1.852) * 3_600_000 / 30;
-  const closestMoment = phase === "active" && progress >= 43 && progress <= 57;
   const aircraftScale = .88 + .24 * Math.sin(Math.PI * progress / 100) ** 2;
-  const crossingStatus = phase === "exiting" ? "Leaving your sky" : crossing?.motion === "approaching" ? "Coming closer" : crossing?.motion === "leaving" ? "Moving away" : "Crossing your sky";
+  const crossingStatus = phase === "exiting" ? "Leaving your sky" : crossing?.motion === "approaching" ? "Drawing closer" : crossing?.motion === "leaving" ? "Heading away" : "Crossing your sky";
 
   useEffect(() => {
     if (!playing) return;
@@ -105,12 +104,24 @@ function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox"
   return (
     <main className="app-shell">
       <header className="topbar">
-        <div className="brand"><span className="brand-mark"><Navigation2 size={19} strokeWidth={1.9} /></span><span>overhead<span className="brand-period">.</span></span></div>
-        <div className="topbar-right">
-          <ModeToggle mode="sandbox" onChange={onModeChange} />
-          <span className="top-divider" />
-          <span className="topbar-place"><MapPin size={15} />{demoPlace.label}</span>
+        <div className="topbar-main">
+          <div className="brand"><span className="brand-mark"><Navigation2 size={19} strokeWidth={1.9} /></span><span>overhead<span className="brand-period">.</span></span></div>
+          <div className="topbar-right">
+            <ModeToggle mode="sandbox" onChange={onModeChange} />
+            <span className="top-divider" />
+            <span className="topbar-place"><MapPin size={15} />{demoPlace.label}</span>
+          </div>
         </div>
+        <section className="weather-section header-weather" aria-label="Sample weather">
+          <article className="detail-panel weather-panel">
+            <div className="detail-title"><CloudSun size={19} strokeWidth={1.8} /><h3>Sample weather</h3></div>
+            <div className="weather-main"><strong className="weather-temp">{demoWeather.temperatureF}°</strong><div><strong>Partly cloudy</strong><span>Illustrative conditions</span></div></div>
+            <div className="weather-stats">
+              <span><CloudSun size={17} /> Cloud cover <strong>{demoWeather.cloudCover}%</strong></span>
+              <span><Wind size={17} /> Wind <strong>{demoWeather.windMph} mph</strong></span>
+            </div>
+          </article>
+        </section>
       </header>
 
       <section className={`sky-stage sky-${phase} ${flight ? "has-flight" : ""}`} aria-labelledby="hero-title">
@@ -119,31 +130,30 @@ function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox"
         {flight && selected ? <>
           <div className="hero-inner hero-flight boarding-pass" key={`flight-${selected.id}-${flightRun}`}>
             <div className="boarding-pass-main">
-              <div className="boarding-pass-topline"><p className={`hero-status boarding-pass-motion ${phase === "exiting" ? "leaving" : crossing?.motion ?? "nearby"}`} role="status"><span className="signal-dot" /> {crossingStatus}</p><span>OVERHEAD</span></div>
-              <h1 id="hero-title" className="boarding-pass-heading">Flight in your sky</h1>
+              <div className="boarding-pass-topline"><span>OVERHEAD</span></div>
+              <h1 id="hero-title" className="boarding-pass-heading">{crossingStatus}</h1>
               <FlightIdentity {...flight} />
               <div className="boarding-pass-divider" aria-hidden="true" />
               <BoardingRoute origin={selected.origin} destination={selected.destination} />
               {!routeKnown && <p className="boarding-pass-route-note">No published route in this scenario</p>}
             </div>
-            <BoardingPassStub callsign={flight.callsign} aircraftType={flight.aircraftType} mode="sample" />
+            <BoardingPassStub callsign={flight.callsign} aircraftType={flight.aircraftType}>
+              <div className="hero-flight-details">
+                <BoardingPassStats altitudeFt={flight.altitudeFt} speedKts={flight.speedKts} distanceKm={flight.distanceKm} />
+                <div className="hero-playback">
+                  <button type="button" className="zone-play" disabled={phase === "exiting"} onClick={() => setPlaying((value) => !value)}>{playing ? <Pause size={15} /> : <Play size={15} />}{playing ? "Pause" : "Resume"}</button>
+                  <button type="button" className="zone-reset" onClick={() => selectFlight(selected.id)}><RotateCcw size={15} />Replay</button>
+                  <span>30× speed · {Math.round(crossingDurationMs / 1000)} sec crossing</span>
+                </div>
+              </div>
+            </BoardingPassStub>
           </div>
           <div className="hero-visual-column">
           <div className="aircraft-scene" aria-hidden="true">
-            <div className="hero-location"><MapPin size={19} /><span>You are here</span><small>Illustrated crossing</small></div>
-            <div className={`proximity-pulse ${closestMoment ? "is-visible" : ""}`}><span /><span /><i /></div>
             <div className="aircraft-wrap" key={`aircraft-${selected.id}-${flightRun}`} style={{ left: `${40 + progress * .2}%` }}>
               <img src={aircraftImage(flight.aircraftType ?? "")} alt="" className="aircraft-image" style={{ transform: `scale(${aircraftScale})` }} />
             </div>
           </div>
-          </div>
-          <div className="hero-flight-details">
-            <BoardingPassStats altitudeFt={flight.altitudeFt} speedKts={flight.speedKts} distanceKm={flight.distanceKm} />
-            <div className="hero-playback">
-              <button type="button" className="zone-play" disabled={phase === "exiting"} onClick={() => setPlaying((value) => !value)}>{playing ? <Pause size={15} /> : <Play size={15} />}{playing ? "Pause" : "Resume"}</button>
-              <button type="button" className="zone-reset" onClick={() => selectFlight(selected.id)}><RotateCcw size={15} />Replay</button>
-              <span>30× speed · {Math.round(crossingDurationMs / 1000)} sec crossing</span>
-            </div>
           </div>
         </> : <div className="hero-inner hero-empty">
           <p className="hero-status"><span className="signal-dot quiet-dot" /> Waiting for a plane</p>
@@ -196,17 +206,6 @@ function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox"
           </div>}
         </aside>
       </div>
-
-      <section className="weather-section" aria-label="Sample weather">
-          <article className="detail-panel weather-panel">
-            <div className="detail-title"><CloudSun size={19} strokeWidth={1.8} /><h3>Sample weather</h3></div>
-            <div className="weather-main"><strong className="weather-temp">{demoWeather.temperatureF}°</strong><div><strong>Partly cloudy</strong><span>Illustrative conditions</span></div></div>
-            <div className="weather-stats">
-              <span><CloudSun size={17} /> Cloud cover <strong>{demoWeather.cloudCover}%</strong></span>
-              <span><Wind size={17} /> Wind <strong>{demoWeather.windMph} mph</strong></span>
-            </div>
-          </article>
-      </section>
 
       <footer className="site-footer"><span className="footer-brand">overhead<span className="brand-period">.</span></span><span>Map: OpenStreetMap</span></footer>
     </main>
