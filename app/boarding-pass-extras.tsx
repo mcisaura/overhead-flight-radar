@@ -6,10 +6,29 @@ export function BoardingPassStats({ altitudeFt, speedKts, distanceKm }: { altitu
   </div>;
 }
 
-export function BoardingPassStub({ callsign, flightNumber, mode }: { callsign: string | null; flightNumber?: string | null; mode: "live" | "sample" }) {
-  const number = flightNumber?.trim() || callsign?.trim().toUpperCase().match(/^[A-Z]{2,3}(\d+[A-Z]?)$/)?.[1] || null;
+export function BoardingPassStub({ callsign, flightNumber, flightIata, airline, aircraftType, aircraftModel, mode }: {
+  callsign: string | null;
+  flightNumber?: string | null;
+  flightIata?: string | null;
+  airline?: AirlineIdentity | null;
+  aircraftType: string | null;
+  aircraftModel?: string | null;
+  mode: "live" | "sample";
+}) {
+  const rawFlight = callsign?.trim().toUpperCase() || null;
+  const match = rawFlight?.match(/^([A-Z]{3})(\d+[A-Z]?)$/);
+  const number = flightNumber?.trim().toUpperCase() || match?.[2] || null;
+  const carrier = airline ?? airlineIdentity(match?.[1]);
+  const flightId = flightIata?.trim().toUpperCase() || (carrier?.iata && number ? `${carrier.iata}${number}` : rawFlight);
+  const model = displayAircraftType(aircraftType, aircraftModel);
+  const typeCode = aircraftType?.trim().toUpperCase();
   return <div className="boarding-pass-stub">
-    <div><span>FLIGHT NUMBER</span><strong title={callsign || undefined}>{number || "Local flight"}</strong></div>
+    <div className="boarding-pass-stub-info">
+      <span>FLIGHT</span><strong>{flightId || "Local flight"}</strong>
+      <span className="boarding-pass-stub-detail">Raw flight <code>{rawFlight || "Unavailable"}</code></span>
+      <span className="boarding-pass-stub-detail">Aircraft {model}{typeCode && model.toUpperCase() !== typeCode && <code>{typeCode}</code>}</span>
+    </div>
     <span className={`boarding-pass-stub-mode ${mode}`}>{mode === "live" ? "LIVE" : "SAMPLE"}</span>
   </div>;
 }
+import { airlineIdentity, displayAircraftType, type AirlineIdentity } from "../lib/flight-display";

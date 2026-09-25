@@ -131,7 +131,7 @@ export async function GET(request: NextRequest) {
         const seenSeconds = typeof item.updated === "number" ? Math.max(0, Math.round(Date.now() / 1000 - item.updated)) : null;
         return { item, distanceKm, altitudeFt, seenSeconds };
       })
-      .filter((entry) => entry.distanceKm <= ZONE_RADIUS_KM && (entry.altitudeFt === null || entry.altitudeFt > 500) && entry.seenSeconds !== null && entry.seenSeconds <= 60)
+      .filter((entry) => entry.distanceKm <= ZONE_RADIUS_KM && entry.seenSeconds !== null && entry.seenSeconds <= 60)
       .sort((a, b) => a.distanceKm - b.distanceKm);
     nearbyCount = candidates.length;
     aircraft = candidates.map(({ item, distanceKm, altitudeFt, seenSeconds }) => ({
@@ -165,7 +165,7 @@ export async function GET(request: NextRequest) {
       flight = {
         hex: item.hex!, callsign,
         registration: item.reg_number || null, aircraftType: item.aircraft_icao || null,
-        airline, flightNumber: item.flight_number || null, aircraftModel,
+        airline, flightNumber: item.flight_number || null, flightIata: item.flight_iata || null, aircraftModel,
         altitudeFt: selected.altitudeFt, speedKts: typeof item.speed === "number" ? item.speed / 1.852 : null,
         distanceKm: selected.distanceKm,
         elevationDeg: altitudeKm === null ? null : Math.atan2(altitudeKm, Math.max(selected.distanceKm, 0.1)) * 180 / Math.PI,
