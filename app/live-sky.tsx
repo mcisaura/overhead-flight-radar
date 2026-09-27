@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowRight, CloudSun, LocateFixed, MapPin, Navigation2, RefreshCw, Wind } from "lucide-react";
+import { ArrowRight, CloudSun, LocateFixed, MapPin, Navigation2, RefreshCw } from "lucide-react";
 import FlightMap, { type MapAircraft } from "./flight-map";
 import ModeToggle from "./mode-toggle";
 import { demoPlace } from "./demo-data";
@@ -170,12 +170,17 @@ export default function LiveSky({ onModeChange }: { onModeChange: (mode: "live" 
     <header className="topbar">
       <div className="topbar-main">
         <div className="brand"><span className="brand-mark"><Navigation2 size={19} strokeWidth={1.9} /></span><span>overhead<span className="brand-period">.</span></span></div>
+        <div className="header-weather" aria-label="Current weather">
+          <CloudSun size={19} strokeWidth={1.8} aria-hidden="true" />
+          {data?.weather ? <>
+            <strong className="header-weather-temp">{Math.round(data.weather.temperatureF)}°</strong>
+            <span className="header-weather-condition">{weatherLabel(data.weather.code)}</span>
+            <span className="header-weather-stat">Cloud {data.weather.cloudCover}%</span>
+            <span className="header-weather-stat">Wind {Math.round(data.weather.windMph)} mph</span>
+          </> : <span className="header-weather-condition">{loading ? "Loading weather…" : "Weather unavailable"}</span>}
+        </div>
         <div className="topbar-right"><ModeToggle mode="live" onChange={onModeChange} /><span className="top-divider" /><span className="topbar-place"><MapPin size={15} />{place.label}</span></div>
       </div>
-      <section className="weather-section header-weather" aria-label="Current weather"><article className="detail-panel weather-panel">
-        <div className="detail-title"><CloudSun size={19} strokeWidth={1.8} /><h3>Current weather</h3></div>
-        {data?.weather ? <><div className="weather-main"><strong className="weather-temp">{Math.round(data.weather.temperatureF)}°</strong><div><strong>{weatherLabel(data.weather.code)}</strong><span>{place.sample ? "Central Chicago" : "Near your location"}</span></div></div><div className="weather-stats"><span><CloudSun size={17} /> Cloud cover <strong>{data.weather.cloudCover}%</strong></span><span><Wind size={17} /> Wind <strong>{Math.round(data.weather.windMph)} mph</strong></span></div></> : <p className="live-weather-empty">{loading ? "Loading current conditions…" : "Current weather unavailable."}</p>}
-      </article></section>
     </header>
 
     <section className={`sky-stage live-stage ${flight ? "sky-active has-flight" : "sky-empty"}`} aria-labelledby="hero-title">

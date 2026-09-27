@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, CloudSun, MapPin, Navigation2, Pause, Play, RotateCcw, Wind } from "lucide-react";
+import { ArrowRight, CloudSun, MapPin, Navigation2, Pause, Play, RotateCcw } from "lucide-react";
 import FlightMap from "./flight-map";
 import LiveSky from "./live-sky";
 import ModeToggle from "./mode-toggle";
@@ -106,22 +106,19 @@ function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox"
       <header className="topbar">
         <div className="topbar-main">
           <div className="brand"><span className="brand-mark"><Navigation2 size={19} strokeWidth={1.9} /></span><span>overhead<span className="brand-period">.</span></span></div>
+          <div className="header-weather" aria-label="Sample weather">
+            <CloudSun size={19} strokeWidth={1.8} aria-hidden="true" />
+            <strong className="header-weather-temp">{demoWeather.temperatureF}°</strong>
+            <span className="header-weather-condition">Partly cloudy <small>· Sample weather</small></span>
+            <span className="header-weather-stat">Cloud {demoWeather.cloudCover}%</span>
+            <span className="header-weather-stat">Wind {demoWeather.windMph} mph</span>
+          </div>
           <div className="topbar-right">
             <ModeToggle mode="sandbox" onChange={onModeChange} />
             <span className="top-divider" />
             <span className="topbar-place"><MapPin size={15} />{demoPlace.label}</span>
           </div>
         </div>
-        <section className="weather-section header-weather" aria-label="Sample weather">
-          <article className="detail-panel weather-panel">
-            <div className="detail-title"><CloudSun size={19} strokeWidth={1.8} /><h3>Sample weather</h3></div>
-            <div className="weather-main"><strong className="weather-temp">{demoWeather.temperatureF}°</strong><div><strong>Partly cloudy</strong><span>Illustrative conditions</span></div></div>
-            <div className="weather-stats">
-              <span><CloudSun size={17} /> Cloud cover <strong>{demoWeather.cloudCover}%</strong></span>
-              <span><Wind size={17} /> Wind <strong>{demoWeather.windMph} mph</strong></span>
-            </div>
-          </article>
-        </section>
       </header>
 
       <section className={`sky-stage sky-${phase} ${flight ? "has-flight" : ""}`} aria-labelledby="hero-title">
