@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, CloudSun, MapPin, Navigation2, Pause, Play, RotateCcw } from "lucide-react";
+import { ArrowRight, Check, CloudSun, Helicopter, MapPin, Navigation2, Pause, Plane, PlaneLanding, Play, RotateCcw } from "lucide-react";
 import FlightMap from "./flight-map";
 import LiveSky from "./live-sky";
 import ModeToggle from "./mode-toggle";
@@ -124,7 +124,6 @@ function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox"
         <BoardingPassDisplay displayKey={flight && selected ? `${selected.id}:${crossingStatus}` : "quiet"} active={Boolean(flight && selected)}>
         {flight && selected ? <>
             <div className="boarding-pass-main">
-              <div className="boarding-pass-topline"><p className="hero-status"><span className="signal-dot" /> Sample flight</p><span>OVERHEAD</span></div>
               <h1 id="hero-title" className="boarding-pass-heading"><span>{crossingStatus}</span></h1>
               <FlightIdentity {...flight} />
               <div className="boarding-pass-divider" aria-hidden="true" />
@@ -143,7 +142,6 @@ function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox"
             </BoardingPassStub>
         </> : <>
           <div className="boarding-pass-main">
-            <div className="boarding-pass-topline boarding-pass-topline-quiet"><span>OVERHEAD</span></div>
             <h1 id="hero-title" className="boarding-pass-heading"><span>A quiet sky.<br /><em>For now.</em></span></h1>
             <p className="hero-description">No aircraft are inside the sample zone. Choose a simulated flight below to watch it enter, cross, and leave your sky.</p>
           </div>
@@ -164,14 +162,17 @@ function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox"
       </section>
 
       <section className="presets-section compact-presets" aria-labelledby="presets-title">
-        <div className="presets-heading"><h2 id="presets-title">Try a flight</h2><p>Fictional flights · Choose a scenario to start.</p></div>
+        <div className="presets-heading"><h2 id="presets-title">Try a flight</h2><p>Three fictional flights · Select one to watch it cross your sky.</p></div>
         <div className="preset-list" role="group" aria-label="Sample flights">
-          {demoFlights.map((item) => (
-            <button key={item.id} type="button" className={`preset-button ${selectedId === item.id ? "active" : ""}`} aria-pressed={selectedId === item.id} onClick={() => selectFlight(item.id)}>
-              <span className="preset-icon"><Navigation2 size={18} /></span>
-              <span><strong>{item.label}</strong><small title={item.aircraft.callsign || undefined}>{flightIdentityText(item.aircraft)}</small></span>
-            </button>
-          ))}
+          {demoFlights.map((item) => {
+            const kind = aircraftVisualForFlight(item.aircraft);
+            const Icon = kind === "helicopter" ? Helicopter : kind === "private" ? Plane : PlaneLanding;
+            return <button key={item.id} type="button" className={`preset-button preset-${kind} ${selectedId === item.id ? "active" : ""}`} aria-pressed={selectedId === item.id} onClick={() => selectFlight(item.id)}>
+              <span className="preset-icon"><Icon size={25} strokeWidth={1.65} /></span>
+              <span className="preset-copy"><span className="preset-category">{kind === "airliner" ? "Commercial" : kind === "private" ? "Private" : "Rotorcraft"}</span><strong>{item.label}</strong><small>{item.description}</small></span>
+              <span className="preset-action" aria-hidden="true">{selectedId === item.id ? <Check size={17} /> : <ArrowRight size={17} />}</span>
+            </button>;
+          })}
         </div>
       </section>
 

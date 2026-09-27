@@ -36,7 +36,7 @@ export default function AircraftModel({ progress = 50, live = false, visual = "a
       return () => window.clearTimeout(failureNotice);
     }
 
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.15;
@@ -87,6 +87,7 @@ export default function AircraftModel({ progress = 50, live = false, visual = "a
     } | null = null;
     let frame = 0;
     let previousFrame = 0;
+    let inViewport = true;
     let startCenter = .04;
     let endCenter = 1.3;
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -94,7 +95,8 @@ export default function AircraftModel({ progress = 50, live = false, visual = "a
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
 
-    const render = () => renderer.render(scene, camera);
+    const canRender = () => inViewport && !document.hidden;
+    const render = () => { if (canRender()) renderer.render(scene, camera); };
     const drawAircraft = () => {
       if (!model) return;
       model.position.set(baseX + offsetX + dragX, baseY + dragY, model.position.z);
@@ -151,6 +153,10 @@ export default function AircraftModel({ progress = 50, live = false, visual = "a
     const place = (immediate: boolean) => {
       targetX = positionForProgress(progressRef.current);
       if (!model) return;
+      if (!canRender()) {
+        offsetX = targetX;
+        return;
+      }
       if (immediate) {
         offsetX = targetX;
         drawAircraft();
@@ -161,6 +167,11 @@ export default function AircraftModel({ progress = 50, live = false, visual = "a
     const animate = (time: number) => {
       frame = 0;
       if (!alive || !model) return;
+      if (!canRender()) {
+        offsetX = targetX;
+        previousFrame = 0;
+        return;
+      }
       const elapsed = previousFrame ? Math.min(time - previousFrame, 100) : 16;
       previousFrame = time;
       if (visual === "helicopter" && !reducedMotion.matches) {
@@ -186,6 +197,24 @@ export default function AircraftModel({ progress = 50, live = false, visual = "a
       else previousFrame = 0;
     };
     updateProgressRef.current = () => place(reducedMotion.matches);
+
+    const syncVisibility = () => {
+      if (!canRender()) {
+        cancelAnimationFrame(frame);
+        frame = 0;
+        previousFrame = 0;
+        return;
+      }
+      previousFrame = 0;
+      place(true);
+      if (model && visual === "helicopter" && !reducedMotion.matches && !frame) frame = requestAnimationFrame(animate);
+    };
+    const visibilityObserver = new IntersectionObserver(([entry]) => {
+      inViewport = entry.isIntersecting;
+      syncVisibility();
+    }, { rootMargin: "100px" });
+    visibilityObserver.observe(root);
+    document.addEventListener("visibilitychange", syncVisibility);
 
     const aircraftAt = (clientX: number, clientY: number) => {
       if (!model) return false;
@@ -306,7 +335,7 @@ export default function AircraftModel({ progress = 50, live = false, visual = "a
         scene.add(model);
         measureFlightPath();
         place(true);
-        if (visual === "helicopter" && !reducedMotion.matches && !frame) frame = requestAnimationFrame(animate);
+        if (canRender() && visual === "helicopter" && !reducedMotion.matches && !frame) frame = requestAnimationFrame(animate);
         setStatus("ready");
       },
       undefined,
@@ -318,6 +347,8 @@ export default function AircraftModel({ progress = 50, live = false, visual = "a
       updateProgressRef.current = () => {};
       cancelAnimationFrame(frame);
       observer.disconnect();
+      visibilityObserver.disconnect();
+      document.removeEventListener("visibilitychange", syncVisibility);
       document.body.style.cursor = originalCursor;
       window.removeEventListener("pointerdown", pointerDown);
       window.removeEventListener("pointermove", pointerMove);

@@ -26,27 +26,17 @@ function plane(hex: string, callsign: string, registration: string, aircraftType
 
 export const demoFlights: DemoFlight[] = [
   {
-    id: "arrival", label: "O’Hare arrival", description: "An airliner on approach",
+    id: "arrival", label: "O’Hare arrival", description: "Boeing 737-800 · FLL → ORD",
     aircraft: plane("d0a001", "UAL4827", "N742UV", "B738", 41.91455, -87.7239, 295, 3500, 205),
     origin: { code: "FLL", city: "Ft Lauderdale", lat: 26.073, lon: -80.153 }, destination: { code: "ORD", city: "Chicago", lat: 41.974, lon: -87.907 },
   },
   {
-    id: "cross-country", label: "Cross-country", description: "A jet crossing the city",
-    aircraft: plane("d0a002", "AAL3184", "N836AX", "A321", 41.95205, -87.5809, 82, 33000, 458),
-    origin: { code: "LAX", city: "Los Angeles", lat: 33.942, lon: -118.409 }, destination: { code: "JFK", city: "New York", lat: 40.641, lon: -73.778 },
-  },
-  {
-    id: "cargo", label: "Cargo flight", description: "A freighter heading in",
-    aircraft: plane("d0a003", "FDX6204", "N623FX", "B763", 41.81505, -87.6234, 346, 5700, 225),
-    origin: { code: "MEM", city: "Memphis", lat: 35.042, lon: -89.977 }, destination: { code: "ORD", city: "Chicago", lat: 41.974, lon: -87.907 },
-  },
-  {
-    id: "private-plane", label: "Private aircraft", description: "A small twin-engine plane",
+    id: "private-plane", label: "Private aircraft", description: "Cessna 310 · local crossing",
     aircraft: plane("d0a005", "N310JP", "N310JP", "C310", 41.902, -87.656, 242, 2200, 145),
     origin: null, destination: null,
   },
   {
-    id: "helicopter", label: "Local helicopter", description: "A short local flight",
+    id: "helicopter", label: "Local helicopter", description: "Bell 407 · local crossing",
     aircraft: plane("d0a004", "N582QX", "N582QX", "B407", 41.889, -87.617, 232, 1200, 85),
     origin: null, destination: null,
   },

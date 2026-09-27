@@ -40,6 +40,7 @@ type Props = {
   lat: number;
   lon: number;
   aircraft: MapAircraft[];
+  routeAircraft?: MapAircraft[];
   closestHex: string | null;
   loading: boolean;
   unavailable: boolean;
@@ -70,24 +71,47 @@ function headingPoint(plane: MapAircraft, distanceKm: number) {
     plane.lon + Math.sin(radians) * distanceKm / kmPerLon] as [number, number];
 }
 
-export default function FlightMap({ lat, lon, aircraft, closestHex, loading, unavailable, demo = false, locationLabel, showDetails = true, exiting = false, onSelect }: Props) {
+export default function FlightMap({ lat, lon, aircraft, routeAircraft, closestHex, loading, unavailable, demo = false, locationLabel, showDetails = true, exiting = false, onSelect }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<Leaflet.Map | null>(null);
   const markerLayerRef = useRef<Leaflet.LayerGroup | null>(null);
   const routeLayerRef = useRef<Leaflet.LayerGroup | null>(null);
   const markersRef = useRef<Map<string, Leaflet.Marker>>(new Map());
   const markerStyleRef = useRef<Map<string, string>>(new Map());
+  const markerLabelRef = useRef<Map<string, string>>(new Map());
   const leafletRef = useRef<typeof Leaflet | null>(null);
+  const onSelectRef = useRef(onSelect);
   const [ready, setReady] = useState(false);
+  const [nearViewport, setNearViewport] = useState(false);
+  const [hasEntered, setHasEntered] = useState(false);
   const [selectedHex, setSelectedHex] = useState<string | null>(closestHex);
   const [view, setView] = useState<"local" | "route">("local");
 
+  useEffect(() => { onSelectRef.current = onSelect; }, [onSelect]);
+
   useEffect(() => {
+    const element = containerRef.current;
+    if (!element) return;
+    if (typeof IntersectionObserver === "undefined") {
+      const timer = setTimeout(() => { setNearViewport(true); setHasEntered(true); }, 0);
+      return () => clearTimeout(timer);
+    }
+    const observer = new IntersectionObserver(([entry]) => {
+      setNearViewport(entry.isIntersecting);
+      if (entry.isIntersecting) setHasEntered(true);
+    }, { rootMargin: "200px" });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!hasEntered) return;
     let cancelled = false;
     let map: Leaflet.Map | null = null;
     let resizeObserver: ResizeObserver | null = null;
     const markers = markersRef.current;
     const markerStyles = markerStyleRef.current;
+    const markerLabels = markerLabelRef.current;
     void import("leaflet").then((L) => {
       if (cancelled || !containerRef.current) return;
       leafletRef.current = L;
@@ -116,9 +140,10 @@ export default function FlightMap({ lat, lon, aircraft, closestHex, loading, una
       routeLayerRef.current = null;
       markers.clear();
       markerStyles.clear();
+      markerLabels.clear();
       leafletRef.current = null;
     };
-  }, [lat, lon, demo, locationLabel]);
+  }, [hasEntered, lat, lon, demo, locationLabel]);
 
   const activeHex = onSelect ? closestHex : selectedHex && aircraft.some((plane) => plane.hex === selectedHex)
     ? selectedHex : closestHex || aircraft[0]?.hex || null;
@@ -131,13 +156,14 @@ export default function FlightMap({ lat, lon, aircraft, closestHex, loading, una
   const originLon = routeOrigin?.lon ?? null;
   const destinationLat = routeDestination?.lat ?? null;
   const destinationLon = routeDestination?.lon ?? null;
+  const routePlanes = routeAircraft ?? aircraft;
 
   useEffect(() => {
     const L = leafletRef.current;
     const layer = routeLayerRef.current;
-    if (!ready || !L || !layer) return;
+    if (!ready || !nearViewport || !L || !layer) return;
     layer.clearLayers();
-    for (const plane of aircraft) {
+    for (const plane of routePlanes) {
       const highlighted = plane.hex === activeHex;
       const color = highlighted ? "#b75f43" : "#58879a";
       const weight = highlighted ? 3 : 1.5;
@@ -151,14 +177,15 @@ export default function FlightMap({ lat, lon, aircraft, closestHex, loading, una
           { color, weight, opacity: highlighted ? .75 : .4, dashArray: "3 7", interactive: false }).addTo(layer);
       }
     }
-    if (routeAvailable && selected) {
-      for (const airport of [selected.origin, selected.destination]) {
+    const routeSelected = routePlanes.find((plane) => plane.hex === activeHex);
+    if (routeAvailable && routeSelected) {
+      for (const airport of [routeSelected.origin, routeSelected.destination]) {
         if (!hasCoordinates(airport)) continue;
         L.circleMarker([airport.lat, airport.lon], { radius: 5, color: "#173746", weight: 2, fillColor: "#fffefa", fillOpacity: 1 })
           .bindTooltip(airport.code, { permanent: activeView === "route", direction: "top", offset: [0, -6] }).addTo(layer);
       }
     }
-  }, [aircraft, ready, activeHex, routeAvailable, selected, activeView]);
+  }, [routePlanes, ready, nearViewport, activeHex, routeAvailable, activeView]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -175,42 +202,50 @@ export default function FlightMap({ lat, lon, aircraft, closestHex, loading, una
   useEffect(() => {
     const L = leafletRef.current;
     const layer = markerLayerRef.current;
-    if (!ready || !L || !layer) return;
+    if (!ready || !nearViewport || !L || !layer) return;
     const visible = new Set(aircraft.map((plane) => plane.hex));
     for (const [hex, marker] of markersRef.current) {
       if (!visible.has(hex)) {
         layer.removeLayer(marker);
         markersRef.current.delete(hex);
         markerStyleRef.current.delete(hex);
+        markerLabelRef.current.delete(hex);
       }
     }
     for (const plane of aircraft) {
       const selected = plane.hex === activeHex;
       const heading = plane.heading ?? 0;
       const style = `${heading}:${selected}`;
-      const icon = L.divIcon({
+      let marker = markersRef.current.get(plane.hex);
+      const styleChanged = markerStyleRef.current.get(plane.hex) !== style;
+      const name = formatName(plane);
+      const icon = () => L.divIcon({
         className: `plane-marker ${selected ? "plane-marker-selected" : ""}`,
         html: `<span class="plane-marker-icon" style="transform:rotate(${heading}deg)">${planeShape}</span>`,
         iconSize: [38, 38], iconAnchor: [19, 19],
       });
-      let marker = markersRef.current.get(plane.hex);
       if (marker) {
-        marker.setLatLng([plane.lat, plane.lon]);
-        if (markerStyleRef.current.get(plane.hex) !== style) marker.setIcon(icon);
-        marker.setZIndexOffset(selected ? 1000 : 0);
-        marker.off("click");
+        const current = marker.getLatLng();
+        if (current.lat !== plane.lat || current.lng !== plane.lon) marker.setLatLng([plane.lat, plane.lon]);
+        if (styleChanged) {
+          marker.setIcon(icon());
+          marker.setZIndexOffset(selected ? 1000 : 0);
+        }
       } else {
-        marker = L.marker([plane.lat, plane.lon], { icon, zIndexOffset: selected ? 1000 : 0, keyboard: true, title: formatName(plane) });
+        marker = L.marker([plane.lat, plane.lon], { icon: icon(), zIndexOffset: selected ? 1000 : 0, keyboard: true, title: name });
         marker.addTo(layer);
         markersRef.current.set(plane.hex, marker);
+        marker.on("click", () => onSelectRef.current ? onSelectRef.current(plane.hex) : setSelectedHex(plane.hex));
       }
       markerStyleRef.current.set(plane.hex, style);
-      const label = document.createElement("span");
-      label.textContent = formatName(plane);
-      marker.bindTooltip(label, { direction: "top", offset: [0, -18] });
-      marker.on("click", () => onSelect ? onSelect(plane.hex) : setSelectedHex(plane.hex));
+      if (markerLabelRef.current.get(plane.hex) !== name) {
+        const label = document.createElement("span");
+        label.textContent = name;
+        marker.bindTooltip(label, { direction: "top", offset: [0, -18] });
+        markerLabelRef.current.set(plane.hex, name);
+      }
     }
-  }, [aircraft, ready, activeHex, onSelect]);
+  }, [aircraft, ready, nearViewport, activeHex]);
 
   return (
     <section className={`map-section ${exiting ? "map-exiting" : selected ? "map-active" : "map-empty"}`} aria-label="Flight map">

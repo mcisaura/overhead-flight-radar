@@ -35,6 +35,7 @@ type SkyResponse = {
   updatedAt: string;
   warnings: string[];
 };
+const noAircraft: MapAircraft[] = [];
 
 function weatherLabel(code: number) {
   if (code === 0) return "Clear sky";
@@ -180,7 +181,6 @@ export default function LiveSky({ onModeChange }: { onModeChange: (mode: "live" 
       <BoardingPassDisplay displayKey={flight ? `${flight.hex}:${flightHeading}` : "quiet"} active={Boolean(flight)}>
       {flight ? <>
         <div className="boarding-pass-main">
-          <div className="boarding-pass-topline"><p className="hero-status" role="status"><span className={`signal-dot ${error ? "quiet-dot" : ""}`} /> {error ? "Feed interrupted" : "Live flight"}</p><span>OVERHEAD</span></div>
           <h1 id="hero-title" className="boarding-pass-heading"><span>{flightHeading}</span></h1>
           <FlightIdentity {...flight} />
           <div className="boarding-pass-divider" aria-hidden="true" />
@@ -202,7 +202,6 @@ export default function LiveSky({ onModeChange }: { onModeChange: (mode: "live" 
         </BoardingPassStub>
       </> : <>
         <div className="boarding-pass-main">
-          <div className="boarding-pass-topline boarding-pass-topline-quiet"><span>OVERHEAD</span></div>
           <h1 id="hero-title" className="boarding-pass-heading"><span>A quiet sky.<br /><em>For now.</em></span></h1>
           <p className="hero-description">{error || (loading ? "Finding aircraft heading toward the 5 nautical mile zone." : `No aircraft currently heading toward ${place.sample ? "central Chicago" : "your location"} within 5 nautical miles.`)}</p>
         </div>
@@ -224,7 +223,7 @@ export default function LiveSky({ onModeChange }: { onModeChange: (mode: "live" 
     </section>
 
     <div className="sky-dashboard">
-      <FlightMap lat={place.lat} lon={place.lon} aircraft={aircraft} closestHex={flight?.hex ?? null} loading={loading && !data} unavailable={Boolean(error)} locationLabel={place.sample ? "Central Chicago" : "Your location"} />
+      <FlightMap lat={place.lat} lon={place.lon} aircraft={aircraft} routeAircraft={data?.aircraft ?? noAircraft} closestHex={flight?.hex ?? null} loading={loading && !data} unavailable={Boolean(error)} locationLabel={place.sample ? "Central Chicago" : "Your location"} />
       <aside className="flight-sidebar" aria-label="Live flight details"><article className="detail-panel flight-panel">
         <div className="detail-title"><Navigation2 size={18} strokeWidth={1.8} /><h3 title={flight?.callsign || undefined}>{flightName}</h3></div>
         {flight ? <><div className="airport-row"><div><strong className="airport-code">{flight.origin?.code ?? "···"}</strong><span className="airport-city">{flight.origin?.city ?? "Origin unknown"}</span></div><ArrowRight className="airport-connector" size={25} strokeWidth={1.3} aria-hidden="true" /><div><strong className="airport-code">{flight.destination?.code ?? "···"}</strong><span className="airport-city">{flight.destination?.city ?? "Destination unknown"}</span></div></div>
