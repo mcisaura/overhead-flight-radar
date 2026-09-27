@@ -22,6 +22,7 @@ const aircraftModels: Record<string, string> = {
   B789: "Boeing 787-9", A319: "Airbus A319", A320: "Airbus A320",
   A321: "Airbus A321", A20N: "Airbus A320neo", A21N: "Airbus A321neo",
   A333: "Airbus A330-300", A359: "Airbus A350-900", B407: "Bell 407",
+  C310: "Cessna 310", R44: "Robinson R44",
 };
 
 export function airlineIdentity(icao: string | null | undefined, iata?: string | null, name?: string | null): AirlineIdentity | null {

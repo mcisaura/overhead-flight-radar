@@ -41,6 +41,11 @@ export const demoFlights: DemoFlight[] = [
     origin: { code: "MEM", city: "Memphis", lat: 35.042, lon: -89.977 }, destination: { code: "ORD", city: "Chicago", lat: 41.974, lon: -87.907 },
   },
   {
+    id: "private-plane", label: "Private aircraft", description: "A small twin-engine plane",
+    aircraft: plane("d0a005", "N310JP", "N310JP", "C310", 41.902, -87.656, 242, 2200, 145),
+    origin: null, destination: null,
+  },
+  {
     id: "helicopter", label: "Local helicopter", description: "A short local flight",
     aircraft: plane("d0a004", "N582QX", "N582QX", "B407", 41.889, -87.617, 232, 1200, 85),
     origin: null, destination: null,

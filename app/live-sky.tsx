@@ -14,6 +14,8 @@ import type { AirlineIdentity } from "../lib/flight-display";
 import HeroProgressLine from "./hero-progress-line";
 import BoardingPassDisplay from "./boarding-pass-display";
 import AircraftModel from "./aircraft-model";
+import { aircraftVisualForFlight } from "../lib/aircraft-visual";
+import ModelCredits from "./model-credits";
 
 type Place = { lat: number; lon: number; label: string; sample: boolean };
 type LiveFlight = {
@@ -217,7 +219,7 @@ export default function LiveSky({ onModeChange }: { onModeChange: (mode: "live" 
         </div>
       </>}
       </BoardingPassDisplay>
-      {flight ? <div className="sky-aircraft-layer"><AircraftModel key={flight.hex} progress={progress} live /></div> : <div className="quiet-orbit" aria-hidden="true"><span /><span /><span /><i /></div>}
+      {flight ? <div className="sky-aircraft-layer"><AircraftModel key={`${flight.hex}-${aircraftVisualForFlight(flight)}`} progress={progress} visual={aircraftVisualForFlight(flight)} live /></div> : <div className="quiet-orbit" aria-hidden="true"><span /><span /><span /><i /></div>}
       {flight && <HeroProgressLine key={flight.hex} progress={progress} label={`${flightName} crossing the 5 nautical mile zone`} valueText={progress == null ? "Progress unavailable" : `${progress.toFixed(1)}% through the zone, estimated from the latest reported position and heading`} live />}
     </section>
 
@@ -230,6 +232,6 @@ export default function LiveSky({ onModeChange }: { onModeChange: (mode: "live" 
       </article></aside>
     </div>
 
-    <footer className="site-footer"><span className="footer-brand">overhead<span className="brand-period">.</span></span><span className="live-attribution">Data: <a href="https://airlabs.co/">AirLabs</a> · <a href="https://open-meteo.com/">Open-Meteo</a> · Map: <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a></span></footer>
+    <footer className="site-footer"><span className="footer-brand">overhead<span className="brand-period">.</span></span><span className="live-attribution">Data: <a href="https://airlabs.co/">AirLabs</a> · <a href="https://open-meteo.com/">Open-Meteo</a> · Map: <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a></span><ModelCredits /></footer>
   </main>;
 }

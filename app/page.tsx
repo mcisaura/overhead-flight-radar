@@ -13,6 +13,8 @@ import { BoardingPassStats, BoardingPassStub } from "./boarding-pass-extras";
 import HeroProgressLine from "./hero-progress-line";
 import BoardingPassDisplay from "./boarding-pass-display";
 import AircraftModel from "./aircraft-model";
+import { aircraftVisualForFlight } from "../lib/aircraft-visual";
+import ModelCredits from "./model-credits";
 
 export default function Home() {
   const [mode, setMode] = useState<"live" | "sandbox">("live");
@@ -156,7 +158,7 @@ function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox"
           </div>
         </>}
         </BoardingPassDisplay>
-        {flight && selected && <div className="sky-aircraft-layer"><AircraftModel key={`${selected.id}-${flightRun}`} progress={progress} /></div>}
+        {flight && selected && <div className="sky-aircraft-layer"><AircraftModel key={`${selected.id}-${flightRun}`} progress={progress} visual={aircraftVisualForFlight(flight)} /></div>}
         {!flight && <div className="quiet-orbit" aria-hidden="true"><span /><span /><span /><i /></div>}
         {flight && <HeroProgressLine key={`${selectedId}-${flightRun}`} progress={progress} label={`${flight.callsign || "Aircraft"} crossing the zone`} valueText={`${Math.round(progress)}%, ${crossingStatus.toLowerCase()}`} />}
       </section>
@@ -203,7 +205,7 @@ function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox"
         </aside>
       </div>
 
-      <footer className="site-footer"><span className="footer-brand">overhead<span className="brand-period">.</span></span><span>Map: OpenStreetMap</span></footer>
+      <footer className="site-footer"><span className="footer-brand">overhead<span className="brand-period">.</span></span><span>Map: OpenStreetMap</span><ModelCredits /></footer>
     </main>
   );
 }
