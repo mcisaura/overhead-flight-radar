@@ -66,9 +66,14 @@ async function getJson<T>(url: string, seconds: number, timeout = 9000): Promise
 }
 
 async function getAirLabs<T>(endpoint: string, apiKey: string, params: Record<string, string>, cacheSeconds: number) {
-  const result = await getJson<AirLabsResponse<T>>(airLabsUrl(endpoint, apiKey, params), cacheSeconds);
-  if (result.error) throw new Error(`AirLabs ${result.error.code || "error"}`);
-  if (result.response == null) throw new Error("AirLabs response unavailable");
+  const url = airLabsUrl(endpoint, apiKey, params);
+  const result = await getJson<AirLabsResponse<T>>(url, cacheSeconds);
+  if (result.error || result.response == null) {
+    // AirLabs can return an error in a successful HTTP response. Do not keep
+    // that response in the one-day metadata cache.
+    upstreamCache.delete(url);
+    throw new Error(result.error ? `AirLabs ${result.error.code || "error"}` : "AirLabs response unavailable");
+  }
   return result.response;
 }
 

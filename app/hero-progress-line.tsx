@@ -22,31 +22,42 @@ export default function HeroProgressLine({ progress, label, valueText, live = fa
   const [walkerProgress, setWalkerProgress] = useState(initialPosition);
   const walkerPosition = useRef(initialPosition);
   const walkerTarget = useRef(initialPosition);
+  const frameRef = useRef(0);
+  const lastTimeRef = useRef(0);
 
   useEffect(() => {
     if (progress == null) return;
     walkerTarget.current = walkerPositionForProgress(progress);
-  }, [progress]);
-
-  useEffect(() => {
-    let frame = 0;
-    let lastTime = 0;
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      window.cancelAnimationFrame(frameRef.current);
+      frameRef.current = 0;
+      walkerPosition.current = walkerTarget.current;
+      setWalkerProgress(walkerTarget.current);
+      return;
+    }
+    if (frameRef.current) return;
+    lastTimeRef.current = 0;
     const move = (time: number) => {
-      const deltaMs = lastTime ? Math.min(time - lastTime, 50) : 16;
-      lastTime = time;
+      frameRef.current = 0;
+      const deltaMs = lastTimeRef.current ? Math.min(time - lastTimeRef.current, 50) : 16;
+      lastTimeRef.current = time;
       const target = walkerTarget.current;
-      const next = reducedMotion || Math.abs(target - walkerPosition.current) < 0.03
+      const next = Math.abs(target - walkerPosition.current) < 0.03
         ? target
         : walkerPosition.current + (target - walkerPosition.current) * (1 - Math.exp(-deltaMs / 250));
       if (next !== walkerPosition.current) {
         walkerPosition.current = next;
         setWalkerProgress(next);
       }
-      frame = window.requestAnimationFrame(move);
+      if (Math.abs(walkerTarget.current - walkerPosition.current) > 0.001) {
+        frameRef.current = window.requestAnimationFrame(move);
+      }
     };
-    frame = window.requestAnimationFrame(move);
-    return () => window.cancelAnimationFrame(frame);
+    frameRef.current = window.requestAnimationFrame(move);
+  }, [progress]);
+
+  useEffect(() => () => {
+    window.cancelAnimationFrame(frameRef.current);
   }, []);
 
   const pointing = progress != null && progress >= 40 && progress < 60;

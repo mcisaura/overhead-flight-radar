@@ -2,26 +2,45 @@
 
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
-import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import type { AircraftVisual } from "../lib/aircraft-visual";
+import { loadAircraftScene } from "./aircraft-assets";
 
-const modelFiles: Record<AircraftVisual, string> = {
-  airliner: "/models/boeing_737-200_white.glb",
-  private: "/models/cessna_310_airplane_-_low_poly.glb",
-  helicopter: "/models/helicopter.glb",
-};
-
-export default function AircraftModel({ progress = 50, live = false, visual = "airliner" }: { progress?: number | null; live?: boolean; visual?: AircraftVisual }) {
+export default function AircraftModel({ progress = 50, live = false, visual = "airliner", entranceRun, onReady }: { progress?: number | null; live?: boolean; visual?: AircraftVisual; entranceRun?: number; onReady?: () => void }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const progressRef = useRef(progress ?? 50);
   const updateProgressRef = useRef<(value: number) => void>(() => {});
+  const resetProgressRef = useRef<() => void>(() => {});
+  const onReadyRef = useRef(onReady);
   const [status, setStatus] = useState<"loading" | "ready" | "unavailable">("loading");
+  const lastEntranceRun = useRef(entranceRun);
+
+  useEffect(() => { onReadyRef.current = onReady; }, [onReady]);
 
   useEffect(() => {
     progressRef.current = progress ?? 50;
     updateProgressRef.current(progressRef.current);
   }, [progress]);
+
+  useEffect(() => {
+    if (entranceRun === undefined || entranceRun === lastEntranceRun.current) return;
+    lastEntranceRun.current = entranceRun;
+    const root = rootRef.current;
+    if (root && status === "ready" && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      root.classList.remove("is-ready");
+    }
+    resetProgressRef.current();
+    if (status !== "loading") onReadyRef.current?.();
+    if (!root || status !== "ready" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    let nextFrame = 0;
+    const frame = window.requestAnimationFrame(() => {
+      nextFrame = window.requestAnimationFrame(() => root.classList.add("is-ready"));
+    });
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.cancelAnimationFrame(nextFrame);
+    };
+  }, [entranceRun, status]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -32,7 +51,10 @@ export default function AircraftModel({ progress = 50, live = false, visual = "a
     try {
       renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: "low-power" });
     } catch {
-      const failureNotice = window.setTimeout(() => setStatus("unavailable"), 0);
+      const failureNotice = window.setTimeout(() => {
+        setStatus("unavailable");
+        onReadyRef.current?.();
+      }, 0);
       return () => window.clearTimeout(failureNotice);
     }
 
@@ -197,6 +219,7 @@ export default function AircraftModel({ progress = 50, live = false, visual = "a
       else previousFrame = 0;
     };
     updateProgressRef.current = () => place(reducedMotion.matches);
+    resetProgressRef.current = () => place(true);
 
     const syncVisibility = () => {
       if (!canRender()) {
@@ -303,10 +326,12 @@ export default function AircraftModel({ progress = 50, live = false, visual = "a
     observer.observe(container);
     resize();
 
-    new GLTFLoader().load(
-      modelFiles[visual],
-      ({ scene: loaded }) => {
+    void loadAircraftScene(visual).then(
+      (template) => {
         if (!alive) return;
+        // The cached GLB owns its geometry, materials and textures. Each mounted
+        // aircraft gets its own transforms and rotor state without parsing again.
+        const loaded = template.clone(true);
         const bounds = new THREE.Box3().setFromObject(loaded);
         const size = bounds.getSize(new THREE.Vector3());
         const center = bounds.getCenter(new THREE.Vector3());
@@ -337,14 +362,19 @@ export default function AircraftModel({ progress = 50, live = false, visual = "a
         place(true);
         if (canRender() && visual === "helicopter" && !reducedMotion.matches && !frame) frame = requestAnimationFrame(animate);
         setStatus("ready");
+        onReadyRef.current?.();
       },
-      undefined,
-      () => { if (alive) setStatus("unavailable"); },
+      () => {
+        if (!alive) return;
+        setStatus("unavailable");
+        onReadyRef.current?.();
+      },
     );
 
     return () => {
       alive = false;
       updateProgressRef.current = () => {};
+      resetProgressRef.current = () => {};
       cancelAnimationFrame(frame);
       observer.disconnect();
       visibilityObserver.disconnect();
@@ -356,22 +386,6 @@ export default function AircraftModel({ progress = 50, live = false, visual = "a
       window.removeEventListener("pointercancel", pointerUp);
       window.removeEventListener("blur", windowBlur);
       window.removeEventListener("contextmenu", contextMenu);
-      if (model) {
-        const textures = new Set<THREE.Texture>();
-        model.traverse((child) => {
-          if (child instanceof THREE.Mesh) {
-            child.geometry.dispose();
-            const materials = Array.isArray(child.material) ? child.material : [child.material];
-            materials.forEach((material) => {
-              Object.values(material).forEach((value) => {
-                if (value instanceof THREE.Texture) textures.add(value);
-              });
-              material.dispose();
-            });
-          }
-        });
-        textures.forEach((texture) => texture.dispose());
-      }
       renderer.dispose();
       renderer.domElement.remove();
     };

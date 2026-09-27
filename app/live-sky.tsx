@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowRight, CloudSun, LocateFixed, MapPin, Navigation2, RefreshCw } from "lucide-react";
 import FlightMap, { type MapAircraft } from "./flight-map";
 import ModeToggle from "./mode-toggle";
-import { demoPlace } from "./demo-data";
 import { distanceKm, estimatePosition } from "../lib/flight-estimate";
 import { ZONE_RADIUS_KM, zoneProgress } from "../lib/zone-progress";
 import FlightIdentity, { flightIdentityText } from "./flight-identity";
@@ -17,7 +16,7 @@ import AircraftModel from "./aircraft-model";
 import { aircraftVisualForFlight } from "../lib/aircraft-visual";
 import ModelCredits from "./model-credits";
 
-type Place = { lat: number; lon: number; label: string; sample: boolean };
+export type Place = { lat: number; lon: number; label: string; sample: boolean };
 type LiveFlight = {
   hex: string; callsign: string | null; registration: string | null; aircraftType: string | null;
   airline?: AirlineIdentity | null; flightNumber?: string | null; flightIata?: string | null; aircraftModel?: string | null;
@@ -48,8 +47,7 @@ function weatherLabel(code: number) {
   return "Stormy";
 }
 
-export default function LiveSky({ onModeChange }: { onModeChange: (mode: "live" | "sandbox") => void }) {
-  const [place, setPlace] = useState<Place>({ lat: demoPlace.lat, lon: demoPlace.lon, label: "Chicago · live sky", sample: true });
+export default function LiveSky({ onModeChange, place, onPlaceChange }: { onModeChange: (mode: "live" | "sandbox") => void; place: Place; onPlaceChange: (place: Place) => void }) {
   const [data, setData] = useState<SkyResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -106,16 +104,16 @@ export default function LiveSky({ onModeChange }: { onModeChange: (mode: "live" 
       ({ coords }) => {
         trackedHex.current = null;
         exitRefreshHex.current = null;
-        setPlace({ lat: coords.latitude, lon: coords.longitude, label: "Your location · live sky", sample: false });
+        onPlaceChange({ lat: coords.latitude, lon: coords.longitude, label: "Your location · live sky", sample: false });
         setData(null);
         setReceivedAt(0);
         setLoading(true);
         setLocating(false);
       },
-      () => { setLocationError("Location unavailable. Showing the live sky over Chicago."); setLocating(false); },
+      () => { setLocationError("Location unavailable. Keeping the current live sky."); setLocating(false); },
       { enableHighAccuracy: false, timeout: 10_000, maximumAge: 60_000 },
     );
-  }, []);
+  }, [onPlaceChange]);
 
   const elapsedSeconds = receivedAt ? Math.max(0, (clockMs - receivedAt) / 1000) : 0;
   const aircraft = (data?.aircraft ?? []).map((plane) => {

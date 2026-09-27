@@ -1,47 +1,41 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useLayoutEffect, useRef, type ReactNode } from "react";
 
-type Display = { displayKey: string; active: boolean; children: ReactNode };
+type Props = {
+  displayKey: string;
+  active: boolean;
+  children: ReactNode;
+  onDisplayed?: (displayKey: string) => void;
+};
 
-export default function BoardingPassDisplay({ displayKey, active, children }: Display) {
-  const requested = useRef<Display>({ displayKey, active, children });
-  const shownKey = useRef(displayKey);
-  const [shown, setShown] = useState<Display>({ displayKey, active, children });
-  const [phase, setPhase] = useState<"idle" | "closing" | "opening">("idle");
+export default function BoardingPassDisplay({ displayKey, active, children, onDisplayed }: Props) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const previous = useRef({ displayKey, active });
+  const onDisplayedRef = useRef(onDisplayed);
 
-  useEffect(() => {
-    requested.current = { displayKey, active, children };
-  }, [displayKey, active, children]);
+  useLayoutEffect(() => { onDisplayedRef.current = onDisplayed; }, [onDisplayed]);
 
-  useEffect(() => {
-    if (displayKey === shownKey.current) {
-      setPhase("idle");
+  useLayoutEffect(() => {
+    if (previous.current.displayKey === displayKey) return;
+    const stateChanged = previous.current.active !== active;
+    const aircraftChanged = previous.current.displayKey.split(":", 1)[0] !== displayKey.split(":", 1)[0];
+    previous.current = { displayKey, active };
+
+    if ((!stateChanged && !aircraftChanged) || window.matchMedia("(prefers-reduced-motion: reduce)").matches || !rootRef.current) {
+      onDisplayedRef.current?.(displayKey);
       return;
     }
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      shownKey.current = displayKey;
-      setShown(requested.current);
-      setPhase("idle");
-      return;
-    }
-    setPhase("closing");
-    const timer = window.setTimeout(() => {
-      shownKey.current = requested.current.displayKey;
-      setShown(requested.current);
-      setPhase("opening");
-    }, 160);
-    return () => window.clearTimeout(timer);
-  }, [displayKey]);
 
-  useEffect(() => {
-    if (phase !== "opening") return;
-    const timer = window.setTimeout(() => setPhase("idle"), 300);
-    return () => window.clearTimeout(timer);
-  }, [phase]);
+    const animation = rootRef.current.animate(
+      [{ opacity: 0.12 }, { opacity: 1 }],
+      { duration: 280, easing: "ease-out" },
+    );
+    void animation.finished.then(() => onDisplayedRef.current?.(displayKey)).catch(() => {});
+    return () => animation.cancel();
+  }, [displayKey, active]);
 
-  const current = shown.displayKey === displayKey ? { active, children } : shown;
-  return <div className={`hero-inner boarding-pass ${current.active ? "hero-flight" : "empty-boarding-pass"}`}>
-    <div className={`boarding-pass-display flap-${phase}`}>{current.children}</div>
+  return <div className={`hero-inner boarding-pass ${active ? "hero-flight" : "empty-boarding-pass"}`} ref={rootRef}>
+    <div className="boarding-pass-display">{children}</div>
   </div>;
 }

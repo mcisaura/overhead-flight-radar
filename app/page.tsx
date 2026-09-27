@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight, Check, CloudSun, Helicopter, MapPin, Navigation2, Pause, Plane, PlaneLanding, Play, RotateCcw } from "lucide-react";
 import FlightMap from "./flight-map";
-import LiveSky from "./live-sky";
+import LiveSky, { type Place } from "./live-sky";
 import ModeToggle from "./mode-toggle";
 import { demoFlights, demoPlace, demoWeather, distanceFromDemoPlace } from "./demo-data";
 import { positionAtZoneProgress, zoneProgress, ZONE_RADIUS_KM } from "../lib/zone-progress";
@@ -15,10 +15,13 @@ import BoardingPassDisplay from "./boarding-pass-display";
 import AircraftModel from "./aircraft-model";
 import { aircraftVisualForFlight } from "../lib/aircraft-visual";
 import ModelCredits from "./model-credits";
+import { preloadAircraftScenes } from "./aircraft-assets";
 
 export default function Home() {
   const [mode, setMode] = useState<"live" | "sandbox">("live");
-  return mode === "live" ? <LiveSky onModeChange={setMode} /> : <SandboxHome onModeChange={setMode} />;
+  const [place, setPlace] = useState<Place>({ lat: demoPlace.lat, lon: demoPlace.lon, label: "Chicago · live sky", sample: true });
+  useEffect(() => { preloadAircraftScenes(); }, []);
+  return mode === "live" ? <LiveSky onModeChange={setMode} place={place} onPlaceChange={setPlace} /> : <SandboxHome onModeChange={setMode} />;
 }
 
 function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox") => void }) {
@@ -27,6 +30,10 @@ function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox"
   const [flightRun, setFlightRun] = useState(0);
   const [progress, setProgress] = useState(0);
   const [playing, setPlaying] = useState(false);
+  const [preparing, setPreparing] = useState(false);
+  const pendingStartRef = useRef(false);
+  const modelReadyRef = useRef(false);
+  const passReadyRef = useRef(false);
   const progressRef = useRef(0);
   const selected = demoFlights.find((item) => item.id === selectedId) ?? null;
   const previewPosition = selected ? positionAtZoneProgress(demoPlace, selected.aircraft, progress) : null;
@@ -41,6 +48,7 @@ function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox"
   const pathLength = selected ? zoneProgress(demoPlace, selected.aircraft)?.crossingKm ?? ZONE_RADIUS_KM * 2 : ZONE_RADIUS_KM * 2;
   const crossingDurationMs = pathLength / ((selected?.aircraft.speedKts ?? 200) * 1.852) * 3_600_000 / 30;
   const crossingStatus = phase === "exiting" ? "Leaving your sky" : crossing?.motion === "approaching" ? "Drawing closer" : crossing?.motion === "leaving" ? "Heading away" : "Crossing your sky";
+  const displayKey = flight && selected ? `${selected.id}:${flightRun}:${crossingStatus}` : "quiet";
 
   useEffect(() => {
     if (!playing) return;
@@ -67,23 +75,36 @@ function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox"
       setPhase("empty");
       progressRef.current = 0;
       setProgress(0);
+      setPreparing(false);
     }, 2000);
     return () => window.clearTimeout(timer);
   }, [phase]);
 
+  function startWhenReady() {
+    if (!pendingStartRef.current || !modelReadyRef.current || !passReadyRef.current) return;
+    pendingStartRef.current = false;
+    setPreparing(false);
+    setPlaying(true);
+  }
+
   function selectFlight(id: string) {
+    pendingStartRef.current = true;
+    modelReadyRef.current = false;
+    passReadyRef.current = false;
     setPlaying(false);
+    setPreparing(true);
     progressRef.current = 0;
     setProgress(0);
     setSelectedId(id);
     setFlightRun((run) => run + 1);
     setPhase("active");
-    setPlaying(true);
     if (window.scrollY > 300) window.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
   }
 
   function setPreviewProgress(value: number) {
+    pendingStartRef.current = false;
     setPlaying(false);
+    setPreparing(false);
     progressRef.current = value;
     setProgress(value);
     if (value === 100) setPhase("exiting");
@@ -91,7 +112,9 @@ function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox"
   }
 
   function clearSky() {
+    pendingStartRef.current = false;
     setPlaying(false);
+    setPreparing(false);
     setSelectedId(null);
     progressRef.current = 0;
     setProgress(0);
@@ -121,7 +144,11 @@ function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox"
       <section className={`sky-stage sky-${phase} ${flight ? "has-flight" : ""}`} aria-labelledby="hero-title">
         <div className="sky-art" aria-hidden="true" />
         <div className="sky-overlay" aria-hidden="true" />
-        <BoardingPassDisplay displayKey={flight && selected ? `${selected.id}:${crossingStatus}` : "quiet"} active={Boolean(flight && selected)}>
+        <BoardingPassDisplay displayKey={displayKey} active={Boolean(flight && selected)} onDisplayed={(shownKey) => {
+          if (shownKey !== displayKey) return;
+          passReadyRef.current = true;
+          startWhenReady();
+        }}>
         {flight && selected ? <>
             <div className="boarding-pass-main">
               <h1 id="hero-title" className="boarding-pass-heading"><span>{crossingStatus}</span></h1>
@@ -134,7 +161,7 @@ function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox"
               <div className="hero-flight-details">
                 <BoardingPassStats altitudeFt={flight.altitudeFt} speedKts={flight.speedKts} distanceKm={flight.distanceKm} />
                 <div className="hero-playback">
-                  <button type="button" className="zone-play" disabled={phase === "exiting"} onClick={() => setPlaying((value) => !value)}>{playing ? <Pause size={15} /> : <Play size={15} />}{playing ? "Pause" : "Resume"}</button>
+                  <button type="button" className="zone-play" disabled={phase === "exiting" || preparing} onClick={() => setPlaying((value) => !value)}>{playing ? <Pause size={15} /> : <Play size={15} />}{preparing ? "Preparing…" : playing ? "Pause" : "Resume"}</button>
                   <button type="button" className="zone-reset" onClick={() => selectFlight(selected.id)}><RotateCcw size={15} />Replay</button>
                   <span>30× speed · {Math.round(crossingDurationMs / 1000)} sec crossing</span>
                 </div>
@@ -156,7 +183,10 @@ function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox"
           </div>
         </>}
         </BoardingPassDisplay>
-        {flight && selected && <div className="sky-aircraft-layer"><AircraftModel key={`${selected.id}-${flightRun}`} progress={progress} visual={aircraftVisualForFlight(flight)} /></div>}
+        {flight && selected && <div className="sky-aircraft-layer"><AircraftModel key={selected.id} progress={progress} visual={aircraftVisualForFlight(flight)} entranceRun={flightRun} onReady={() => {
+          modelReadyRef.current = true;
+          startWhenReady();
+        }} /></div>}
         {!flight && <div className="quiet-orbit" aria-hidden="true"><span /><span /><span /><i /></div>}
         {flight && <HeroProgressLine key={`${selectedId}-${flightRun}`} progress={progress} label={`${flight.callsign || "Aircraft"} crossing the zone`} valueText={`${Math.round(progress)}%, ${crossingStatus.toLowerCase()}`} />}
       </section>

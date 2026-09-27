@@ -544,17 +544,22 @@ button:disabled { opacity: .6; cursor: wait; }
 
 /* Both the quiet and active sky views use the boarding pass. */
 .boarding-pass, .live-stage .boarding-pass {
+  display: flex;
+  flex-direction: column;
   width: min(500px, calc(100vw - 52px));
+  min-height: 640px;
   margin: clamp(24px, 4vh, 48px) 0 0 clamp(26px, 6vw, 100px);
   padding: 0;
   overflow: hidden;
   border: 1px solid #b9d1d6;
   border-radius: 18px;
-  background: #fffefbec;
+  background: #fffefbf7;
   box-shadow: 0 24px 60px #19465b25;
-  backdrop-filter: blur(14px);
-  animation: boarding-pass-enter .55s cubic-bezier(.2,.75,.22,1) both;
+  animation: none;
 }
+.boarding-pass-display { display: flex; flex: 1; flex-direction: column; }
+.boarding-pass-main { flex: 1; }
+.boarding-pass-stub { margin-top: auto; }
 .boarding-pass-main { padding: 22px 27px 24px; }
 .boarding-pass .boarding-pass-heading, .live-stage .boarding-pass .boarding-pass-heading { display: flex; align-items: center; margin: 0 0 18px; color: var(--ocean-deep); font-family: var(--display); font-size: clamp(27px, 2.8vw, 36px); font-weight: 520; letter-spacing: -.025em; line-height: 1.12; }
 .boarding-pass-heading > span { display: block; }
@@ -591,7 +596,6 @@ button:disabled { opacity: .6; cursor: wait; }
 .boarding-pass-stub strong { color: var(--ocean-deep); font-size: 16px; font-weight: 850; line-height: 1.1; overflow-wrap: anywhere; }
 .boarding-pass-stub-details { margin-top: 19px; padding-top: 19px; border-top: 1px solid #d5e3e3; }
 .boarding-pass-stub .hero-flight-details { margin: 0; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; }
-.boarding-pass-display { perspective: 900px; }
 .boarding-pass .boarding-pass-heading, .live-stage .boarding-pass .boarding-pass-heading {
   position: relative;
   min-height: 120px;
@@ -621,25 +625,6 @@ button:disabled { opacity: .6; cursor: wait; }
 }
 .boarding-pass .boarding-pass-heading::before { top: 50%; bottom: 0; background: linear-gradient(#08182008, #0818203b); }
 .boarding-pass .boarding-pass-heading::after { top: 50%; height: 2px; background: #07161d; box-shadow: 0 1px 0 #ffffff30; }
-.boarding-pass-display.flap-closing, .boarding-pass-display.flap-opening { pointer-events: none; }
-.boarding-pass-display.flap-closing .boarding-pass-heading { animation: pass-board-close 160ms ease-in both; transform-origin: center center; }
-.boarding-pass-display.flap-opening .boarding-pass-heading { animation: pass-board-open 220ms ease-out both; transform-origin: center center; }
-.boarding-pass-display.flap-closing .boarding-pass-main > :not(.boarding-pass-divider):not(.boarding-pass-heading),
-.boarding-pass-display.flap-closing .boarding-pass-stub-codes,
-.boarding-pass-display.flap-closing .boarding-pass-stub-details > * {
-  animation: pass-copy-close 160ms ease-in both;
-}
-.boarding-pass-display.flap-opening .boarding-pass-main > :not(.boarding-pass-divider):not(.boarding-pass-heading),
-.boarding-pass-display.flap-opening .boarding-pass-stub-codes,
-.boarding-pass-display.flap-opening .boarding-pass-stub-details > * {
-  animation: pass-copy-open 220ms ease-out both;
-}
-.boarding-pass-display.flap-opening .boarding-pass-stub-codes { animation-delay: 35ms; }
-.boarding-pass-display.flap-opening .boarding-pass-stub-details > * { animation-delay: 70ms; }
-@keyframes pass-board-close { from { transform: rotateX(0deg); } to { transform: rotateX(-90deg); } }
-@keyframes pass-board-open { from { transform: rotateX(90deg); } to { transform: rotateX(0deg); } }
-@keyframes pass-copy-close { to { opacity: 0; } }
-@keyframes pass-copy-open { from { opacity: 0; } to { opacity: 1; } }
 .empty-boarding-pass, .live-stage .empty-boarding-pass { margin-top: clamp(70px, 10vh, 120px); }
 .empty-boarding-pass .hero-description { max-width: none; margin: 0; color: var(--ink-soft); font-size: 14px; line-height: 1.55; }
 .empty-boarding-pass .boarding-pass-heading, .live-stage .empty-boarding-pass .boarding-pass-heading { font-size: clamp(38px, 4vw, 48px); }
@@ -656,12 +641,12 @@ button:disabled { opacity: .6; cursor: wait; }
 .boarding-pass-footer .primary-button { padding: 0 14px; }
 .boarding-pass-footer .refresh-button { width: auto; padding: 0 12px; font-size: 12px; }
 .boarding-pass-footer .live-place-note, .boarding-pass-footer .live-location-error { margin-top: 9px; font-size: 10px; }
-@keyframes boarding-pass-enter { from { opacity: 0; transform: translateY(22px) scale(.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @media (max-width: 760px) {
   .boarding-pass, .live-stage .boarding-pass { width: calc(100% - 56px); max-width: 500px; margin: 28px 28px 0; padding: 0; }
   .boarding-pass .boarding-pass-heading, .live-stage .boarding-pass .boarding-pass-heading { font-size: clamp(34px, 6vw, 43px); }
 }
 @media (max-width: 520px) {
+  .boarding-pass, .live-stage .boarding-pass { min-height: 610px; }
   .boarding-pass, .live-stage .boarding-pass { width: calc(100% - 46px); margin: 24px 23px 0; }
   .boarding-pass-main { padding: 18px 20px 20px; }
   .boarding-pass-footer { padding: 16px 19px 18px; }
@@ -701,7 +686,7 @@ button:disabled { opacity: .6; cursor: wait; }
   margin: 0;
   padding: 0;
 }
-.sky-stage.has-flight .boarding-pass-main { min-height: 416px; padding: 22px 27px 24px; }
+.boarding-pass.hero-flight .boarding-pass-main { min-height: 416px; padding: 22px 27px 24px; }
 .sky-stage.has-flight .boarding-pass-divider { margin: 18px 0 16px; }
 .sky-stage.has-flight .boarding-route-stop strong { font-size: clamp(42px, 4vw, 58px); }
 .sky-stage.has-flight .hero-visual-column,
@@ -787,13 +772,13 @@ button:disabled { opacity: .6; cursor: wait; }
 }
 .aircraft-slipstream::before { top: 6px; height: 2px; }
 .aircraft-slipstream::after { top: 13px; height: 1px; opacity: .6; }
-.aircraft-model.is-ready .aircraft-slipstream { animation: slipstream-enter .7s ease-out .7s both; }
+.aircraft-model.is-ready .aircraft-slipstream { animation: slipstream-enter .4s ease-out .35s both; }
 @keyframes slipstream-enter {
   from { opacity: 0; transform: translateY(-50%) scaleX(.2); }
   to { opacity: .9; transform: translateY(-50%) scaleX(1); }
 }
 .aircraft-model-canvas { position: absolute; inset: 0; opacity: 0; }
-.aircraft-model.is-ready .aircraft-model-canvas { animation: aircraft-enter 1.1s ease-out both; }
+.aircraft-model.is-ready .aircraft-model-canvas { animation: aircraft-enter .5s ease-out both; }
 @keyframes aircraft-enter {
   from { opacity: 0; clip-path: inset(0 100% 0 0); }
   to { opacity: 1; clip-path: inset(0 0 0 0); }
@@ -950,7 +935,7 @@ button:disabled { opacity: .6; cursor: wait; }
 @media (max-width: 520px) {
   .sky-stage.has-flight .sky-aircraft-layer { height: 205px; }
   .sky-stage.has-flight, .sky-stage.has-flight.live-stage { row-gap: 15px; padding: 24px 23px 62px; }
-  .sky-stage.has-flight .boarding-pass-main { min-height: 380px; padding: 18px 20px 20px; }
+  .boarding-pass.hero-flight .boarding-pass-main { min-height: 380px; padding: 18px 20px 20px; }
   .sky-stage.has-flight .aircraft-scene { height: 205px; }
   .live-aircraft-scene { height: 205px; }
   .sky-stage.has-flight .aircraft-wrap { width: 85%; }
