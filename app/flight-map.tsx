@@ -35,7 +35,6 @@ type Props = {
   lon: number;
   aircraft: MapAircraft[];
   closestHex: string | null;
-  selectedAircraftHex?: string | null;
   loading: boolean;
   unavailable: boolean;
   demo?: boolean;
@@ -53,7 +52,7 @@ function formatName(plane: MapAircraft) {
   return plane.displayName || displayFlightName(plane.callsign, airline, plane.flightNumber) || plane.registration || plane.hex.toUpperCase();
 }
 
-export default function FlightMap({ lat, lon, aircraft, closestHex, selectedAircraftHex, loading, unavailable, demo = false, locationLabel, showDetails = true, exiting = false, onSelect }: Props) {
+export default function FlightMap({ lat, lon, aircraft, closestHex, loading, unavailable, demo = false, locationLabel, showDetails = true, exiting = false, onSelect }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<Leaflet.Map | null>(null);
   const markerLayerRef = useRef<Leaflet.LayerGroup | null>(null);
@@ -95,7 +94,7 @@ export default function FlightMap({ lat, lon, aircraft, closestHex, selectedAirc
     };
   }, [lat, lon, demo, locationLabel]);
 
-  const activeHex = onSelect ? selectedAircraftHex ?? closestHex : selectedHex && aircraft.some((plane) => plane.hex === selectedHex)
+  const activeHex = onSelect ? closestHex : selectedHex && aircraft.some((plane) => plane.hex === selectedHex)
     ? selectedHex : closestHex || aircraft[0]?.hex || null;
 
   useEffect(() => {
@@ -153,7 +152,7 @@ export default function FlightMap({ lat, lon, aircraft, closestHex, selectedAirc
         <div className="map-key"><span className="map-key-plane"><Navigation2 size={15} fill="currentColor" /></span> Aircraft <span className="map-key-location" /> {locationLabel ?? (demo ? "Sample location" : "Your location")}</div>
         {showDetails && <div className="map-flight-card" aria-live="polite">
           {selected ? <>
-            <span className="map-card-label">{demo ? "SAMPLE FLIGHT" : selected.hex === closestHex ? "CLOSEST AIRCRAFT" : "SELECTED AIRCRAFT"}</span>
+            <span className="map-card-label">{demo ? "SAMPLE FLIGHT" : selected.hex === closestHex ? "TRACKED AIRCRAFT" : "SELECTED AIRCRAFT"}</span>
             <strong title={selected.callsign || undefined} tabIndex={selected.callsign ? 0 : undefined}>{formatName(selected)}</strong>
             <span className="map-card-type"><span title={selected.aircraftType || undefined} tabIndex={selected.aircraftType ? 0 : undefined}><AircraftModelLabel label={selected.displayType || displayAircraftType(selected.aircraftType, selected.aircraftModel)} /></span>{selected.registration && selected.registration !== selected.callsign ? ` · ${selected.registration}` : ""}</span>
             <div className="map-card-stats">

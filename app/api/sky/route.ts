@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDemoSky } from "../../demo-data";
 import { ZONE_RADIUS_KM, zoneProgress } from "../../../lib/zone-progress";
+import { estimatePosition } from "../../../lib/flight-estimate";
 import { airlineIdentity, displayAircraftType, displayFlightName } from "../../../lib/flight-display";
 
 export const runtime = "edge";
@@ -129,7 +130,12 @@ export async function GET(request: NextRequest) {
         const distanceKm = haversine(lat, lon, item.lat!, item.lng!);
         const altitudeFt = typeof item.alt === "number" ? item.alt * 3.28084 : null;
         const seenSeconds = typeof item.updated === "number" ? Math.max(0, Math.round(Date.now() / 1000 - item.updated)) : null;
-        return { item, distanceKm, altitudeFt, seenSeconds };
+        const heading = typeof item.dir === "number" && Number.isFinite(item.dir) ? item.dir : null;
+        const speedKts = typeof item.speed === "number" ? item.speed / 1.852 : null;
+        const projected = seenSeconds === null ? null : estimatePosition({ lat: item.lat!, lon: item.lng!, heading, speedKts, seenSeconds }, 0);
+        const projectedDistanceKm = projected ? haversine(lat, lon, projected.lat, projected.lon) : Infinity;
+        const approaching = projected && zoneProgress({ lat, lon }, { ...projected, heading })?.motion === "approaching";
+        return { item, distanceKm, altitudeFt, seenSeconds, projectedDistanceKm, approaching };
       })
       .filter((entry) => entry.distanceKm <= ZONE_RADIUS_KM && entry.seenSeconds !== null && entry.seenSeconds <= 60)
       .sort((a, b) => a.distanceKm - b.distanceKm);
@@ -142,8 +148,11 @@ export async function GET(request: NextRequest) {
       altitudeFt, speedKts: typeof item.speed === "number" ? item.speed / 1.852 : null,
       distanceKm, seenSeconds: seenSeconds!,
     }));
-    const selectedHex = request.nextUrl.searchParams.get("selected")?.toLowerCase();
-    const selected = candidates.find(({ item }) => item.hex?.toLowerCase() === selectedHex) ?? candidates[0];
+    const trackedHex = request.nextUrl.searchParams.get("selected")?.toLowerCase();
+    const tracked = candidates.find((candidate) => candidate.item.hex?.toLowerCase() === trackedHex && candidate.projectedDistanceKm <= ZONE_RADIUS_KM);
+    const selected = tracked ?? candidates
+      .filter((candidate) => candidate.approaching && candidate.projectedDistanceKm <= ZONE_RADIUS_KM)
+      .sort((a, b) => a.projectedDistanceKm - b.projectedDistanceKm)[0];
     if (selected) {
       const item = selected.item;
       const originCode = item.dep_iata?.trim() || null;

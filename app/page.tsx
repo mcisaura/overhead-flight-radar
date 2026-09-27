@@ -124,8 +124,8 @@ function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox"
       <section className={`sky-stage sky-${phase} ${flight ? "has-flight" : ""}`} aria-labelledby="hero-title">
         <div className="sky-art" aria-hidden="true" />
         <div className="sky-overlay" aria-hidden="true" />
+        <div className={`hero-inner boarding-pass ${flight && selected ? "hero-flight" : "empty-boarding-pass"}`}>
         {flight && selected ? <>
-          <div className="hero-inner hero-flight boarding-pass" key={`flight-${selected.id}-${flightRun}`}>
             <div className="boarding-pass-main">
               <div className="boarding-pass-topline"><span>OVERHEAD</span></div>
               <h1 id="hero-title" className="boarding-pass-heading">{crossingStatus}</h1>
@@ -144,22 +144,33 @@ function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox"
                 </div>
               </div>
             </BoardingPassStub>
+        </> : <>
+          <div className="boarding-pass-main">
+            <div className="boarding-pass-topline"><span>OVERHEAD</span></div>
+            <p className="hero-status"><span className="signal-dot quiet-dot" /> Waiting for a plane</p>
+            <h1 id="hero-title" className="boarding-pass-heading">A quiet sky.<br /><em>For now.</em></h1>
+            <p className="hero-description">No aircraft are inside the sample zone. Choose a simulated flight below to watch it enter, cross, and leave your sky.</p>
           </div>
-          <div className="hero-visual-column">
+          <div className="boarding-pass-stub">
+            <div className="boarding-pass-stub-codes">
+              <div><span>SKY STATUS</span><strong>No aircraft in the zone</strong></div>
+              <div><span>OBSERVATION ZONE</span><strong>5 nautical miles</strong></div>
+            </div>
+            <div className="boarding-pass-stub-details">
+              <button type="button" className="primary-button" onClick={() => document.getElementById("presets-title")?.scrollIntoView({ behavior: "smooth", block: "start" })}>Simulate an arrival <ArrowRight size={18} /></button>
+            </div>
+          </div>
+        </>}
+        </div>
+        {flight && selected && <div className="hero-visual-column">
           <div className="aircraft-scene" aria-hidden="true">
             <div className="aircraft-wrap" key={`aircraft-${selected.id}-${flightRun}`} style={{ left: `${40 + progress * .2}%` }}>
               <img src={aircraftImage(flight.aircraftType ?? "")} alt="" className="aircraft-image" style={{ transform: `scale(${aircraftScale})` }} />
             </div>
           </div>
-          </div>
-        </> : <div className="hero-inner hero-empty">
-          <p className="hero-status"><span className="signal-dot quiet-dot" /> Waiting for a plane</p>
-          <h1 id="hero-title">A quiet sky.<br /><em>For now.</em></h1>
-          <p className="hero-description">No aircraft are inside the sample zone. Choose a simulated flight below to watch it enter, cross, and leave your sky.</p>
-          <button type="button" className="primary-button" onClick={() => document.getElementById("presets-title")?.scrollIntoView({ behavior: "smooth", block: "start" })}>Simulate an arrival <ArrowRight size={18} /></button>
         </div>}
         {!flight && <div className="quiet-orbit" aria-hidden="true"><span /><span /><span /><i /></div>}
-        {flight ? <HeroProgressLine progress={progress} label={`${flight.callsign || "Aircraft"} crossing the zone`} valueText={`${Math.round(progress)}%, ${crossingStatus.toLowerCase()}`} /> : <div className="hero-baseline"><span>No aircraft in the zone</span><span>5 nautical mile zone</span></div>}
+        {flight && <HeroProgressLine key={`${selectedId}-${flightRun}`} progress={progress} label={`${flight.callsign || "Aircraft"} crossing the zone`} valueText={`${Math.round(progress)}%, ${crossingStatus.toLowerCase()}`} />}
       </section>
 
       <section className="presets-section compact-presets" aria-labelledby="presets-title">

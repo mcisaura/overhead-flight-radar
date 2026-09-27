@@ -51,7 +51,6 @@ function weatherLabel(code: number) {
 
 export default function LiveSky({ onModeChange }: { onModeChange: (mode: "live" | "sandbox") => void }) {
   const [place, setPlace] = useState<Place>({ lat: demoPlace.lat, lon: demoPlace.lon, label: "Chicago · live sky", sample: true });
-  const [selectedHex, setSelectedHex] = useState<string | null>(null);
   const [data, setData] = useState<SkyResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -60,8 +59,8 @@ export default function LiveSky({ onModeChange }: { onModeChange: (mode: "live" 
   const [refreshKey, setRefreshKey] = useState(0);
   const [receivedAt, setReceivedAt] = useState(0);
   const [clockMs, setClockMs] = useState(0);
-  const [departure, setDeparture] = useState<{ flight: LiveFlight; lastReportAge: number; at: number } | null>(null);
-  const latestSkyRef = useRef<{ response: SkyResponse; receivedAt: number; place: Place } | null>(null);
+  const trackedHex = useRef<string | null>(null);
+  const exitRefreshHex = useRef<string | null>(null);
 
   useEffect(() => {
     const tick = () => { if (!document.hidden) setClockMs(Date.now()); };
@@ -77,29 +76,14 @@ export default function LiveSky({ onModeChange }: { onModeChange: (mode: "live" 
       const requestId = ++latestRequest;
       try {
         const params = new URLSearchParams({ mode: "live", lat: String(place.lat), lon: String(place.lon) });
-        if (selectedHex) params.set("selected", selectedHex);
+        if (trackedHex.current) params.set("selected", trackedHex.current);
         const response = await fetch(`/api/sky?${params}`, { cache: "no-store" });
         if (!response.ok) throw new Error("Live sky is temporarily unavailable.");
         const result = await response.json() as SkyResponse;
         if (!active || requestId !== latestRequest) return;
         const now = Date.now();
-        const previous = latestSkyRef.current;
-        const previousFlight = previous?.response.flight;
-        const previousAircraft = previous?.response.aircraft.find((plane) => plane.hex === previousFlight?.hex);
-        const samePlace = previous?.place.lat === place.lat && previous?.place.lon === place.lon;
-        const flightVanished = previousFlight && !result.aircraft.some((plane) => plane.hex === previousFlight.hex);
-        if (samePlace && flightVanished && previousAircraft && !result.warnings.some((warning) => warning.includes("aircraft"))) {
-          const position = estimatePosition(previousAircraft, (now - previous.receivedAt) / 1000);
-          const crossing = zoneProgress(place, { ...previousAircraft, lat: position.lat, lon: position.lon });
-          if (crossing?.motion === "leaving" && distanceKm(place, position) >= ZONE_RADIUS_KM * 0.95) {
-            setDeparture({ flight: previousFlight, lastReportAge: position.ageSeconds, at: now });
-          } else {
-            setDeparture(null);
-          }
-        } else {
-          setDeparture(null);
-        }
-        latestSkyRef.current = { response: result, receivedAt: now, place };
+        trackedHex.current = result.flight?.hex ?? null;
+        if (exitRefreshHex.current !== trackedHex.current) exitRefreshHex.current = null;
         setData(result);
         setReceivedAt(now);
         setClockMs(now);
@@ -113,13 +97,7 @@ export default function LiveSky({ onModeChange }: { onModeChange: (mode: "live" 
     void refresh();
     const timer = window.setInterval(() => void refresh(), 30_000);
     return () => { active = false; window.clearInterval(timer); };
-  }, [place, selectedHex, refreshKey]);
-
-  useEffect(() => {
-    if (!departure) return;
-    const timer = window.setTimeout(() => setDeparture(null), 2500);
-    return () => window.clearTimeout(timer);
-  }, [departure]);
+  }, [place, refreshKey]);
 
   const useLocation = useCallback(() => {
     setLocationError(null);
@@ -127,10 +105,9 @@ export default function LiveSky({ onModeChange }: { onModeChange: (mode: "live" 
     setLocating(true);
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => {
-        latestSkyRef.current = null;
-        setDeparture(null);
+        trackedHex.current = null;
+        exitRefreshHex.current = null;
         setPlace({ lat: coords.latitude, lon: coords.longitude, label: "Your location · live sky", sample: false });
-        setSelectedHex(null);
         setData(null);
         setReceivedAt(0);
         setLoading(true);
@@ -141,7 +118,6 @@ export default function LiveSky({ onModeChange }: { onModeChange: (mode: "live" 
     );
   }, []);
 
-  const flight = departure?.flight ?? data?.flight ?? null;
   const elapsedSeconds = receivedAt ? Math.max(0, (clockMs - receivedAt) / 1000) : 0;
   const aircraft = (data?.aircraft ?? []).map((plane) => {
     const position = estimatePosition(plane, elapsedSeconds);
@@ -154,15 +130,23 @@ export default function LiveSky({ onModeChange }: { onModeChange: (mode: "live" 
       estimated: position.estimated,
     };
   });
-  const selectedAircraft = departure ? null : aircraft.find((plane) => plane.hex === flight?.hex);
+  const selectedAircraft = aircraft.find((plane) => plane.hex === data?.flight?.hex);
+  const inZone = Boolean(selectedAircraft && selectedAircraft.distanceKm <= ZONE_RADIUS_KM);
+  const flight = inZone ? data?.flight ?? null : null;
+  useEffect(() => {
+    const hex = data?.flight?.hex;
+    if (hex && !inZone && !error && exitRefreshHex.current !== hex) {
+      exitRefreshHex.current = hex;
+      trackedHex.current = null;
+      setRefreshKey((key) => key + 1);
+    }
+  }, [data?.flight?.hex, inZone, error]);
   const routeKnown = Boolean(flight?.origin && flight?.destination);
   const flightName = flight ? flightIdentityText(flight) : "Aircraft";
   const crossing = selectedAircraft ? zoneProgress(place, selectedAircraft) : flight?.zoneProgress ?? null;
-  const progress = departure ? 100 : crossing?.percent ?? null;
+  const progress = crossing?.percent ?? null;
   const shownDistanceKm = selectedAircraft?.distanceKm ?? flight?.distanceKm ?? 0;
-  const shownAgeSeconds = departure
-    ? departure.lastReportAge + Math.max(0, (clockMs - departure.at) / 1000)
-    : selectedAircraft?.seenSeconds ?? flight?.seenSeconds ?? 0;
+  const shownAgeSeconds = selectedAircraft?.seenSeconds ?? flight?.seenSeconds ?? 0;
   const positionEstimated = Boolean(selectedAircraft?.estimated);
   const aircraftOffset = progress == null ? 0 : (progress - 50) * 0.6;
   const aircraftScale = progress == null ? 1 : 1 + 0.08 * Math.sin(Math.PI * progress / 100) ** 2;
@@ -185,10 +169,11 @@ export default function LiveSky({ onModeChange }: { onModeChange: (mode: "live" 
 
     <section className={`sky-stage live-stage ${flight ? "sky-active has-flight" : "sky-empty"}`} aria-labelledby="hero-title">
       <div className="sky-art" aria-hidden="true" /><div className="sky-overlay" aria-hidden="true" />
-      {flight ? <div className="hero-inner hero-flight boarding-pass" key={flight.hex}>
+      <div className={`hero-inner boarding-pass ${flight ? "hero-flight" : "empty-boarding-pass"}`}>
+      {flight ? <>
         <div className="boarding-pass-main">
           <div className="boarding-pass-topline"><span>OVERHEAD</span></div>
-          <h1 id="hero-title" className="boarding-pass-heading">{departure ? "Moved beyond your sky" : error ? "Live feed interrupted" : crossing?.motion === "approaching" ? "Drawing closer" : crossing?.motion === "leaving" ? "Heading away" : "Live aircraft nearby"}</h1>
+          <h1 id="hero-title" className="boarding-pass-heading">{error ? "Live feed interrupted" : crossing?.motion === "approaching" ? "Drawing closer" : crossing?.motion === "leaving" ? "Heading away" : "Live aircraft nearby"}</h1>
           <FlightIdentity {...flight} />
           <div className="boarding-pass-divider" aria-hidden="true" />
           <BoardingRoute origin={flight.origin} destination={flight.destination} />
@@ -197,31 +182,43 @@ export default function LiveSky({ onModeChange }: { onModeChange: (mode: "live" 
         <BoardingPassStub callsign={flight.callsign} flightNumber={flight.flightNumber} flightIata={flight.flightIata} airline={flight.airline} aircraftType={flight.aircraftType}>
           <div className="hero-flight-details">
             <BoardingPassStats altitudeFt={flight.altitudeFt} speedKts={flight.speedKts} distanceKm={shownDistanceKm} />
-            <p className="boarding-pass-freshness">Last reported {Math.round(shownAgeSeconds)} sec ago · {departure ? "Aircraft left the zone" : positionEstimated ? "Position estimated between reports" : "Reported position"}</p>
+            <p className="boarding-pass-freshness">Last reported {Math.round(shownAgeSeconds)} sec ago · {positionEstimated ? "Position estimated between reports" : "Reported position"}</p>
             <div className="live-actions"><button type="button" className="primary-button" onClick={useLocation} disabled={locating}><LocateFixed size={17} />{locating ? "Finding your location…" : "Use my location"}</button><button type="button" className="refresh-button" onClick={() => setRefreshKey((key) => key + 1)}><RefreshCw size={15} />Refresh</button></div>
             {locationError && <p className="live-location-error" role="status">{locationError}</p>}
           </div>
         </BoardingPassStub>
-      </div> : <div className="hero-inner hero-empty">
-        <p className="hero-status" role="status"><span className={`signal-dot ${error ? "quiet-dot" : ""}`} /> {error ? "Live feed interrupted" : loading && !data ? "Checking the sky" : "Live sky"}</p>
-        <h1 id="hero-title">A quiet sky.<br /><em>For now.</em></h1>
-        <p className="hero-description">{error || (loading ? "Finding aircraft in the 5 nautical mile zone." : `No aircraft currently reported within 5 nautical miles of ${place.sample ? "central Chicago" : "your location"}.`)}</p>
-        <div className="live-actions"><button type="button" className="primary-button" onClick={useLocation} disabled={locating}><LocateFixed size={17} />{locating ? "Finding your location…" : "Use my location"}</button><button type="button" className="refresh-button" onClick={() => setRefreshKey((key) => key + 1)}><RefreshCw size={15} />Refresh</button></div>
-        {locationError && <p className="live-location-error" role="status">{locationError}</p>}
-        {place.sample && <p className="live-place-note">Showing real flights over Chicago until you choose your location.</p>}
-      </div>}
+      </> : <>
+        <div className="boarding-pass-main">
+          <div className="boarding-pass-topline"><span>OVERHEAD</span></div>
+          <p className="hero-status" role="status"><span className={`signal-dot ${error ? "quiet-dot" : ""}`} /> {error ? "Live feed interrupted" : loading && !data ? "Checking the sky" : "Live sky"}</p>
+          <h1 id="hero-title" className="boarding-pass-heading">A quiet sky.<br /><em>For now.</em></h1>
+          <p className="hero-description">{error || (loading ? "Finding aircraft heading toward the 5 nautical mile zone." : `No aircraft currently heading toward ${place.sample ? "central Chicago" : "your location"} within 5 nautical miles.`)}</p>
+        </div>
+        <div className="boarding-pass-stub">
+          <div className="boarding-pass-stub-codes">
+            <div><span>SKY STATUS</span><strong>{loading && !data ? "Checking for aircraft" : error ? "Feed unavailable" : "No approaching aircraft"}</strong></div>
+            <div><span>OBSERVATION ZONE</span><strong>5 nautical miles</strong></div>
+          </div>
+          <div className="boarding-pass-stub-details">
+            <div className="live-actions"><button type="button" className="primary-button" onClick={useLocation} disabled={locating}><LocateFixed size={17} />{locating ? "Finding your location…" : "Use my location"}</button><button type="button" className="refresh-button" onClick={() => setRefreshKey((key) => key + 1)}><RefreshCw size={15} />Refresh</button></div>
+            {locationError && <p className="live-location-error" role="status">{locationError}</p>}
+            {place.sample && <p className="live-place-note">Showing real flights over Chicago until you choose your location.</p>}
+          </div>
+        </div>
+      </>}
+      </div>
       {flight ? <div className="live-aircraft-column">
-        <div className={`live-aircraft-scene ${departure ? "is-departing" : ""}`} style={{ transform: `translateX(${aircraftOffset}px) scale(${aircraftScale})` }}><img src={aircraftImage(flight.aircraftType ?? "")} alt="" aria-hidden="true" /></div>
+        <div className="live-aircraft-scene" style={{ transform: `translateX(${aircraftOffset}px) scale(${aircraftScale})` }}><img src={aircraftImage(flight.aircraftType ?? "")} alt="" aria-hidden="true" /></div>
       </div> : <div className="quiet-orbit" aria-hidden="true"><span /><span /><span /><i /></div>}
-      {flight ? <HeroProgressLine progress={progress} label={`${flightName} crossing the 5 nautical mile zone`} valueText={departure ? "100%, aircraft no longer reported in the zone" : progress == null ? "Progress unavailable" : `${progress.toFixed(1)}% through the zone, estimated from the latest reported position and heading`} live /> : <div className="hero-baseline"><span>{data ? `${data.nearbyCount} aircraft reported nearby` : "Waiting for live data"}</span><span>Updates every 30 seconds</span></div>}
+      {flight && <HeroProgressLine key={flight.hex} progress={progress} label={`${flightName} crossing the 5 nautical mile zone`} valueText={progress == null ? "Progress unavailable" : `${progress.toFixed(1)}% through the zone, estimated from the latest reported position and heading`} live />}
     </section>
 
     <div className="sky-dashboard">
-      <FlightMap lat={place.lat} lon={place.lon} aircraft={aircraft} closestHex={aircraft[0]?.hex ?? null} selectedAircraftHex={departure ? data?.flight?.hex ?? null : flight?.hex ?? null} loading={loading && !data} unavailable={Boolean(error)} locationLabel={place.sample ? "Central Chicago" : "Your location"} onSelect={setSelectedHex} />
+      <FlightMap lat={place.lat} lon={place.lon} aircraft={aircraft} closestHex={flight?.hex ?? null} loading={loading && !data} unavailable={Boolean(error)} locationLabel={place.sample ? "Central Chicago" : "Your location"} />
       <aside className="flight-sidebar" aria-label="Live flight details"><article className="detail-panel flight-panel">
         <div className="detail-title"><Navigation2 size={18} strokeWidth={1.8} /><h3 title={flight?.callsign || undefined}>{flightName}</h3></div>
         {flight ? <><div className="airport-row"><div><strong className="airport-code">{flight.origin?.code ?? "···"}</strong><span className="airport-city">{flight.origin?.city ?? "Origin unknown"}</span></div><ArrowRight className="airport-connector" size={25} strokeWidth={1.3} aria-hidden="true" /><div><strong className="airport-code">{flight.destination?.code ?? "···"}</strong><span className="airport-city">{flight.destination?.city ?? "Destination unknown"}</span></div></div>
-          <div className="stat-row"><div><span>Altitude</span><strong>{flight.altitudeFt == null ? "—" : `${Math.round(flight.altitudeFt).toLocaleString()} ft`}</strong></div><div><span>Ground speed</span><strong>{flight.speedKts == null ? "—" : `${Math.round(flight.speedKts)} kt`}</strong></div><div><span>Distance</span><strong>{shownDistanceKm.toFixed(1)} km</strong></div></div><p className="data-note">{routeKnown ? "Route reported by AirLabs" : "Route unavailable"} · Last report {Math.round(shownAgeSeconds)} sec ago{positionEstimated ? " · Position estimated" : ""}</p></> : <p className="empty-copy">{loading ? "Checking for nearby flights…" : error || "No aircraft reported in this zone right now."}</p>}
+          <div className="stat-row"><div><span>Altitude</span><strong>{flight.altitudeFt == null ? "—" : `${Math.round(flight.altitudeFt).toLocaleString()} ft`}</strong></div><div><span>Ground speed</span><strong>{flight.speedKts == null ? "—" : `${Math.round(flight.speedKts)} kt`}</strong></div><div><span>Distance</span><strong>{shownDistanceKm.toFixed(1)} km</strong></div></div><p className="data-note">{routeKnown ? "Route reported by AirLabs" : "Route unavailable"} · Last report {Math.round(shownAgeSeconds)} sec ago{positionEstimated ? " · Position estimated" : ""}</p></> : <p className="empty-copy">{loading ? "Checking for nearby flights…" : error || "No approaching aircraft reported in this zone right now."}</p>}
       </article></aside>
     </div>
 

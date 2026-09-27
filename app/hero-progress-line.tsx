@@ -10,49 +10,23 @@ type HeroProgressLineProps = {
   live?: boolean;
 };
 
-function easedWalkerProgress(progress: number) {
-  if (progress < 40 || progress >= 60) return progress;
-  if (progress < 50) {
-    const t = (progress - 40) / 10;
-    return 40 + 10 * (t + t * t - t * t * t);
-  }
-  const t = (progress - 50) / 10;
-  return 50 + 10 * (2 * t * t - t * t * t);
+function walkerPositionForProgress(progress: number) {
+  const crossing = Math.max(0, Math.min(100, progress));
+  if (crossing < 50) return crossing;
+  if (crossing < 60) return 50;
+  return 50 * (100 - crossing) / 40;
 }
 
 export default function HeroProgressLine({ progress, label, valueText, live = false }: HeroProgressLineProps) {
-  const previousProgress = useRef<number | null>(null);
-  const pausedThisCrossing = useRef(false);
-  const [holdingAtCenter, setHoldingAtCenter] = useState(false);
-  const [walkerProgress, setWalkerProgress] = useState(progress ?? 0);
-  const walkerPosition = useRef(progress ?? 0);
-  const walkerTarget = useRef(progress ?? 0);
-
-  useEffect(() => {
-    if (progress == null || progress < 40) pausedThisCrossing.current = false;
-    const previous = previousProgress.current;
-    if (progress != null && progress < 60 && previous !== null && previous < 50 && progress >= 50 && !pausedThisCrossing.current) {
-      pausedThisCrossing.current = true;
-      setHoldingAtCenter(true);
-    }
-    previousProgress.current = progress;
-  }, [progress]);
-
-  useEffect(() => {
-    if (!holdingAtCenter) return;
-    const timer = window.setTimeout(() => setHoldingAtCenter(false), 1200);
-    return () => window.clearTimeout(timer);
-  }, [holdingAtCenter]);
+  const initialPosition = walkerPositionForProgress(progress ?? 0);
+  const [walkerProgress, setWalkerProgress] = useState(initialPosition);
+  const walkerPosition = useRef(initialPosition);
+  const walkerTarget = useRef(initialPosition);
 
   useEffect(() => {
     if (progress == null) return;
-    const target = holdingAtCenter ? 50 : easedWalkerProgress(progress);
-    if (progress < 40 && walkerPosition.current > 60) {
-      walkerPosition.current = progress;
-      setWalkerProgress(progress);
-    }
-    walkerTarget.current = target;
-  }, [progress, holdingAtCenter]);
+    walkerTarget.current = walkerPositionForProgress(progress);
+  }, [progress]);
 
   useEffect(() => {
     let frame = 0;
@@ -75,10 +49,12 @@ export default function HeroProgressLine({ progress, label, valueText, live = fa
     return () => window.cancelAnimationFrame(frame);
   }, []);
 
-  const pointing = walkerProgress >= 40 && walkerProgress < 60;
+  const pointing = progress != null && progress >= 40 && progress < 60;
+  const paused = progress != null && ((progress >= 50 && progress < 60 && walkerProgress >= 49.5) || (progress >= 100 && walkerProgress <= 0.5));
+  const returning = progress != null && progress >= 60;
   return <div className={`hero-baseline hero-progress-baseline ${live ? "is-live" : ""}`}>
     <div className="hero-baseline-track" role={progress == null ? undefined : "progressbar"} aria-label={progress == null ? `${label}: progress unavailable until a heading is reported` : label} aria-valuemin={progress == null ? undefined : 0} aria-valuemax={progress == null ? undefined : 100} aria-valuenow={progress == null ? undefined : Number(progress.toFixed(1))} aria-valuetext={progress == null ? undefined : valueText}>
-      {progress != null && <><span className="hero-baseline-fill" style={{ width: `${progress}%` }} /><ProgressWalker progress={walkerProgress} pointing={pointing} /></>}
+      {progress != null && <><span className="hero-baseline-fill" style={{ width: `${progress}%` }} /><ProgressWalker progress={walkerProgress} pointing={pointing} paused={paused} returning={returning} /></>}
     </div>
     <span className="hero-baseline-percent" aria-hidden="true">{progress == null ? "—" : `${Math.round(progress)}%`}</span>
   </div>;
