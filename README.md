@@ -30,7 +30,7 @@ npm run build
 
 The map uses a pale wireframe-style treatment with projected flight lines. For live flights, airport coordinates are looked up from AirLabs for up to the 16 nearest aircraft plus the tracked aircraft, then cached for one day. A solid line links a known departure airport to the aircraft and a dashed line projects onward to a known arrival airport; neither line is a recorded flight track. When both airport coordinates are available, **Full route** zooms out to show the endpoints. Otherwise the map shows a short heading projection in **Local sky** view. Sandbox routes use approximate airport coordinates and are illustrative.
 
-The hero aircraft image is an illustration. The live hero starts with the closest aircraft approaching the chosen location, using estimated positions between reports, and keeps that flight on screen through its full crossing. Once it leaves the zone, the app chooses the next closest approaching aircraft or shows the quiet-sky pass. Selecting a map marker previews that aircraft on the map without changing the hero. Reported positions can be delayed or missing. Live mode does not request browser location until the user selects **Use my location**. If location is unavailable, central Chicago remains the reference location.
+The hero aircraft is a generic 3D commercial aircraft illustration rendered with Three.js in React. It uses the supplied Boeing 737-200 model as a visual stand-in for multiple aircraft types; the boarding pass keeps each flight's reported type. The live hero starts with the closest aircraft approaching the chosen location, using estimated positions between reports, and keeps that flight on screen through its full crossing. Once it leaves the zone, the app chooses the next closest approaching aircraft or shows the quiet-sky pass. Selecting a map marker previews that aircraft on the map without changing the hero. Reported positions can be delayed or missing. Live mode does not request browser location until the user selects **Use my location**. If location is unavailable, central Chicago remains the reference location.
 
 The live flight feed no longer calls ADSB.fi or ADSBdb.
 
@@ -60,7 +60,10 @@ Projection stops 90 seconds after the underlying report so it can continue throu
 - `app/flight-identity.tsx`, `app/aircraft-model-label.tsx`, `lib/flight-display.ts`: readable flight and aircraft labels, codes, and airline presentation.
 - `app/api/sky/route.ts`: server-side live API aggregation and caching.
 - `app/flight-map.tsx`: interactive Leaflet map.
+- `app/aircraft-model.tsx`: Three.js rendering of the supplied Boeing 737-200 model in Live and Sandbox.
 - `app/demo-data.ts`: Sandbox flights and weather.
 - `lib/zone-progress.ts`, `lib/flight-estimate.ts`, `lib/closest-approach.ts`: crossing calculations, movement estimates, and closest-approach messages.
 
 Before public hosting, review the source terms and request limits for [AirLabs](https://airlabs.co/docs/flights), [Open-Meteo](https://open-meteo.com/en/terms), and [OpenStreetMap tiles](https://operations.osmfoundation.org/policies/tiles/). No deployment is configured here.
+
+The Boeing 737-200 model is by LucasSS on Sketchfab, supplied as `boeing_737-200_white.glb` under the Sketchfab Standard License. See the attribution embedded in the GLB asset for its source URL.
