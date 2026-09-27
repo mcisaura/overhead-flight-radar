@@ -519,7 +519,7 @@ button:disabled { opacity: .6; cursor: wait; }
 
 /* Both the quiet and active sky views use the boarding pass. */
 .boarding-pass, .live-stage .boarding-pass {
-  width: min(500px, 42vw);
+  width: min(500px, calc(100vw - 52px));
   margin: clamp(24px, 4vh, 48px) 0 0 clamp(26px, 6vw, 100px);
   padding: 0;
   overflow: hidden;
@@ -566,6 +566,48 @@ button:disabled { opacity: .6; cursor: wait; }
 .boarding-pass-stub strong { color: var(--ocean-deep); font-size: 16px; font-weight: 850; line-height: 1.1; overflow-wrap: anywhere; }
 .boarding-pass-stub-details { margin-top: 19px; padding-top: 19px; border-top: 1px solid #d5e3e3; }
 .boarding-pass-stub .hero-flight-details { margin: 0; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; }
+.boarding-pass-display { perspective: 900px; }
+.boarding-pass .boarding-pass-heading, .live-stage .boarding-pass .boarding-pass-heading {
+  position: relative;
+  min-height: 108px;
+  padding: 20px 22px;
+  border: 1px solid #091a22;
+  border-radius: 5px;
+  background: #14252d;
+  color: #f5f6ee;
+  box-shadow: inset 0 1px 0 #ffffff24, inset 0 -4px 10px #00000045, 0 8px 12px #17374624;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+}
+.boarding-pass .boarding-pass-heading em, .live-stage .boarding-pass .boarding-pass-heading em { color: #b9dce5; }
+.boarding-pass .boarding-pass-heading::before, .boarding-pass .boarding-pass-heading::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+}
+.boarding-pass .boarding-pass-heading::before { top: 50%; bottom: 0; background: linear-gradient(#08182008, #0818203b); }
+.boarding-pass .boarding-pass-heading::after { top: 50%; height: 2px; background: #07161d; box-shadow: 0 1px 0 #ffffff30; }
+.boarding-pass-display.flap-closing, .boarding-pass-display.flap-opening { pointer-events: none; }
+.boarding-pass-display.flap-closing .boarding-pass-heading { animation: pass-board-close 160ms ease-in both; transform-origin: center center; }
+.boarding-pass-display.flap-opening .boarding-pass-heading { animation: pass-board-open 220ms ease-out both; transform-origin: center center; }
+.boarding-pass-display.flap-closing .boarding-pass-main > :not(.boarding-pass-topline):not(.boarding-pass-divider):not(.boarding-pass-heading),
+.boarding-pass-display.flap-closing .boarding-pass-stub-codes,
+.boarding-pass-display.flap-closing .boarding-pass-stub-details > * {
+  animation: pass-copy-close 160ms ease-in both;
+}
+.boarding-pass-display.flap-opening .boarding-pass-main > :not(.boarding-pass-topline):not(.boarding-pass-divider):not(.boarding-pass-heading),
+.boarding-pass-display.flap-opening .boarding-pass-stub-codes,
+.boarding-pass-display.flap-opening .boarding-pass-stub-details > * {
+  animation: pass-copy-open 220ms ease-out both;
+}
+.boarding-pass-display.flap-opening .boarding-pass-stub-codes { animation-delay: 35ms; }
+.boarding-pass-display.flap-opening .boarding-pass-stub-details > * { animation-delay: 70ms; }
+@keyframes pass-board-close { from { transform: rotateX(0deg); } to { transform: rotateX(-90deg); } }
+@keyframes pass-board-open { from { transform: rotateX(90deg); } to { transform: rotateX(0deg); } }
+@keyframes pass-copy-close { to { opacity: 0; } }
+@keyframes pass-copy-open { from { opacity: 0; } to { opacity: 1; } }
 .empty-boarding-pass, .live-stage .empty-boarding-pass { margin-top: clamp(70px, 10vh, 120px); }
 .empty-boarding-pass .hero-status { margin: 20px 0 13px; }
 .empty-boarding-pass .hero-description { max-width: none; margin: 0; color: var(--ink-soft); font-size: 14px; line-height: 1.55; }
@@ -585,7 +627,7 @@ button:disabled { opacity: .6; cursor: wait; }
 .boarding-pass-footer .live-place-note, .boarding-pass-footer .live-location-error { margin-top: 9px; font-size: 10px; }
 @keyframes boarding-pass-enter { from { opacity: 0; transform: translateY(22px) scale(.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @media (max-width: 760px) {
-  .boarding-pass, .live-stage .boarding-pass { width: calc(100% - 56px); max-width: 590px; margin: 28px 28px 0; padding: 0; }
+  .boarding-pass, .live-stage .boarding-pass { width: calc(100% - 56px); max-width: 500px; margin: 28px 28px 0; padding: 0; }
   .boarding-pass .boarding-pass-heading, .live-stage .boarding-pass .boarding-pass-heading { font-size: 32px; }
 }
 @media (max-width: 520px) {
@@ -610,20 +652,20 @@ button:disabled { opacity: .6; cursor: wait; }
 /* Keep the aircraft, crossing, and flight details in one readable sequence. */
 .sky-stage.has-flight, .sky-stage.has-flight.live-stage {
   display: grid;
-  grid-template-columns: minmax(320px, .82fr) minmax(420px, 1.18fr);
+  grid-template-columns: minmax(0, min(500px, 42vw)) minmax(0, 1fr);
   grid-template-rows: auto;
-  align-items: center;
+  align-items: start;
   column-gap: clamp(28px, 4vw, 76px);
   row-gap: 14px;
   height: auto;
   min-height: min(790px, calc(100svh - 84px));
-  padding: 38px clamp(26px, 5vw, 80px) 82px;
+  padding: clamp(70px, 10vh, 120px) clamp(26px, 6vw, 100px) 82px;
 }
 .sky-stage.has-flight > .boarding-pass {
   grid-column: 1;
   grid-row: 1;
-  align-self: center;
-  justify-self: end;
+  align-self: start;
+  justify-self: start;
   width: min(100%, 500px);
   max-width: none;
   margin: 0;
@@ -639,7 +681,8 @@ button:disabled { opacity: .6; cursor: wait; }
   position: relative;
   z-index: 4;
   inset: auto;
-  align-self: center;
+  align-self: start;
+  margin-top: clamp(65px, 7vw, 110px);
   width: min(100%, 620px);
   min-width: 0;
   pointer-events: auto;
@@ -777,6 +820,12 @@ button:disabled { opacity: .6; cursor: wait; }
 .hero-flight-details .hero-playback { margin-top: 11px; gap: 7px; }
 .hero-flight-details .zone-play, .hero-flight-details .zone-reset { height: 34px; padding: 0 10px; font-size: 11px; }
 .hero-flight-details .hero-playback > span { font-size: 10px; }
+.next-aircraft-queue { margin-top: 17px; padding-top: 14px; border-top: 1px solid #cbdcde; font-variant-numeric: tabular-nums; }
+.next-aircraft-label { color: #5a7c8a; font-size: 9px; font-weight: 850; letter-spacing: .13em; }
+.next-aircraft-main { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-top: 5px; color: var(--ocean-deep); }
+.next-aircraft-main strong { font-size: 16px; font-weight: 800; overflow-wrap: anywhere; }
+.next-aircraft-main span { flex: none; font-size: 12px; font-weight: 750; white-space: nowrap; }
+.next-aircraft-queue p { margin: 5px 0 0; color: var(--ink-soft); font-size: 10px; line-height: 1.4; }
 
 @media (max-width: 850px) {
   .sky-stage.has-flight, .sky-stage.has-flight.live-stage {
@@ -784,16 +833,19 @@ button:disabled { opacity: .6; cursor: wait; }
     grid-template-rows: auto auto;
     row-gap: 16px;
     min-height: 0;
-    padding: 26px clamp(18px, 5vw, 38px) 76px;
+    padding: clamp(70px, 10vh, 120px) clamp(26px, 6vw, 100px) 76px;
   }
-  .sky-stage.has-flight > .boarding-pass { grid-column: 1; grid-row: 1; justify-self: center; width: min(100%, 620px); }
+  .sky-stage.has-flight > .boarding-pass { grid-column: 1; grid-row: 1; justify-self: start; width: min(100%, 500px); }
   .sky-stage.has-flight .hero-visual-column,
-  .sky-stage.has-flight .live-aircraft-column { grid-column: 1; grid-row: 2; justify-self: center; width: min(100%, 620px); }
+  .sky-stage.has-flight .live-aircraft-column { grid-column: 1; grid-row: 2; justify-self: center; width: min(100%, 620px); margin-top: 0; }
   .sky-stage.has-flight .aircraft-scene { height: 270px; }
   .sky-stage.has-flight .live-aircraft-scene img { max-height: 270px; }
 }
+@media (max-width: 760px) {
+  .sky-stage.has-flight, .sky-stage.has-flight.live-stage { padding: 28px 28px 76px; }
+}
 @media (max-width: 520px) {
-  .sky-stage.has-flight, .sky-stage.has-flight.live-stage { row-gap: 15px; padding: 18px 17px 62px; }
+  .sky-stage.has-flight, .sky-stage.has-flight.live-stage { row-gap: 15px; padding: 24px 23px 62px; }
   .sky-stage.has-flight .boarding-pass-main { padding: 18px 20px 20px; }
   .sky-stage.has-flight .aircraft-scene { height: 205px; }
   .sky-stage.has-flight .aircraft-wrap { width: 85%; }

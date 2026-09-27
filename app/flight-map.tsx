@@ -16,6 +16,8 @@ export type MapAircraft = {
   airlineIcao?: string | null;
   airlineIata?: string | null;
   flightNumber?: string | null;
+  originCode?: string | null;
+  destinationCode?: string | null;
   airline?: AirlineIdentity | null;
   displayName?: string | null;
   displayType?: string | null;

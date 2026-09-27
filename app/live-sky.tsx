@@ -12,6 +12,7 @@ import BoardingRoute from "./boarding-route";
 import { BoardingPassStats, BoardingPassStub } from "./boarding-pass-extras";
 import type { AirlineIdentity } from "../lib/flight-display";
 import HeroProgressLine from "./hero-progress-line";
+import BoardingPassDisplay from "./boarding-pass-display";
 
 type Place = { lat: number; lon: number; label: string; sample: boolean };
 type LiveFlight = {
@@ -150,6 +151,17 @@ export default function LiveSky({ onModeChange }: { onModeChange: (mode: "live" 
   const positionEstimated = Boolean(selectedAircraft?.estimated);
   const aircraftOffset = progress == null ? 0 : (progress - 50) * 0.6;
   const aircraftScale = progress == null ? 1 : 1 + 0.08 * Math.sin(Math.PI * progress / 100) ** 2;
+  const nextAircraft = flight ? aircraft
+    .filter((plane) => plane.hex !== flight.hex && plane.distanceKm <= ZONE_RADIUS_KM && plane.seenSeconds <= 90)
+    .map((plane) => {
+      const path = zoneProgress(place, plane);
+      const speedKmPerMinute = (plane.speedKts ?? 0) * 1.852 / 60;
+      const minutesToClosest = path && speedKmPerMinute > 0
+        ? Math.max(0, path.remainingKm - path.crossingKm / 2) / speedKmPerMinute : null;
+      return { plane, path, minutesToClosest };
+    })
+    .filter((candidate) => candidate.path?.motion === "approaching")
+    .sort((a, b) => (a.minutesToClosest ?? Infinity) - (b.minutesToClosest ?? Infinity) || a.plane.distanceKm - b.plane.distanceKm)[0] : null;
   return <main className="app-shell live-shell">
     <header className="topbar">
       <div className="topbar-main">
@@ -169,7 +181,7 @@ export default function LiveSky({ onModeChange }: { onModeChange: (mode: "live" 
 
     <section className={`sky-stage live-stage ${flight ? "sky-active has-flight" : "sky-empty"}`} aria-labelledby="hero-title">
       <div className="sky-art" aria-hidden="true" /><div className="sky-overlay" aria-hidden="true" />
-      <div className={`hero-inner boarding-pass ${flight ? "hero-flight" : "empty-boarding-pass"}`}>
+      <BoardingPassDisplay displayKey={flight?.hex ?? "quiet"} active={Boolean(flight)}>
       {flight ? <>
         <div className="boarding-pass-main">
           <div className="boarding-pass-topline"><span>OVERHEAD</span></div>
@@ -185,6 +197,11 @@ export default function LiveSky({ onModeChange }: { onModeChange: (mode: "live" 
             <p className="boarding-pass-freshness">Last reported {Math.round(shownAgeSeconds)} sec ago · {positionEstimated ? "Position estimated between reports" : "Reported position"}</p>
             <div className="live-actions"><button type="button" className="primary-button" onClick={useLocation} disabled={locating}><LocateFixed size={17} />{locating ? "Finding your location…" : "Use my location"}</button><button type="button" className="refresh-button" onClick={() => setRefreshKey((key) => key + 1)}><RefreshCw size={15} />Refresh</button></div>
             {locationError && <p className="live-location-error" role="status">{locationError}</p>}
+            {nextAircraft && <div className="next-aircraft-queue" aria-label="Next approaching aircraft">
+              <span className="next-aircraft-label">NEXT APPROACHING</span>
+              <div className="next-aircraft-main"><strong>{nextAircraft.plane.callsign || nextAircraft.plane.registration || nextAircraft.plane.hex.toUpperCase()}</strong><span>{nextAircraft.plane.originCode || "···"} → {nextAircraft.plane.destinationCode || "···"}</span></div>
+              <p>{nextAircraft.plane.distanceKm.toFixed(1)} km away{nextAircraft.minutesToClosest !== null ? ` · ${nextAircraft.minutesToClosest < 1 ? "<1" : `~${Math.ceil(nextAircraft.minutesToClosest)}`} min to closest approach` : ""}</p>
+            </div>}
           </div>
         </BoardingPassStub>
       </> : <>
@@ -206,7 +223,7 @@ export default function LiveSky({ onModeChange }: { onModeChange: (mode: "live" 
           </div>
         </div>
       </>}
-      </div>
+      </BoardingPassDisplay>
       {flight ? <div className="live-aircraft-column">
         <div className="live-aircraft-scene" style={{ transform: `translateX(${aircraftOffset}px) scale(${aircraftScale})` }}><img src={aircraftImage(flight.aircraftType ?? "")} alt="" aria-hidden="true" /></div>
       </div> : <div className="quiet-orbit" aria-hidden="true"><span /><span /><span /><i /></div>}

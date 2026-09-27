@@ -11,6 +11,7 @@ import FlightIdentity, { flightIdentityText } from "./flight-identity";
 import BoardingRoute from "./boarding-route";
 import { BoardingPassStats, BoardingPassStub } from "./boarding-pass-extras";
 import HeroProgressLine from "./hero-progress-line";
+import BoardingPassDisplay from "./boarding-pass-display";
 
 function aircraftImage(type: string) {
   if (/^(B7[4-8]|A3[0-2]|BCS)/.test(type)) return "/aircraft/narrowbody.png";
@@ -124,7 +125,7 @@ function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox"
       <section className={`sky-stage sky-${phase} ${flight ? "has-flight" : ""}`} aria-labelledby="hero-title">
         <div className="sky-art" aria-hidden="true" />
         <div className="sky-overlay" aria-hidden="true" />
-        <div className={`hero-inner boarding-pass ${flight && selected ? "hero-flight" : "empty-boarding-pass"}`}>
+        <BoardingPassDisplay displayKey={selected?.id ?? "quiet"} active={Boolean(flight && selected)}>
         {flight && selected ? <>
             <div className="boarding-pass-main">
               <div className="boarding-pass-topline"><span>OVERHEAD</span></div>
@@ -161,7 +162,7 @@ function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox"
             </div>
           </div>
         </>}
-        </div>
+        </BoardingPassDisplay>
         {flight && selected && <div className="hero-visual-column">
           <div className="aircraft-scene" aria-hidden="true">
             <div className="aircraft-wrap" key={`aircraft-${selected.id}-${flightRun}`} style={{ left: `${40 + progress * .2}%` }}>

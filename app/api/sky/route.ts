@@ -122,7 +122,7 @@ export async function GET(request: NextRequest) {
 
   let flight = null;
   let nearbyCount = 0;
-  let aircraft: { hex: string; callsign: string | null; registration: string | null; aircraftType: string | null; airlineIcao: string | null; airlineIata: string | null; flightNumber: string | null; lat: number; lon: number; heading: number | null; altitudeFt: number | null; speedKts: number | null; distanceKm: number; seenSeconds: number }[] = [];
+  let aircraft: { hex: string; callsign: string | null; registration: string | null; aircraftType: string | null; airlineIcao: string | null; airlineIata: string | null; flightNumber: string | null; originCode: string | null; destinationCode: string | null; lat: number; lon: number; heading: number | null; altitudeFt: number | null; speedKts: number | null; distanceKm: number; seenSeconds: number }[] = [];
   if (aircraftResult.status === "fulfilled" && Array.isArray(aircraftResult.value)) {
     const candidates = aircraftResult.value
       .filter((item) => item.hex && typeof item.lat === "number" && typeof item.lng === "number" && (item.status === "en-route" || item.status === "active"))
@@ -144,6 +144,7 @@ export async function GET(request: NextRequest) {
       hex: item.hex!, callsign: item.flight_icao || item.flight_iata || null,
       registration: item.reg_number || null, aircraftType: item.aircraft_icao || null,
       airlineIcao: item.airline_icao || null, airlineIata: item.airline_iata || null, flightNumber: item.flight_number || null,
+      originCode: item.dep_iata?.trim() || null, destinationCode: item.arr_iata?.trim() || null,
       lat: item.lat!, lon: item.lng!, heading: typeof item.dir === "number" && Number.isFinite(item.dir) ? item.dir : null,
       altitudeFt, speedKts: typeof item.speed === "number" ? item.speed / 1.852 : null,
       distanceKm, seenSeconds: seenSeconds!,
