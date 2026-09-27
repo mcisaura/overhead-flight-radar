@@ -1,6 +1,6 @@
 # Overhead
 
-Overhead shows aircraft currently reported within 5 nautical miles of a chosen location. Live mode opens on central Chicago, labeled as a reference location. Select **Use my location** to see the sky near you. The header contains the Live/Sandbox toggle, selected place, and a compact weather strip. Sandbox has four fictional flights and sample weather.
+Overhead shows aircraft currently reported within 5 nautical miles of a chosen location. Live mode opens on central Chicago, labeled as a reference location. Select **Use my location** to see the sky near you. The header contains the Live/Sandbox toggle, selected place, and a compact weather strip. Sandbox has five fictional flights and sample weather.
 
 The project was inspired by British Airways' 2013 **#LookUp** campaign, which connected planes in the sky to information shown on a billboard.
 
@@ -30,13 +30,13 @@ npm run build
 
 The map uses a pale wireframe-style treatment with projected flight lines. For live flights, airport coordinates are looked up from AirLabs for up to the 16 nearest aircraft plus the tracked aircraft, then cached for one day. A solid line links a known departure airport to the aircraft and a dashed line projects onward to a known arrival airport; neither line is a recorded flight track. When both airport coordinates are available, **Full route** zooms out to show the endpoints. Otherwise the map shows a short heading projection in **Local sky** view. Sandbox routes use approximate airport coordinates and are illustrative.
 
-The hero aircraft is a generic 3D commercial aircraft illustration rendered with Three.js in React. It uses the supplied Boeing 737-200 model as a visual stand-in for multiple aircraft types; the boarding pass keeps each flight's reported type. The live hero starts with the closest aircraft approaching the chosen location, using estimated positions between reports, and keeps that flight on screen through its full crossing. Once it leaves the zone, the app chooses the next closest approaching aircraft or shows the quiet-sky pass. Selecting a map marker previews that aircraft on the map without changing the hero. Reported positions can be delayed or missing. Live mode does not request browser location until the user selects **Use my location**. If location is unavailable, central Chicago remains the reference location.
+The hero aircraft is a generic 3D illustration rendered with Three.js in React. Commercial aircraft use the supplied Boeing 737-200 model, private and small fixed-wing aircraft use the Cessna 310, and helicopters and similar rotorcraft use the helicopter model. AirLabs' aircraft type code and model name determine the category; an airline identity helps identify commercial flights when the type is ambiguous. These models are visual stand-ins, while the boarding pass keeps each flight's reported type. Drag the aircraft to move it temporarily, or Shift-drag/right-drag to rotate it; it returns to the moving flight path on release. The live hero starts with the closest aircraft approaching the chosen location, using estimated positions between reports, and keeps that flight on screen through its full crossing. Once it leaves the zone, the app chooses the next closest approaching aircraft or shows the quiet-sky pass. Selecting a map marker previews that aircraft on the map without changing the hero. Reported positions can be delayed or missing. Live mode does not request browser location until the user selects **Use my location**. If location is unavailable, central Chicago remains the reference location.
 
 The live flight feed no longer calls ADSB.fi or ADSBdb.
 
 ## Sandbox
 
-The Sandbox contains four fictional flights near a sample Chicago location. Select a preset to watch an accelerated crossing, pause, resume, replay, or scrub its position. The boarding pass heading changes from “Drawing closer” to “Heading away” as the sample aircraft crosses the zone. Sandbox flights and weather are local fixtures; switching to Sandbox does not request live flight or weather data. Map tiles still come from OpenStreetMap.
+The Sandbox contains five fictional flights near a sample Chicago location, including a private plane and a helicopter. Select a preset to watch an accelerated crossing, pause, resume, replay, or scrub its position. The boarding pass heading changes from “Drawing closer” to “Heading away” as the sample aircraft crosses the zone. Sandbox flights and weather are local fixtures; switching to Sandbox does not request live flight or weather data. Map tiles still come from OpenStreetMap.
 
 ## Boarding pass
 
@@ -60,10 +60,12 @@ Projection stops 90 seconds after the underlying report so it can continue throu
 - `app/flight-identity.tsx`, `app/aircraft-model-label.tsx`, `lib/flight-display.ts`: readable flight and aircraft labels, codes, and airline presentation.
 - `app/api/sky/route.ts`: server-side live API aggregation and caching.
 - `app/flight-map.tsx`: interactive Leaflet map.
-- `app/aircraft-model.tsx`: Three.js rendering of the supplied Boeing 737-200 model in Live and Sandbox.
+- `app/aircraft-model.tsx`, `lib/aircraft-visual.ts`: Three.js rendering and selection of the supplied aircraft models in Live and Sandbox.
 - `app/demo-data.ts`: Sandbox flights and weather.
 - `lib/zone-progress.ts`, `lib/flight-estimate.ts`, `lib/closest-approach.ts`: crossing calculations, movement estimates, and closest-approach messages.
 
 Before public hosting, review the source terms and request limits for [AirLabs](https://airlabs.co/docs/flights), [Open-Meteo](https://open-meteo.com/en/terms), and [OpenStreetMap tiles](https://operations.osmfoundation.org/policies/tiles/). No deployment is configured here.
 
 The Boeing 737-200 model is by LucasSS on Sketchfab, supplied as `boeing_737-200_white.glb` under the Sketchfab Standard License. See the attribution embedded in the GLB asset for its source URL.
+
+The Cessna 310 model is by BorealRiver on [Sketchfab](https://sketchfab.com/3d-models/cessna-310-airplane-low-poly-bbf73d06537c4a2ba86b96a3b97209c1), supplied as `cessna_310_airplane_-_low_poly.glb` under CC BY 4.0. The helicopter model is by linus1178 on [Sketchfab](https://sketchfab.com/3d-models/helicopter-dec45a28e6f346648c3d6585426157b8), supplied as `helicopter.glb` under CC BY 4.0. Their GLB metadata also includes author, license, and source information.
