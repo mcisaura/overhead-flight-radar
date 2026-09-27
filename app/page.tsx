@@ -12,12 +12,7 @@ import BoardingRoute from "./boarding-route";
 import { BoardingPassStats, BoardingPassStub } from "./boarding-pass-extras";
 import HeroProgressLine from "./hero-progress-line";
 import BoardingPassDisplay from "./boarding-pass-display";
-
-function aircraftImage(type: string) {
-  if (/^(B7[4-8]|A3[0-2]|BCS)/.test(type)) return "/aircraft/narrowbody.png";
-  if (/^(B7[6-9]|A3[3-5]|A38)/.test(type)) return "/aircraft/widebody.png";
-  return "/aircraft/regional.png";
-}
+import AircraftModel from "./aircraft-model";
 
 export default function Home() {
   const [mode, setMode] = useState<"live" | "sandbox">("live");
@@ -43,7 +38,6 @@ function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox"
   const mapAircraft = flight && selected ? [{ ...flight, origin: selected.origin, destination: selected.destination }] : [];
   const pathLength = selected ? zoneProgress(demoPlace, selected.aircraft)?.crossingKm ?? ZONE_RADIUS_KM * 2 : ZONE_RADIUS_KM * 2;
   const crossingDurationMs = pathLength / ((selected?.aircraft.speedKts ?? 200) * 1.852) * 3_600_000 / 30;
-  const aircraftScale = .88 + .24 * Math.sin(Math.PI * progress / 100) ** 2;
   const crossingStatus = phase === "exiting" ? "Leaving your sky" : crossing?.motion === "approaching" ? "Drawing closer" : crossing?.motion === "leaving" ? "Heading away" : "Crossing your sky";
 
   useEffect(() => {
@@ -162,13 +156,7 @@ function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox"
           </div>
         </>}
         </BoardingPassDisplay>
-        {flight && selected && <div className="hero-visual-column">
-          <div className="aircraft-scene" aria-hidden="true">
-            <div className="aircraft-wrap" key={`aircraft-${selected.id}-${flightRun}`} style={{ left: `${40 + progress * .2}%` }}>
-              <img src={aircraftImage(flight.aircraftType ?? "")} alt="" className="aircraft-image" style={{ transform: `scale(${aircraftScale})` }} />
-            </div>
-          </div>
-        </div>}
+        {flight && selected && <div className="sky-aircraft-layer"><AircraftModel key={`${selected.id}-${flightRun}`} progress={progress} /></div>}
         {!flight && <div className="quiet-orbit" aria-hidden="true"><span /><span /><span /><i /></div>}
         {flight && <HeroProgressLine key={`${selectedId}-${flightRun}`} progress={progress} label={`${flight.callsign || "Aircraft"} crossing the zone`} valueText={`${Math.round(progress)}%, ${crossingStatus.toLowerCase()}`} />}
       </section>

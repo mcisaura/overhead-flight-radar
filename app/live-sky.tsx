@@ -13,6 +13,7 @@ import { BoardingPassStats, BoardingPassStub } from "./boarding-pass-extras";
 import type { AirlineIdentity } from "../lib/flight-display";
 import HeroProgressLine from "./hero-progress-line";
 import BoardingPassDisplay from "./boarding-pass-display";
+import AircraftModel from "./aircraft-model";
 
 type Place = { lat: number; lon: number; label: string; sample: boolean };
 type LiveFlight = {
@@ -32,12 +33,6 @@ type SkyResponse = {
   updatedAt: string;
   warnings: string[];
 };
-
-function aircraftImage(type: string) {
-  if (/^(B7[4-8]|A3[0-2]|BCS)/.test(type)) return "/aircraft/narrowbody.png";
-  if (/^(B7[6-9]|A3[3-5]|A38)/.test(type)) return "/aircraft/widebody.png";
-  return "/aircraft/regional.png";
-}
 
 function weatherLabel(code: number) {
   if (code === 0) return "Clear sky";
@@ -149,8 +144,6 @@ export default function LiveSky({ onModeChange }: { onModeChange: (mode: "live" 
   const shownDistanceKm = selectedAircraft?.distanceKm ?? flight?.distanceKm ?? 0;
   const shownAgeSeconds = selectedAircraft?.seenSeconds ?? flight?.seenSeconds ?? 0;
   const positionEstimated = Boolean(selectedAircraft?.estimated);
-  const aircraftOffset = progress == null ? 0 : (progress - 50) * 0.6;
-  const aircraftScale = progress == null ? 1 : 1 + 0.08 * Math.sin(Math.PI * progress / 100) ** 2;
   const flightHeading = error ? "Live feed interrupted" : crossing?.motion === "approaching" ? "Drawing closer" : crossing?.motion === "leaving" ? "Heading away" : "Live aircraft nearby";
   const nextAircraft = flight ? aircraft
     .filter((plane) => plane.hex !== flight.hex && plane.distanceKm <= ZONE_RADIUS_KM && plane.seenSeconds <= 90)
@@ -224,9 +217,7 @@ export default function LiveSky({ onModeChange }: { onModeChange: (mode: "live" 
         </div>
       </>}
       </BoardingPassDisplay>
-      {flight ? <div className="live-aircraft-column">
-        <div className="live-aircraft-scene" style={{ transform: `translateX(${aircraftOffset}px) scale(${aircraftScale})` }}><img src={aircraftImage(flight.aircraftType ?? "")} alt="" aria-hidden="true" /></div>
-      </div> : <div className="quiet-orbit" aria-hidden="true"><span /><span /><span /><i /></div>}
+      {flight ? <div className="sky-aircraft-layer"><AircraftModel key={flight.hex} progress={progress} live /></div> : <div className="quiet-orbit" aria-hidden="true"><span /><span /><span /><i /></div>}
       {flight && <HeroProgressLine key={flight.hex} progress={progress} label={`${flightName} crossing the 5 nautical mile zone`} valueText={progress == null ? "Progress unavailable" : `${progress.toFixed(1)}% through the zone, estimated from the latest reported position and heading`} live />}
     </section>
 
