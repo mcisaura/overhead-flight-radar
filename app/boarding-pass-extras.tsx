@@ -27,8 +27,8 @@ export function BoardingPassStub({ callsign, flightNumber, flightIata, airline, 
   return <div className="boarding-pass-stub" aria-label="Flight identifiers and details">
     <div className="boarding-pass-stub-codes">
       <div><span>FLIGHT CODE · IATA</span><strong>{publicCode || "—"}</strong></div>
-      {rawFlight && rawFlight !== publicCode && <div><span>CALLSIGN · ICAO</span><strong>{rawFlight}</strong></div>}
-      {aircraftCode && <div><span>AIRCRAFT TYPE</span><strong>{aircraftCode}</strong></div>}
+      <div><span>CALLSIGN · ICAO</span><strong>{rawFlight && rawFlight !== publicCode ? rawFlight : "—"}</strong></div>
+      <div><span>AIRCRAFT TYPE</span><strong>{aircraftCode || "—"}</strong></div>
     </div>
     <div className="boarding-pass-stub-details">{children}</div>
   </div>;

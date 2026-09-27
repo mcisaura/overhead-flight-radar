@@ -40,7 +40,7 @@ function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox"
   } : null;
   const crossing = flight ? zoneProgress(demoPlace, flight) : null;
   const routeKnown = Boolean(selected?.origin && selected?.destination);
-  const mapAircraft = flight ? [flight] : [];
+  const mapAircraft = flight && selected ? [{ ...flight, origin: selected.origin, destination: selected.destination }] : [];
   const pathLength = selected ? zoneProgress(demoPlace, selected.aircraft)?.crossingKm ?? ZONE_RADIUS_KM * 2 : ZONE_RADIUS_KM * 2;
   const crossingDurationMs = pathLength / ((selected?.aircraft.speedKts ?? 200) * 1.852) * 3_600_000 / 30;
   const aircraftScale = .88 + .24 * Math.sin(Math.PI * progress / 100) ** 2;
@@ -125,11 +125,11 @@ function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox"
       <section className={`sky-stage sky-${phase} ${flight ? "has-flight" : ""}`} aria-labelledby="hero-title">
         <div className="sky-art" aria-hidden="true" />
         <div className="sky-overlay" aria-hidden="true" />
-        <BoardingPassDisplay displayKey={selected?.id ?? "quiet"} active={Boolean(flight && selected)}>
+        <BoardingPassDisplay displayKey={flight && selected ? `${selected.id}:${crossingStatus}` : "quiet"} active={Boolean(flight && selected)}>
         {flight && selected ? <>
             <div className="boarding-pass-main">
-              <div className="boarding-pass-topline"><span>OVERHEAD</span></div>
-              <h1 id="hero-title" className="boarding-pass-heading">{crossingStatus}</h1>
+              <div className="boarding-pass-topline"><p className="hero-status"><span className="signal-dot" /> Sample flight</p><span>OVERHEAD</span></div>
+              <h1 id="hero-title" className="boarding-pass-heading"><span>{crossingStatus}</span></h1>
               <FlightIdentity {...flight} />
               <div className="boarding-pass-divider" aria-hidden="true" />
               <BoardingRoute origin={selected.origin} destination={selected.destination} />
@@ -147,9 +147,8 @@ function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox"
             </BoardingPassStub>
         </> : <>
           <div className="boarding-pass-main">
-            <div className="boarding-pass-topline"><span>OVERHEAD</span></div>
-            <p className="hero-status"><span className="signal-dot quiet-dot" /> Waiting for a plane</p>
-            <h1 id="hero-title" className="boarding-pass-heading">A quiet sky.<br /><em>For now.</em></h1>
+            <div className="boarding-pass-topline boarding-pass-topline-quiet"><span>OVERHEAD</span></div>
+            <h1 id="hero-title" className="boarding-pass-heading"><span>A quiet sky.<br /><em>For now.</em></span></h1>
             <p className="hero-description">No aircraft are inside the sample zone. Choose a simulated flight below to watch it enter, cross, and leave your sky.</p>
           </div>
           <div className="boarding-pass-stub">

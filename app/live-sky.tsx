@@ -151,6 +151,7 @@ export default function LiveSky({ onModeChange }: { onModeChange: (mode: "live" 
   const positionEstimated = Boolean(selectedAircraft?.estimated);
   const aircraftOffset = progress == null ? 0 : (progress - 50) * 0.6;
   const aircraftScale = progress == null ? 1 : 1 + 0.08 * Math.sin(Math.PI * progress / 100) ** 2;
+  const flightHeading = error ? "Live feed interrupted" : crossing?.motion === "approaching" ? "Drawing closer" : crossing?.motion === "leaving" ? "Heading away" : "Live aircraft nearby";
   const nextAircraft = flight ? aircraft
     .filter((plane) => plane.hex !== flight.hex && plane.distanceKm <= ZONE_RADIUS_KM && plane.seenSeconds <= 90)
     .map((plane) => {
@@ -181,11 +182,11 @@ export default function LiveSky({ onModeChange }: { onModeChange: (mode: "live" 
 
     <section className={`sky-stage live-stage ${flight ? "sky-active has-flight" : "sky-empty"}`} aria-labelledby="hero-title">
       <div className="sky-art" aria-hidden="true" /><div className="sky-overlay" aria-hidden="true" />
-      <BoardingPassDisplay displayKey={flight?.hex ?? "quiet"} active={Boolean(flight)}>
+      <BoardingPassDisplay displayKey={flight ? `${flight.hex}:${flightHeading}` : "quiet"} active={Boolean(flight)}>
       {flight ? <>
         <div className="boarding-pass-main">
-          <div className="boarding-pass-topline"><span>OVERHEAD</span></div>
-          <h1 id="hero-title" className="boarding-pass-heading">{error ? "Live feed interrupted" : crossing?.motion === "approaching" ? "Drawing closer" : crossing?.motion === "leaving" ? "Heading away" : "Live aircraft nearby"}</h1>
+          <div className="boarding-pass-topline"><p className="hero-status" role="status"><span className={`signal-dot ${error ? "quiet-dot" : ""}`} /> {error ? "Feed interrupted" : "Live flight"}</p><span>OVERHEAD</span></div>
+          <h1 id="hero-title" className="boarding-pass-heading"><span>{flightHeading}</span></h1>
           <FlightIdentity {...flight} />
           <div className="boarding-pass-divider" aria-hidden="true" />
           <BoardingRoute origin={flight.origin} destination={flight.destination} />
@@ -206,9 +207,8 @@ export default function LiveSky({ onModeChange }: { onModeChange: (mode: "live" 
         </BoardingPassStub>
       </> : <>
         <div className="boarding-pass-main">
-          <div className="boarding-pass-topline"><span>OVERHEAD</span></div>
-          <p className="hero-status" role="status"><span className={`signal-dot ${error ? "quiet-dot" : ""}`} /> {error ? "Live feed interrupted" : loading && !data ? "Checking the sky" : "Live sky"}</p>
-          <h1 id="hero-title" className="boarding-pass-heading">A quiet sky.<br /><em>For now.</em></h1>
+          <div className="boarding-pass-topline boarding-pass-topline-quiet"><span>OVERHEAD</span></div>
+          <h1 id="hero-title" className="boarding-pass-heading"><span>A quiet sky.<br /><em>For now.</em></span></h1>
           <p className="hero-description">{error || (loading ? "Finding aircraft heading toward the 5 nautical mile zone." : `No aircraft currently heading toward ${place.sample ? "central Chicago" : "your location"} within 5 nautical miles.`)}</p>
         </div>
         <div className="boarding-pass-stub">

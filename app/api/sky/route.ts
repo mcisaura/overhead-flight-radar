@@ -12,7 +12,7 @@ type AirLabsFlight = {
   speed?: number | null; aircraft_icao?: string | null; airline_icao?: string | null; airline_iata?: string | null; flight_number?: string | null; dep_iata?: string | null;
   arr_iata?: string | null; updated?: number | null; status?: string | null;
 };
-type AirLabsAirport = { iata_code?: string | null; city?: string | null; name?: string | null };
+type AirLabsAirport = { iata_code?: string | null; city?: string | null; name?: string | null; lat?: number | null; lng?: number | null };
 type AirLabsAirline = { name?: string | null; iata_code?: string | null; icao_code?: string | null };
 type AirLabsFleet = { model?: string | null; icao?: string | null };
 type AirLabsResponse<T> = { response?: T; error?: { code?: string; message?: string } };
@@ -74,10 +74,13 @@ async function getAirLabs<T>(endpoint: string, apiKey: string, params: Record<st
 
 async function getAirport(apiKey: string, code: string) {
   try {
-    const airports = await getAirLabs<AirLabsAirport[]>("airports", apiKey, { iata_code: code, _fields: "iata_code,city,name" }, 86_400);
-    return { code, city: airports[0]?.city || airports[0]?.name || code };
+    const airports = await getAirLabs<AirLabsAirport[]>("airports", apiKey, { iata_code: code, _fields: "iata_code,city,name,lat,lng" }, 86_400);
+    const airport = airports[0];
+    return { code, city: airport?.city || airport?.name || code,
+      lat: typeof airport?.lat === "number" && Number.isFinite(airport.lat) ? airport.lat : null,
+      lon: typeof airport?.lng === "number" && Number.isFinite(airport.lng) ? airport.lng : null };
   } catch {
-    return { code, city: code };
+    return { code, city: code, lat: null, lon: null };
   }
 }
 
@@ -122,7 +125,7 @@ export async function GET(request: NextRequest) {
 
   let flight = null;
   let nearbyCount = 0;
-  let aircraft: { hex: string; callsign: string | null; registration: string | null; aircraftType: string | null; airlineIcao: string | null; airlineIata: string | null; flightNumber: string | null; originCode: string | null; destinationCode: string | null; lat: number; lon: number; heading: number | null; altitudeFt: number | null; speedKts: number | null; distanceKm: number; seenSeconds: number }[] = [];
+  let aircraft: { hex: string; callsign: string | null; registration: string | null; aircraftType: string | null; airlineIcao: string | null; airlineIata: string | null; flightNumber: string | null; originCode: string | null; destinationCode: string | null; origin: Awaited<ReturnType<typeof getAirport>> | null; destination: Awaited<ReturnType<typeof getAirport>> | null; lat: number; lon: number; heading: number | null; altitudeFt: number | null; speedKts: number | null; distanceKm: number; seenSeconds: number }[] = [];
   if (aircraftResult.status === "fulfilled" && Array.isArray(aircraftResult.value)) {
     const candidates = aircraftResult.value
       .filter((item) => item.hex && typeof item.lat === "number" && typeof item.lng === "number" && (item.status === "en-route" || item.status === "active"))
@@ -140,31 +143,38 @@ export async function GET(request: NextRequest) {
       .filter((entry) => entry.distanceKm <= ZONE_RADIUS_KM && entry.seenSeconds !== null && entry.seenSeconds <= 60)
       .sort((a, b) => a.distanceKm - b.distanceKm);
     nearbyCount = candidates.length;
-    aircraft = candidates.map(({ item, distanceKm, altitudeFt, seenSeconds }) => ({
-      hex: item.hex!, callsign: item.flight_icao || item.flight_iata || null,
-      registration: item.reg_number || null, aircraftType: item.aircraft_icao || null,
-      airlineIcao: item.airline_icao || null, airlineIata: item.airline_iata || null, flightNumber: item.flight_number || null,
-      originCode: item.dep_iata?.trim() || null, destinationCode: item.arr_iata?.trim() || null,
-      lat: item.lat!, lon: item.lng!, heading: typeof item.dir === "number" && Number.isFinite(item.dir) ? item.dir : null,
-      altitudeFt, speedKts: typeof item.speed === "number" ? item.speed / 1.852 : null,
-      distanceKm, seenSeconds: seenSeconds!,
-    }));
     const trackedHex = request.nextUrl.searchParams.get("selected")?.toLowerCase();
     const tracked = candidates.find((candidate) => candidate.item.hex?.toLowerCase() === trackedHex && candidate.projectedDistanceKm <= ZONE_RADIUS_KM);
     const selected = tracked ?? candidates
       .filter((candidate) => candidate.approaching && candidate.projectedDistanceKm <= ZONE_RADIUS_KM)
       .sort((a, b) => a.projectedDistanceKm - b.projectedDistanceKm)[0];
+    const routeCandidates = candidates.slice(0, 16);
+    if (selected && !routeCandidates.includes(selected)) routeCandidates.push(selected);
+    const airportCodes = [...new Set(routeCandidates.flatMap(({ item }) => [item.dep_iata?.trim(), item.arr_iata?.trim()]).filter((code): code is string => Boolean(code)))];
+    const airportList = await Promise.all(airportCodes.map((code) => getAirport(apiKey, code)));
+    const airportsByCode = new Map(airportList.map((airport) => [airport.code, airport]));
+    aircraft = candidates.map(({ item, distanceKm, altitudeFt, seenSeconds }) => ({
+      hex: item.hex!, callsign: item.flight_icao || item.flight_iata || null,
+      registration: item.reg_number || null, aircraftType: item.aircraft_icao || null,
+      airlineIcao: item.airline_icao || null, airlineIata: item.airline_iata || null, flightNumber: item.flight_number || null,
+      originCode: item.dep_iata?.trim() || null, destinationCode: item.arr_iata?.trim() || null,
+      origin: airportsByCode.get(item.dep_iata?.trim() || "") ?? null,
+      destination: airportsByCode.get(item.arr_iata?.trim() || "") ?? null,
+      lat: item.lat!, lon: item.lng!, heading: typeof item.dir === "number" && Number.isFinite(item.dir) ? item.dir : null,
+      altitudeFt, speedKts: typeof item.speed === "number" ? item.speed / 1.852 : null,
+      distanceKm, seenSeconds: seenSeconds!,
+    }));
     if (selected) {
       const item = selected.item;
       const originCode = item.dep_iata?.trim() || null;
       const destinationCode = item.arr_iata?.trim() || null;
       const airlineIcao = item.airline_icao || item.flight_icao?.match(/^([A-Z]{3})\d/)?.[1] || null;
-      const [origin, destination, airlineLookup, aircraftModel] = await Promise.all([
-        originCode ? getAirport(apiKey, originCode) : Promise.resolve(null),
-        destinationCode ? getAirport(apiKey, destinationCode) : Promise.resolve(null),
+      const [airlineLookup, aircraftModel] = await Promise.all([
         getAirline(apiKey, airlineIcao, item.airline_iata || null),
         getAircraftModel(apiKey, item.hex!),
       ]);
+      const origin = originCode ? airportsByCode.get(originCode) ?? null : null;
+      const destination = destinationCode ? airportsByCode.get(destinationCode) ?? null : null;
       const airline = airlineLookup ?? airlineIdentity(airlineIcao, item.airline_iata);
       const callsign = item.flight_icao || item.flight_iata || null;
       const displayName = displayFlightName(callsign, airline, item.flight_number);

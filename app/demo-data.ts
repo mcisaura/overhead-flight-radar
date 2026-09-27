@@ -8,8 +8,8 @@ type DemoFlight = {
   label: string;
   description: string;
   aircraft: MapAircraft & { altitudeFt: number };
-  origin: { code: string; city: string } | null;
-  destination: { code: string; city: string } | null;
+  origin: { code: string; city: string; lat: number; lon: number } | null;
+  destination: { code: string; city: string; lat: number; lon: number } | null;
 };
 
 export function distanceFromDemoPlace(lat: number, lon: number) {
@@ -28,17 +28,17 @@ export const demoFlights: DemoFlight[] = [
   {
     id: "arrival", label: "O’Hare arrival", description: "An airliner on approach",
     aircraft: plane("d0a001", "UAL4827", "N742UV", "B738", 41.91455, -87.7239, 295, 3500, 205),
-    origin: { code: "FLL", city: "Ft Lauderdale" }, destination: { code: "ORD", city: "Chicago" },
+    origin: { code: "FLL", city: "Ft Lauderdale", lat: 26.073, lon: -80.153 }, destination: { code: "ORD", city: "Chicago", lat: 41.974, lon: -87.907 },
   },
   {
     id: "cross-country", label: "Cross-country", description: "A jet crossing the city",
     aircraft: plane("d0a002", "AAL3184", "N836AX", "A321", 41.95205, -87.5809, 82, 33000, 458),
-    origin: { code: "LAX", city: "Los Angeles" }, destination: { code: "JFK", city: "New York" },
+    origin: { code: "LAX", city: "Los Angeles", lat: 33.942, lon: -118.409 }, destination: { code: "JFK", city: "New York", lat: 40.641, lon: -73.778 },
   },
   {
     id: "cargo", label: "Cargo flight", description: "A freighter heading in",
     aircraft: plane("d0a003", "FDX6204", "N623FX", "B763", 41.81505, -87.6234, 346, 5700, 225),
-    origin: { code: "MEM", city: "Memphis" }, destination: { code: "ORD", city: "Chicago" },
+    origin: { code: "MEM", city: "Memphis", lat: 35.042, lon: -89.977 }, destination: { code: "ORD", city: "Chicago", lat: 41.974, lon: -87.907 },
   },
   {
     id: "helicopter", label: "Local helicopter", description: "A short local flight",
