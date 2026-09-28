@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { ArrowRight, Check, CloudSun, Helicopter, MapPin, Navigation2, Pause, Plane, PlaneLanding, Play, RotateCcw } from "lucide-react";
 import FlightMap from "./flight-map";
 import LiveSky, { type Place } from "./live-sky";
@@ -217,6 +218,7 @@ function DemoHome({ onModeChange, weatherUnit, onWeatherUnitChange }: { onModeCh
             </button>;
           })}
         </div>
+        <Link className="concept-link" href="/concept/houston">Explore the Houston demo concept <ArrowRight size={16} /></Link>
       </section>
 
       <div className="sky-dashboard">

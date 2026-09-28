@@ -298,6 +298,9 @@ button:disabled { opacity: .6; cursor: wait; }
 .manual-form button { height: 44px; padding: 0 18px; border: 0; border-radius: 8px; background: var(--ocean-deep); color: white; font-size: 13px; font-weight: 700; }
 .manual-form button:hover { background: #103b4f; }
 .site-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px 24px; border-top: 1px solid var(--rule); padding: 25px clamp(24px, 5vw, 80px); color: var(--ink-soft); font-size: 12px; }
+.concept-link { display: inline-flex; align-items: center; gap: 6px; width: max-content; margin-top: 18px; color: var(--ocean-deep); font-size: 12px; font-weight: 800; text-decoration: none; }
+.concept-link:hover { text-decoration: underline; text-underline-offset: 4px; }
+.site-footer .concept-link { margin-top: 0; }
 .weather-unit-control { display: inline-flex; align-items: center; gap: 10px; white-space: nowrap; font-weight: 650; }
 .weather-unit-toggle { display: inline-flex; padding: 3px; border: 1px solid var(--rule); border-radius: 8px; background: #f1f5f4; }
 .weather-unit-toggle button { min-width: 35px; min-height: 29px; border: 0; border-radius: 5px; background: transparent; color: var(--ink-soft); font-size: 12px; font-weight: 800; }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { ArrowRight, CloudSun, LocateFixed, MapPin, Navigation2, RefreshCw } from "lucide-react";
 import FlightMap, { type MapAircraft } from "./flight-map";
 import ModeToggle from "./mode-toggle";
@@ -251,6 +252,6 @@ export default function LiveSky({ onModeChange, place, onPlaceChange, weatherUni
       </article></aside>
     </div>
 
-    <footer className="site-footer"><span className="footer-brand">overhead<span className="brand-period">.</span></span><WeatherUnitToggle value={weatherUnit} onChange={onWeatherUnitChange} /><span className="live-attribution">Data: <a href="https://airlabs.co/">AirLabs</a> · <a href="https://open-meteo.com/">Open-Meteo</a> · Map: <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a></span><ModelCredits /></footer>
+    <footer className="site-footer"><span className="footer-brand">overhead<span className="brand-period">.</span></span><Link className="concept-link" href="/concept/houston">Houston concept <ArrowRight size={15} /></Link><WeatherUnitToggle value={weatherUnit} onChange={onWeatherUnitChange} /><span className="live-attribution">Data: <a href="https://airlabs.co/">AirLabs</a> · <a href="https://open-meteo.com/">Open-Meteo</a> · Map: <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a></span><ModelCredits /></footer>
   </main>;
 }
