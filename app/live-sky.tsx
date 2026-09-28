@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { ArrowRight, CloudSun, LocateFixed, MapPin, Navigation2, RefreshCw } from "lucide-react";
 import FlightMap, { type MapAircraft } from "./flight-map";
 import ModeToggle from "./mode-toggle";
@@ -156,6 +155,7 @@ export default function LiveSky({ onModeChange, place, onPlaceChange, weatherUni
     }
   }, [flight, closestAircraft?.hex, error]);
   const routeKnown = Boolean(flight?.origin && flight?.destination);
+  const routeImplausible = flight?.routeStatus === "implausible";
   const flightName = flight ? flightIdentityText(flight) : "Aircraft";
   const crossing = selectedAircraft ? zoneProgress(place, selectedAircraft) : flight?.zoneProgress ?? null;
   const progress = crossing?.percent ?? null;
@@ -163,7 +163,9 @@ export default function LiveSky({ onModeChange, place, onPlaceChange, weatherUni
   const shownAgeSeconds = selectedAircraft?.seenSeconds ?? flight?.seenSeconds ?? 0;
   const positionEstimated = Boolean(selectedAircraft?.estimated);
   const flightHeading = error ? "Live feed interrupted" : crossing?.motion === "approaching" ? "Drawing closer" : crossing?.motion === "leaving" ? "Heading away" : "Live aircraft nearby";
-  const liveRouteSummary = flight?.origin && flight.destination
+  const liveRouteSummary = routeImplausible
+    ? "AirLabs reported route endpoints that do not match this aircraft’s current position, so they are hidden."
+    : flight?.origin && flight.destination
     ? `AirLabs lists this flight from ${flight.origin.city} to ${flight.destination.city}.`
     : "Route endpoints are unavailable for this aircraft.";
   const minutesToZoneExit = crossing && selectedAircraft?.speedKts && selectedAircraft.speedKts > 0
@@ -198,8 +200,8 @@ export default function LiveSky({ onModeChange, place, onPlaceChange, weatherUni
           <FlightIdentity {...flight} />
           <div className="boarding-pass-divider" aria-hidden="true" />
           <BoardingRoute origin={flight.origin} destination={flight.destination} />
-          {!routeKnown && <p className="boarding-pass-route-note">Flight path could not be confirmed</p>}
-        </> : <p className="hero-description">{error || (loading ? "Finding aircraft in the 5 nautical mile zone." : `No aircraft currently reported within 5 nautical miles of ${place.sample ? "central Chicago" : "your location"}.`)}</p>}
+          {!routeKnown && <p className="boarding-pass-route-note">{routeImplausible ? "Reported route does not match the aircraft’s position" : "Flight path could not be confirmed"}</p>}
+        </> : <p className="hero-description">{error || (loading ? "Finding aircraft in the 5 nautical mile zone." : `No aircraft currently reported within 5 nautical miles of ${place.sample ? "downtown Houston" : "your location"}.`)}</p>}
       </div>
       {flight ?
         <BoardingPassStub callsign={flight.callsign} flightNumber={flight.flightNumber} flightIata={flight.flightIata} airline={flight.airline} aircraftType={flight.aircraftType}>
@@ -223,7 +225,7 @@ export default function LiveSky({ onModeChange, place, onPlaceChange, weatherUni
           <div className="boarding-pass-stub-details">
             <div className="live-actions"><button type="button" className="primary-button" onClick={useLocation} disabled={locating}><LocateFixed size={17} />{locating ? "Finding your location…" : "Use my location"}</button><button type="button" className="refresh-button" onClick={() => setRefreshKey((key) => key + 1)}><RefreshCw size={15} />Refresh</button></div>
             {locationError && <p className="live-location-error" role="status">{locationError}</p>}
-            {place.sample && <p className="live-place-note">Showing real flights over Chicago until you choose your location.</p>}
+            {place.sample && <p className="live-place-note">Showing real flights over Houston until you choose your location.</p>}
           </div>
         </div>}
       </BoardingPassDisplay>
@@ -232,12 +234,12 @@ export default function LiveSky({ onModeChange, place, onPlaceChange, weatherUni
     </section>
 
     <div className="sky-dashboard">
-      <FlightMap lat={place.lat} lon={place.lon} aircraft={aircraft} routeAircraft={data?.aircraft ?? noAircraft} closestHex={flight?.hex ?? null} loading={loading && !data} unavailable={Boolean(error)} locationLabel={place.sample ? "Central Chicago" : "Your location"} />
+      <FlightMap lat={place.lat} lon={place.lon} aircraft={aircraft} routeAircraft={data?.aircraft ?? noAircraft} closestHex={flight?.hex ?? null} loading={loading && !data} unavailable={Boolean(error)} locationLabel={place.sample ? "Downtown Houston" : "Your location"} />
       <aside className="flight-sidebar" aria-label="Live flight details"><article className="detail-panel flight-panel">
         <div className="detail-title"><Navigation2 size={18} strokeWidth={1.8} /><h3 title={flight?.callsign || undefined}>{flightName}</h3></div>
         {flight ? <><div className="airport-row"><div><strong className="airport-code">{flight.origin?.code ?? "···"}</strong><span className="airport-city">{flight.origin?.city ?? "Origin unknown"}</span></div><ArrowRight className="airport-connector" size={25} strokeWidth={1.3} aria-hidden="true" /><div><strong className="airport-code">{flight.destination?.code ?? "···"}</strong><span className="airport-city">{flight.destination?.city ?? "Destination unknown"}</span></div></div>
           <div className="stat-row"><div><span>Altitude</span><strong>{flight.altitudeFt == null ? "—" : `${Math.round(flight.altitudeFt).toLocaleString()} ft`}</strong></div><div><span>Ground speed</span><strong>{flight.speedKts == null ? "—" : `${Math.round(flight.speedKts)} kt`}</strong></div><div><span>Distance</span><strong>{shownDistanceKm.toFixed(1)} km</strong></div></div>
-          <p className="data-note">{routeKnown ? "Route reported by AirLabs" : "Route unavailable"} · Last report {Math.round(shownAgeSeconds)} sec ago{positionEstimated ? " · Position estimated" : ""}</p>
+          <p className="data-note">{routeKnown ? "Route reported by AirLabs" : routeImplausible ? "Inconsistent reported route withheld" : "Route unavailable"} · Last report {Math.round(shownAgeSeconds)} sec ago{positionEstimated ? " · Position estimated" : ""}</p>
           <div className="scenario-brief">
             <span className="scenario-brief-label">FLIGHT BRIEF</span>
             <h4>{crossing?.motion === "approaching" ? "Before closest pass" : crossing?.motion === "leaving" ? "After closest pass" : "Aircraft nearby"}</h4>
@@ -252,6 +254,6 @@ export default function LiveSky({ onModeChange, place, onPlaceChange, weatherUni
       </article></aside>
     </div>
 
-    <footer className="site-footer"><span className="footer-brand">overhead<span className="brand-period">.</span></span><Link className="concept-link" href="/concept/houston">Houston concept <ArrowRight size={15} /></Link><WeatherUnitToggle value={weatherUnit} onChange={onWeatherUnitChange} /><span className="live-attribution">Data: <a href="https://airlabs.co/">AirLabs</a> · <a href="https://open-meteo.com/">Open-Meteo</a> · Map: <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a></span><ModelCredits /></footer>
+    <footer className="site-footer"><span className="footer-brand">overhead<span className="brand-period">.</span></span><WeatherUnitToggle value={weatherUnit} onChange={onWeatherUnitChange} /><span className="live-attribution">Data: <a href="https://airlabs.co/">AirLabs</a> · <a href="https://open-meteo.com/">Open-Meteo</a> · Map: <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a></span><ModelCredits /></footer>
   </main>;
 }

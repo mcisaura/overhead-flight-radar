@@ -398,7 +398,7 @@ export default function AircraftModel({ progress = 50, live = false, visual = "a
     {status === "unavailable" && <span className="aircraft-model-status">3D aircraft unavailable</span>}
     {status === "ready" && <span className="aircraft-model-caption">
       <MousePointer2 size={17} strokeWidth={2.2} aria-hidden="true" />
-      <span><strong>3D aircraft illustration</strong><small>Drag to move · Shift/right-drag to rotate</small></span>
+      <span><strong>3D aircraft illustration</strong><small>Left-click drag to move · Right-click drag to rotate</small></span>
     </span>}
   </div>;
 }

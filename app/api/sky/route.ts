@@ -3,6 +3,7 @@ import { getDemoSky } from "../../demo-data";
 import { ZONE_RADIUS_KM, zoneProgress } from "../../../lib/zone-progress";
 import { estimatePosition } from "../../../lib/flight-estimate";
 import { airlineIdentity, displayAircraftType, displayFlightName } from "../../../lib/flight-display";
+import { reportedRouteIsPlausible } from "../../../lib/route-plausibility";
 
 export const runtime = "edge";
 
@@ -130,7 +131,7 @@ export async function GET(request: NextRequest) {
 
   let flight = null;
   let nearbyCount = 0;
-  let aircraft: { hex: string; callsign: string | null; registration: string | null; aircraftType: string | null; airlineIcao: string | null; airlineIata: string | null; flightNumber: string | null; originCode: string | null; destinationCode: string | null; origin: Awaited<ReturnType<typeof getAirport>> | null; destination: Awaited<ReturnType<typeof getAirport>> | null; lat: number; lon: number; heading: number | null; altitudeFt: number | null; speedKts: number | null; distanceKm: number; seenSeconds: number }[] = [];
+  let aircraft: { hex: string; callsign: string | null; registration: string | null; aircraftType: string | null; airlineIcao: string | null; airlineIata: string | null; flightNumber: string | null; originCode: string | null; destinationCode: string | null; origin: Awaited<ReturnType<typeof getAirport>> | null; destination: Awaited<ReturnType<typeof getAirport>> | null; routeStatus: "available" | "missing" | "implausible"; lat: number; lon: number; heading: number | null; altitudeFt: number | null; speedKts: number | null; distanceKm: number; seenSeconds: number }[] = [];
   if (aircraftResult.status === "fulfilled" && Array.isArray(aircraftResult.value)) {
     const candidates = aircraftResult.value
       .filter((item) => item.hex && typeof item.lat === "number" && typeof item.lng === "number" && (item.status === "en-route" || item.status === "active"))
@@ -152,33 +153,44 @@ export async function GET(request: NextRequest) {
     const airportCodes = [...new Set(routeCandidates.flatMap(({ item }) => [item.dep_iata?.trim(), item.arr_iata?.trim()]).filter((code): code is string => Boolean(code)))];
     const airportList = await Promise.all(airportCodes.map((code) => getAirport(apiKey, code)));
     const airportsByCode = new Map(airportList.map((airport) => [airport.code, airport]));
-    aircraft = candidates.map(({ item, distanceKm, altitudeFt, seenSeconds }) => ({
-      hex: item.hex!, callsign: item.flight_icao || item.flight_iata || null,
-      registration: item.reg_number || null, aircraftType: item.aircraft_icao || null,
-      airlineIcao: item.airline_icao || null, airlineIata: item.airline_iata || null, flightNumber: item.flight_number || null,
-      originCode: item.dep_iata?.trim() || null, destinationCode: item.arr_iata?.trim() || null,
-      origin: airportsByCode.get(item.dep_iata?.trim() || "") ?? null,
-      destination: airportsByCode.get(item.arr_iata?.trim() || "") ?? null,
-      lat: item.lat!, lon: item.lng!, heading: typeof item.dir === "number" && Number.isFinite(item.dir) ? item.dir : null,
-      altitudeFt, speedKts: typeof item.speed === "number" ? item.speed / 1.852 : null,
-      distanceKm, seenSeconds: seenSeconds!,
-    }));
-    if (selected) {
-      const item = selected.item;
+    aircraft = candidates.map(({ item, distanceKm, altitudeFt, seenSeconds }) => {
       const originCode = item.dep_iata?.trim() || null;
       const destinationCode = item.arr_iata?.trim() || null;
+      const reportedOrigin = airportsByCode.get(originCode || "") ?? null;
+      const reportedDestination = airportsByCode.get(destinationCode || "") ?? null;
+      const routePlausible = reportedRouteIsPlausible(
+        { lat: item.lat!, lon: item.lng! },
+        reportedOrigin,
+        reportedDestination,
+      );
+      return {
+        hex: item.hex!, callsign: item.flight_icao || item.flight_iata || null,
+        registration: item.reg_number || null, aircraftType: item.aircraft_icao || null,
+        airlineIcao: item.airline_icao || null, airlineIata: item.airline_iata || null, flightNumber: item.flight_number || null,
+        originCode: routePlausible ? originCode : null, destinationCode: routePlausible ? destinationCode : null,
+        origin: routePlausible ? reportedOrigin : null,
+        destination: routePlausible ? reportedDestination : null,
+        routeStatus: routePlausible ? (reportedOrigin && reportedDestination ? "available" : "missing") : "implausible",
+        lat: item.lat!, lon: item.lng!, heading: typeof item.dir === "number" && Number.isFinite(item.dir) ? item.dir : null,
+        altitudeFt, speedKts: typeof item.speed === "number" ? item.speed / 1.852 : null,
+        distanceKm, seenSeconds: seenSeconds!,
+      };
+    });
+    if (selected) {
+      const item = selected.item;
       const airlineIcao = item.airline_icao || item.flight_icao?.match(/^([A-Z]{3})\d/)?.[1] || null;
       const [airlineLookup, aircraftModel] = await Promise.all([
         getAirline(apiKey, airlineIcao, item.airline_iata || null),
         getAircraftModel(apiKey, item.hex!),
       ]);
-      const origin = originCode ? airportsByCode.get(originCode) ?? null : null;
-      const destination = destinationCode ? airportsByCode.get(destinationCode) ?? null : null;
       const airline = airlineLookup ?? airlineIdentity(airlineIcao, item.airline_iata);
       const callsign = item.flight_icao || item.flight_iata || null;
       const displayName = displayFlightName(callsign, airline, item.flight_number);
       const displayType = displayAircraftType(item.aircraft_icao, aircraftModel);
       const selectedAircraft = aircraft.find((plane) => plane.hex === item.hex);
+      const origin = selectedAircraft?.origin ?? null;
+      const destination = selectedAircraft?.destination ?? null;
+      const routeStatus = selectedAircraft?.routeStatus ?? "missing";
       if (selectedAircraft) Object.assign(selectedAircraft, { airline, displayName, displayType, aircraftModel });
       const altitudeKm = selected.altitudeFt === null ? null : selected.altitudeFt * 0.0003048;
       flight = {
@@ -189,7 +201,7 @@ export async function GET(request: NextRequest) {
         distanceKm: selected.distanceKm,
         elevationDeg: altitudeKm === null ? null : Math.atan2(altitudeKm, Math.max(selected.distanceKm, 0.1)) * 180 / Math.PI,
         seenSeconds: selected.seenSeconds, origin, destination,
-        routeStatus: origin && destination ? "available" : "missing", routeSource: "airlabs",
+        routeStatus, routeSource: "airlabs",
         zoneProgress: zoneProgress({ lat, lon }, { lat: item.lat!, lon: item.lng!, heading: typeof item.dir === "number" ? item.dir : null }),
       };
     }

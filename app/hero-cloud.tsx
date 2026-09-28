@@ -77,6 +77,9 @@ export default function HeroCloud() {
     } | null = null;
     const materials: THREE.Material[] = [];
     const render = () => { if (alive && visible && !document.hidden) renderer.render(scene, camera); };
+    const hasReturnMotion = () => movingClouds.some((cloud) =>
+      Math.abs(cloud.dragX) >= .0005 || Math.abs(cloud.dragY) >= .0005
+      || Math.abs(cloud.turnX) >= .0005 || Math.abs(cloud.turnY) >= .0005 || Math.abs(cloud.turnZ) >= .0005);
     const positionClouds = (time: number, elapsedMs = 0) => {
       movingClouds.forEach((cloud) => {
         if (gesture?.cloud !== cloud && elapsedMs > 0) {
@@ -86,6 +89,11 @@ export default function HeroCloud() {
           cloud.turnX *= 1 - settle;
           cloud.turnY *= 1 - settle;
           cloud.turnZ *= 1 - settle;
+          if (Math.abs(cloud.dragX) < .0005) cloud.dragX = 0;
+          if (Math.abs(cloud.dragY) < .0005) cloud.dragY = 0;
+          if (Math.abs(cloud.turnX) < .0005) cloud.turnX = 0;
+          if (Math.abs(cloud.turnY) < .0005) cloud.turnY = 0;
+          if (Math.abs(cloud.turnZ) < .0005) cloud.turnZ = 0;
         }
         cloud.group.position.x = cloud.x + Math.sin(time * .33 + cloud.phase) * .12 + cloud.dragX;
         cloud.group.position.y = cloud.y + Math.sin(time * .52 + cloud.phase * 1.4) * .09 + cloud.dragY;
@@ -98,7 +106,11 @@ export default function HeroCloud() {
         lastFrame = 0;
         return;
       }
-      if (lastFrame === 0 || time - lastFrame >= 40) {
+      // Idle clouds can render at a lower power-friendly cadence. Pointer
+      // interaction and the spring-back need every animation frame so the
+      // return does not visibly step between positions.
+      const interactiveMotion = Boolean(gesture) || hasReturnMotion();
+      if (lastFrame === 0 || interactiveMotion || time - lastFrame >= 40) {
         const elapsedMs = lastFrame === 0 ? 0 : Math.min(time - lastFrame, 100);
         elapsedSeconds += elapsedMs / 1000;
         lastFrame = time;
@@ -319,10 +331,10 @@ export default function HeroCloud() {
     };
   }, []);
 
-  return <div className="hero-cloud" ref={rootRef} role="img" aria-label="Interactive 3D clouds. Drag to move; Shift or right-drag to rotate.">
+  return <div className="hero-cloud" ref={rootRef} role="img" aria-label="Interactive 3D clouds. Left-click drag to move; right-click drag to rotate.">
     <span className="aircraft-model-caption">
       <MousePointer2 size={17} strokeWidth={2.2} aria-hidden="true" />
-      <span><strong>3D cloud illustration</strong><small>Drag to move · Shift/right-drag to rotate</small></span>
+      <span><strong>3D cloud illustration</strong><small>Left-click drag to move · Right-click drag to rotate</small></span>
     </span>
   </div>;
 }

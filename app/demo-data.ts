@@ -1,7 +1,7 @@
 import type { MapAircraft } from "./flight-map";
 import { positionAtZoneProgress, zoneProgress } from "../lib/zone-progress";
 
-export const demoPlace = { lat: 41.8781, lon: -87.6298, label: "Chicago · sample sky" };
+export const demoPlace = { lat: 29.7604, lon: -95.3698, label: "Downtown Houston · sample sky" };
 
 type FlightProfilePoint = { altitudeFt: number; speedKts: number };
 type FlightProfile = [FlightProfilePoint, FlightProfilePoint, FlightProfilePoint];
@@ -90,58 +90,58 @@ function plane(hex: string, callsign: string, registration: string, aircraftType
 
 export const demoFlights: DemoFlight[] = [
   {
-    id: "arrival", label: "O’Hare arrival", description: "737-800 · Fort Lauderdale → Chicago",
+    id: "iah-arrival", label: "Intercontinental arrival", description: "United 737 · Los Angeles → Houston",
     scenario: {
       title: "A jet on approach",
-      summary: "A fictional United flight crosses central Chicago from southeast to northwest on its way to O’Hare. Its path passes close to the observation point.",
-      routeNote: "Illustrative Fort Lauderdale to O’Hare route",
+      summary: "A fictional United flight crosses downtown Houston on its way to George Bush Intercontinental Airport. Its path passes close to the observation point.",
+      routeNote: "Illustrative Los Angeles to George Bush Intercontinental route",
       phases: [
-        "Watch the jet enter from the southeast and track northwest toward the city.",
-        "The planned track passes almost directly over the sample location.",
-        "The jet continues northwest toward O’Hare after crossing the zone.",
+        "Watch the jet enter southwest of downtown and track northeast across the city.",
+        "The planned track passes close to the downtown observation point.",
+        "The jet continues northeast toward Intercontinental after crossing the zone.",
       ],
     },
-    aircraft: plane("d0a001", "UAL4827", "N742UV", "B738", 41.91455, -87.7239, 295, 4200, 210),
-    profile: [{ altitudeFt: 4200, speedKts: 210 }, { altitudeFt: 3500, speedKts: 190 }, { altitudeFt: 2800, speedKts: 170 }],
-    origin: { code: "FLL", city: "Ft Lauderdale", lat: 26.073, lon: -80.153 }, destination: { code: "ORD", city: "Chicago", lat: 41.974, lon: -87.907 },
+    aircraft: plane("a0b001", "UAL2147", "N782UA", "B738", 29.75, -95.39, 35, 4500, 210),
+    profile: [{ altitudeFt: 4500, speedKts: 210 }, { altitudeFt: 3800, speedKts: 190 }, { altitudeFt: 3100, speedKts: 170 }],
+    origin: { code: "LAX", city: "Los Angeles", lat: 33.9425, lon: -118.4081 }, destination: { code: "IAH", city: "Houston", lat: 29.9844, lon: -95.3414 },
   },
   {
-    id: "private-plane", label: "Private crossing", description: "Cessna 310 · lakefront to southwest",
+    id: "private-crossing", label: "Private city crossing", description: "Cessna 310 · west to east",
     scenario: {
       title: "A twin-engine city crossing",
-      summary: "A fictional Cessna 310 enters from the northeast, crosses north of the observation point, and continues southwest. Airport endpoints are intentionally unspecified.",
+      summary: "A fictional Cessna 310 enters from west Houston, crosses north of the downtown observation point, and continues east. Airport endpoints are intentionally unspecified.",
       routeNote: "Local crossing · airport endpoints unspecified",
-      localSegment: { entry: { code: "NE", city: "Lake Michigan" }, exit: { code: "SW", city: "Southwest Chicago" } },
+      localSegment: { entry: { code: "W", city: "West Houston" }, exit: { code: "E", city: "East Houston" } },
       phases: [
-        "The Cessna enters from the lakefront side of the sample zone.",
-        "Its track stays north of the observation point at closest approach.",
-        "The Cessna continues southwest across the city.",
+        "The Cessna enters from the west side of the Houston sample zone.",
+        "Its track stays north of downtown at closest approach.",
+        "The Cessna continues east across the city.",
       ],
     },
-    aircraft: plane("d0a005", "N310JP", "N310JP", "C310", 41.902, -87.656, 242, 2800, 140),
-    profile: [{ altitudeFt: 2800, speedKts: 140 }, { altitudeFt: 3200, speedKts: 150 }, { altitudeFt: 3400, speedKts: 155 }],
+    aircraft: plane("a0b002", "N310HT", "N310HT", "C310", 29.784, -95.392, 91, 2600, 135),
+    profile: [{ altitudeFt: 2600, speedKts: 135 }, { altitudeFt: 3000, speedKts: 145 }, { altitudeFt: 3200, speedKts: 150 }],
     origin: null, destination: null,
   },
   {
-    id: "helicopter", label: "Helicopter patrol", description: "Bell 407 · low-level city crossing",
+    id: "helicopter", label: "Bayou helicopter", description: "Bell 407 · downtown patrol",
     scenario: {
       title: "A low-level patrol",
-      summary: "A fictional Bell 407 moves southwest across central Chicago. Its planned path passes close to the sample location, lower and slower than the two planes.",
+      summary: "A fictional Bell 407 patrol moves southwest across downtown Houston. Its planned path passes close to the sample location, lower and slower than the two planes.",
       routeNote: "Local patrol · airport endpoints unspecified",
-      localSegment: { entry: { code: "NE", city: "Lake Michigan" }, exit: { code: "SW", city: "Southwest Chicago" } },
+      localSegment: { entry: { code: "NE", city: "Northeast Houston" }, exit: { code: "SW", city: "Southwest Houston" } },
       phases: [
-        "The helicopter enters from the northeast at low altitude.",
-        "Its track passes close to the observation point near mid-crossing.",
-        "The helicopter continues southwest beyond the sample zone.",
+        "The helicopter enters northeast of downtown at low altitude.",
+        "Its track passes close to the downtown observation point near mid-crossing.",
+        "The helicopter continues southwest over Houston beyond the sample zone.",
       ],
     },
-    aircraft: plane("d0a004", "N582QX", "N582QX", "B407", 41.889, -87.617, 232, 1800, 75),
-    profile: [{ altitudeFt: 1800, speedKts: 75 }, { altitudeFt: 2200, speedKts: 90 }, { altitudeFt: 2000, speedKts: 80 }],
+    aircraft: plane("a0b003", "N407HX", "N407HX", "B407", 29.765, -95.37, 215, 1200, 75),
+    profile: [{ altitudeFt: 1200, speedKts: 75 }, { altitudeFt: 1500, speedKts: 85 }, { altitudeFt: 1400, speedKts: 80 }],
     origin: null, destination: null,
   },
 ];
 
-export const demoWeather = { temperatureF: 72, cloudCover: 28, windMph: 9, code: 2, isDay: true };
+export const demoWeather = { temperatureF: 84, cloudCover: 34, windMph: 11, code: 2, isDay: true };
 
 export function getDemoSky(presetId?: string | null) {
   const selected = demoFlights.find((item) => item.id === presetId) ?? null;

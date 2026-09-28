@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { ArrowRight, Check, CloudSun, Helicopter, MapPin, Navigation2, Pause, Plane, PlaneLanding, Play, RotateCcw } from "lucide-react";
 import FlightMap from "./flight-map";
 import LiveSky, { type Place } from "./live-sky";
@@ -26,7 +25,7 @@ const DEMO_CROSSING_DURATION_MS = 30_000;
 
 export default function Home() {
   const [mode, setMode] = useState<"live" | "demo">("live");
-  const [place, setPlace] = useState<Place>({ lat: demoPlace.lat, lon: demoPlace.lon, label: "Chicago · live sky", sample: true });
+  const [place, setPlace] = useState<Place>({ lat: demoPlace.lat, lon: demoPlace.lon, label: "Houston · live sky", sample: true });
   const [weatherUnit, setWeatherUnit] = useState<WeatherUnit>("imperial");
   useEffect(() => { preloadAircraftScenes(); }, []);
   return mode === "live"
@@ -218,7 +217,6 @@ function DemoHome({ onModeChange, weatherUnit, onWeatherUnitChange }: { onModeCh
             </button>;
           })}
         </div>
-        <Link className="concept-link" href="/concept/houston">Explore the Houston demo concept <ArrowRight size={16} /></Link>
       </section>
 
       <div className="sky-dashboard">
