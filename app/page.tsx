@@ -12,6 +12,7 @@ import BoardingRoute from "./boarding-route";
 import { BoardingPassStats, BoardingPassStub } from "./boarding-pass-extras";
 import HeroProgressLine from "./hero-progress-line";
 import BoardingPassDisplay from "./boarding-pass-display";
+import FlipHeading from "./flip-heading";
 import AircraftModel from "./aircraft-model";
 import { aircraftVisualForFlight } from "../lib/aircraft-visual";
 import ModelCredits from "./model-credits";
@@ -166,14 +167,16 @@ function DemoHome({ onModeChange, weatherUnit, onWeatherUnitChange }: { onModeCh
           passReadyRef.current = true;
           startWhenReady();
         }}>
-        {flight && selected ? <>
-            <div className="boarding-pass-main">
-              <h1 id="hero-title" className="boarding-pass-heading"><span>{crossingStatus}</span></h1>
+        <div className="boarding-pass-main">
+          <FlipHeading text={flight && selected ? crossingStatus : "A quiet sky.\nFor now."} />
+          {flight && selected ? <>
               <FlightIdentity {...flight} />
               <div className="boarding-pass-divider" aria-hidden="true" />
               <BoardingRoute origin={routeEntry} destination={routeExit} zoneSegment={!routeKnown} />
               {!routeKnown && <p className="boarding-pass-route-note">{selected.scenario.routeNote}</p>}
-            </div>
+          </> : <p className="hero-description">No aircraft are inside the sample zone. Choose a simulated flight below to watch it enter, cross, and leave your sky.</p>}
+        </div>
+        {flight && selected ?
             <BoardingPassStub callsign={flight.callsign} aircraftType={flight.aircraftType}>
               <div className="hero-flight-details">
                 <BoardingPassStats altitudeFt={flight.altitudeFt} speedKts={flight.speedKts} distanceKm={flight.distanceKm} />
@@ -184,12 +187,7 @@ function DemoHome({ onModeChange, weatherUnit, onWeatherUnitChange }: { onModeCh
                 </div>
               </div>
             </BoardingPassStub>
-        </> : <>
-          <div className="boarding-pass-main">
-            <h1 id="hero-title" className="boarding-pass-heading"><span>A quiet sky.<br /><em>For now.</em></span></h1>
-            <p className="hero-description">No aircraft are inside the sample zone. Choose a simulated flight below to watch it enter, cross, and leave your sky.</p>
-          </div>
-          <div className="boarding-pass-stub">
+        : <div className="boarding-pass-stub">
             <div className="boarding-pass-stub-codes">
               <div><span>SKY STATUS</span><strong>No aircraft in the zone</strong></div>
               <div><span>OBSERVATION ZONE</span><strong>5 nautical miles</strong></div>
@@ -197,8 +195,7 @@ function DemoHome({ onModeChange, weatherUnit, onWeatherUnitChange }: { onModeCh
             <div className="boarding-pass-stub-details">
               <button type="button" className="primary-button" onClick={() => document.getElementById("presets-title")?.scrollIntoView({ behavior: "smooth", block: "start" })}>Simulate an arrival <ArrowRight size={18} /></button>
             </div>
-          </div>
-        </>}
+          </div>}
         </BoardingPassDisplay>
         {flight && selected && <div className="sky-aircraft-layer"><AircraftModel key={selected.id} progress={progress} visual={aircraftVisualForFlight(flight)} entranceRun={flightRun} onReady={() => {
           modelReadyRef.current = true;

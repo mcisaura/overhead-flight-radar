@@ -12,6 +12,7 @@ import { BoardingPassStats, BoardingPassStub } from "./boarding-pass-extras";
 import type { AirlineIdentity } from "../lib/flight-display";
 import HeroProgressLine from "./hero-progress-line";
 import BoardingPassDisplay from "./boarding-pass-display";
+import FlipHeading from "./flip-heading";
 import AircraftModel from "./aircraft-model";
 import { aircraftVisualForFlight } from "../lib/aircraft-visual";
 import ModelCredits from "./model-credits";
@@ -190,14 +191,16 @@ export default function LiveSky({ onModeChange, place, onPlaceChange, weatherUni
       <div className="sky-art" aria-hidden="true" /><div className="sky-overlay" aria-hidden="true" />
       {!flight && <HeroCloud />}
       <BoardingPassDisplay displayKey={flight ? `${flight.hex}:${flightHeading}` : "quiet"} active={Boolean(flight)}>
-      {flight ? <>
-        <div className="boarding-pass-main">
-          <h1 id="hero-title" className="boarding-pass-heading"><span>{flightHeading}</span></h1>
+      <div className="boarding-pass-main">
+        <FlipHeading text={flight ? flightHeading : "A quiet sky.\nFor now."} />
+        {flight ? <>
           <FlightIdentity {...flight} />
           <div className="boarding-pass-divider" aria-hidden="true" />
           <BoardingRoute origin={flight.origin} destination={flight.destination} />
           {!routeKnown && <p className="boarding-pass-route-note">Flight path could not be confirmed</p>}
-        </div>
+        </> : <p className="hero-description">{error || (loading ? "Finding aircraft in the 5 nautical mile zone." : `No aircraft currently reported within 5 nautical miles of ${place.sample ? "central Chicago" : "your location"}.`)}</p>}
+      </div>
+      {flight ?
         <BoardingPassStub callsign={flight.callsign} flightNumber={flight.flightNumber} flightIata={flight.flightIata} airline={flight.airline} aircraftType={flight.aircraftType}>
           <div className="hero-flight-details">
             <BoardingPassStats altitudeFt={flight.altitudeFt} speedKts={flight.speedKts} distanceKm={shownDistanceKm} />
@@ -211,12 +214,7 @@ export default function LiveSky({ onModeChange, place, onPlaceChange, weatherUni
             </div>}
           </div>
         </BoardingPassStub>
-      </> : <>
-        <div className="boarding-pass-main">
-          <h1 id="hero-title" className="boarding-pass-heading"><span>A quiet sky.<br /><em>For now.</em></span></h1>
-          <p className="hero-description">{error || (loading ? "Finding aircraft in the 5 nautical mile zone." : `No aircraft currently reported within 5 nautical miles of ${place.sample ? "central Chicago" : "your location"}.`)}</p>
-        </div>
-        <div className="boarding-pass-stub">
+      : <div className="boarding-pass-stub">
           <div className="boarding-pass-stub-codes">
             <div><span>SKY STATUS</span><strong>{loading && !data ? "Checking for aircraft" : error ? "Feed unavailable" : "No nearby aircraft"}</strong></div>
             <div><span>OBSERVATION ZONE</span><strong>5 nautical miles</strong></div>
@@ -226,8 +224,7 @@ export default function LiveSky({ onModeChange, place, onPlaceChange, weatherUni
             {locationError && <p className="live-location-error" role="status">{locationError}</p>}
             {place.sample && <p className="live-place-note">Showing real flights over Chicago until you choose your location.</p>}
           </div>
-        </div>
-      </>}
+        </div>}
       </BoardingPassDisplay>
       {flight && <div className="sky-aircraft-layer"><AircraftModel key={`${flight.hex}-${aircraftVisualForFlight(flight)}`} progress={progress} visual={aircraftVisualForFlight(flight)} live /></div>}
       {flight && <HeroProgressLine key={flight.hex} progress={progress} label={`${flightName} crossing the 5 nautical mile zone`} valueText={progress == null ? "Progress unavailable" : `${progress.toFixed(1)}% through the zone, estimated from the latest reported position and heading`} live />}
