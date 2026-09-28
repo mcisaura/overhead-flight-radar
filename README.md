@@ -1,6 +1,6 @@
 # Overhead
 
-Overhead shows aircraft currently reported within 5 nautical miles of a chosen location. Live mode opens on central Chicago, labeled as a reference location. Select **Use my location** to see the sky near you. The header contains the Live/Demo toggle, selected place, and a compact weather strip. Demo has three fictional flights and sample weather.
+Overhead shows aircraft currently reported within 5 nautical miles of a chosen location. Live mode opens on downtown Houston, labeled as a reference location. Select **Use my location** to see the sky near you. The header contains the Live/Demo toggle, selected place, and a compact weather strip. Demo has three fictional Houston flights and sample weather.
 
 The project was inspired by British Airways' 2013 **#LookUp** campaign, which connected planes in the sky to information shown on a billboard.
 
@@ -10,7 +10,7 @@ For a new chat or work session, start with [HANDOFF.md](HANDOFF.md). It records 
 
 | | Live | Demo |
 | --- | --- | --- |
-| Aircraft | Flights reported by AirLabs within 5 nautical miles of the selected location. The closest eligible aircraft is featured, and another takes over if it becomes closer. | Three preplanned fictional flights near the sample Chicago location: an airliner, a private plane, and a helicopter. |
+| Aircraft | Flights reported by AirLabs within 5 nautical miles of the selected location. The closest eligible aircraft is featured, and another takes over if it becomes closer. | Three preplanned fictional flights near downtown Houston: an airliner, a private plane, and a helicopter. |
 | Movement | Estimated between 30-second reports from the last known position, heading, and speed. A new report can correct the displayed position. | A planned crossing lasting 30 seconds per flight, with altitude and speed changing along the route. |
 | Weather | Current conditions from Open-Meteo for the selected location. | Labeled sample conditions stored with the app. |
 | Controls | **Use my location** and **Refresh**. A next-closest aircraft appears when one is available. | Choose a flight, pause or resume, scrub its position, replay, reset to entry, or clear the sky. |
@@ -27,7 +27,7 @@ npm ci
 npm run dev
 ```
 
-For Live mode, create `.env.local` with `AIRLABS_API_KEY=your_key` only if it does not already exist; do not overwrite a configured key. Open `http://localhost:5173/` for the app or `http://localhost:5173/concept/houston` for the Houston concept. Live data requires internet access. Stop the development server with `Ctrl+C`. To verify the project:
+For Live mode, create `.env.local` with `AIRLABS_API_KEY=your_key` only if it does not already exist; do not overwrite a configured key. Open `http://localhost:5173/` for the app. Live data requires internet access. Stop the development server with `Ctrl+C`. To verify the project:
 
 ```bash
 npx tsc --noEmit
@@ -38,6 +38,7 @@ npm run build
 ## Live data
 
 - **AirLabs:** nearby aircraft positions and their reported origin and destination, refreshed through the app every 30 seconds. The server caches each area query for 30 seconds and airport, airline, and fleet lookups for one day. Airline names and aircraft models come from AirLabs where available; common codes have local fallbacks. The selected airline's logo uses AirLabs' logo URL, and known airlines get brand color badges. Missing logos fall back to initials; unknown airlines use a neutral color. Hover or focus a flight name or aircraft model to see its raw code. The API key stays on the server in `.env.local` as `AIRLABS_API_KEY`. Missing altitude or route details are shown as unavailable.
+- Reported routes are checked against the aircraft's live position. If an aircraft is far outside a conservative corridor around the reported airport pair, the endpoints and route lines are withheld as inconsistent rather than shown as fact or replaced with guessed airports.
 - **Open-Meteo:** current weather, cached for ten minutes.
 - **OpenStreetMap:** map tiles, with attribution on the map.
 
@@ -45,17 +46,15 @@ The Live flight details sidebar has a Flight Brief when an aircraft is tracked. 
 
 The map uses pale, filtered OpenStreetMap raster tiles with projected flight lines. It loads when it nears the viewport and updates live marker positions without rebuilding route lines on every estimated-position tick. On desktop, the map and flight details card start together and have matching 500px minimum heights; on smaller screens they stack. The map controls and key sit inside the map, with no separate chart heading above it. For live flights, airport coordinates are looked up from AirLabs for up to the 16 nearest aircraft plus the tracked aircraft, then cached for one day. A solid line links a known departure airport to the aircraft and a dashed line projects onward to a known arrival airport; neither line is a recorded flight track. When both airport coordinates are available, **Full route** zooms out to show the endpoints. Otherwise the map shows a short heading projection in **Local sky** view. Demo routes use approximate airport coordinates and are illustrative.
 
-The hero aircraft is a generic 3D illustration rendered with Three.js in React. Commercial aircraft use the supplied Boeing 737-200 model, private and small fixed-wing aircraft use the Cessna 310, and helicopters and similar rotorcraft use the helicopter model. AirLabs' aircraft type code and model name determine the category; an airline identity helps identify commercial flights when the type is ambiguous. These models are visual stand-ins, while the boarding pass keeps each flight's reported type. Drag the aircraft to move it temporarily, or Shift-drag/right-drag to rotate it; it returns to the moving flight path on release. The renderer pauses when the scene is offscreen or the tab is hidden, then catches up to the current flight position when visible again. The live hero shows the closest eligible aircraft in the 5-nautical-mile zone, using estimated positions between reports. Another aircraft takes over when it becomes closer; if the zone is empty, the quiet-sky pass appears. Selecting a map marker previews that aircraft on the map without changing the hero. Reported positions can be delayed or missing. Live mode does not request browser location until the user selects **Use my location**. If location is unavailable, central Chicago remains the reference location.
+The hero aircraft is a generic 3D illustration rendered with Three.js in React. Commercial aircraft use the supplied Boeing 737-200 model, private and small fixed-wing aircraft use the Cessna 310, and helicopters and similar rotorcraft use the helicopter model. AirLabs' aircraft type code and model name determine the category; an airline identity helps identify commercial flights when the type is ambiguous. These models are visual stand-ins, while the boarding pass keeps each flight's reported type. Left-click drag the aircraft to move it temporarily, or right-click drag to rotate it; it returns to the moving flight path on release. The renderer pauses when the scene is offscreen or the tab is hidden, then catches up to the current flight position when visible again. The live hero shows the closest eligible aircraft in the 5-nautical-mile zone, using estimated positions between reports. Another aircraft takes over when it becomes closer; if the zone is empty, the quiet-sky pass appears. Selecting a map marker previews that aircraft on the map without changing the hero. Reported positions can be delayed or missing. Live mode does not request browser location until the user selects **Use my location**. If location is unavailable, downtown Houston remains the reference location.
 
-The three aircraft model files preload in sequence during browser idle time. Parsed scenes are reused, and replaying the same Demo flight keeps its WebGL renderer. The quiet-sky cloud model is loaded when needed; its three copies gently bob and tilt at different rates, pausing offscreen, in a hidden tab, or when reduced motion is requested. Each cloud can be dragged across the full hero or Shift-dragged/right-dragged to rotate it, then eases back to its idle position on release. The drag range keeps the cloud visible at the hero's edges. A dragged cloud passes in front of the boarding pass until it returns. The chosen Live location is kept when switching between Live and Demo during the current page session.
+The three aircraft model files preload in sequence during browser idle time. Parsed scenes are reused, and replaying the same Demo flight keeps its WebGL renderer. The quiet-sky cloud model is loaded when needed; its three copies gently bob and tilt at different rates, pausing offscreen, in a hidden tab, or when reduced motion is requested. Each cloud can be left-click dragged across the full hero or right-click dragged to rotate it, then eases back to its idle position on release. The drag range keeps the cloud visible at the hero's edges. A dragged cloud passes in front of the boarding pass until it returns. The chosen Live location is kept when switching between Live and Demo during the current page session.
 
 The live flight feed no longer calls ADSB.fi or ADSBdb.
 
 ## Demo
 
-The Demo contains three preplanned fictional flights near a sample Chicago location: an O’Hare-bound airliner, a private plane crossing north of the observation point, and a low-level helicopter passing close to it. The airliner has an illustrative airport route; the local flights have zone entry and exit directions but no invented airport endpoints. Positions follow a straight track with altitude and speed interpolated through entry, closest approach, and exit; playback movement follows the changing speed. Each on-screen crossing lasts 30 seconds, regardless of aircraft type. Select a preset to watch, pause, resume, replay, or scrub its position. The boarding pass heading changes from “Drawing closer” to “Heading away” as the sample aircraft crosses the zone. Demo flights and weather are local fixtures; switching to Demo does not request live flight or weather data. Map tiles still come from OpenStreetMap.
-
-A separate Houston concept at `/concept/houston` presents three additional fictional 30-second crossings over downtown Houston: an Intercontinental arrival, a private Cessna, and a helicopter patrol. It uses its own sample weather, map center, and dusk-inspired layout. The existing Chicago Demo remains available on the main page; a link below its scenarios and a link in the Live footer open the Houston page. The Houston page also links back to the main app.
+The Demo contains three preplanned fictional flights over downtown Houston: an arrival bound for George Bush Intercontinental Airport, a private plane crossing north of the observation point, and a low-level helicopter patrol passing close to it. The airliner has an illustrative airport route; the local flights have zone entry and exit directions but no invented airport endpoints. Positions follow a straight track with altitude and speed interpolated through entry, closest approach, and exit; playback movement follows the changing speed. Each on-screen crossing lasts 30 seconds, regardless of aircraft type. Select a preset to watch, pause, resume, replay, or scrub its position. The boarding pass heading changes from “Drawing closer” to “Heading away” as the sample aircraft crosses the zone. Demo flights and weather are local fixtures; switching to Demo does not request live flight or weather data. Map tiles still come from OpenStreetMap.
 
 ## Boarding pass
 
@@ -81,9 +80,9 @@ Projection stops 90 seconds after the underlying report so it can continue throu
 - `app/flight-map.tsx`: interactive Leaflet map.
 - `app/aircraft-model.tsx`, `lib/aircraft-visual.ts`: Three.js rendering and selection of the supplied aircraft models in Live and Demo.
 - `app/demo-data.ts`: Demo flights and weather.
-- `app/concept/houston/page.tsx`, `app/concept/houston/houston-data.ts`, `app/concept/houston/houston.css`: separate Houston demo concept, fixtures, and styling.
 - `app/flip-heading.tsx`: the boarding-pass split-flap headline used in Live and both demos.
 - `lib/zone-progress.ts`, `lib/flight-estimate.ts`, `lib/closest-approach.ts`: crossing calculations, movement estimates, and closest-approach messages.
+- `lib/route-plausibility.ts`: validation that suppresses clearly stale or mismatched reported airport pairs.
 
 Before public hosting, review the source terms and request limits for [AirLabs](https://airlabs.co/docs/flights), [Open-Meteo](https://open-meteo.com/en/terms), and [OpenStreetMap tiles](https://operations.osmfoundation.org/policies/tiles/). No deployment is configured here.
 
