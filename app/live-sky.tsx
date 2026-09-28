@@ -17,6 +17,7 @@ import { aircraftVisualForFlight } from "../lib/aircraft-visual";
 import ModelCredits from "./model-credits";
 import WeatherUnitToggle from "./weather-unit-toggle";
 import { formatTemperature, formatWind, type WeatherUnit } from "../lib/weather-units";
+import HeroCloud from "./hero-cloud";
 
 export type Place = { lat: number; lon: number; label: string; sample: boolean };
 type LiveFlight = {
@@ -187,6 +188,7 @@ export default function LiveSky({ onModeChange, place, onPlaceChange, weatherUni
 
     <section className={`sky-stage live-stage ${flight ? "sky-active has-flight" : "sky-empty"}`} aria-labelledby="hero-title">
       <div className="sky-art" aria-hidden="true" /><div className="sky-overlay" aria-hidden="true" />
+      {!flight && <HeroCloud />}
       <BoardingPassDisplay displayKey={flight ? `${flight.hex}:${flightHeading}` : "quiet"} active={Boolean(flight)}>
       {flight ? <>
         <div className="boarding-pass-main">

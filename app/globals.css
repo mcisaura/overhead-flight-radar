@@ -67,6 +67,14 @@ button:disabled { opacity: .6; cursor: wait; }
 .sky-art, .sky-overlay { position: absolute; inset: 0; pointer-events: none; }
 .sky-art { background: url("/sky-backdrop.png") center center / cover no-repeat; transform: scale(1.015); }
 .sky-overlay { background: linear-gradient(90deg, #e3f1f8c9 0%, #e4f2f8a6 30%, #e5f2f726 58%, transparent 82%); }
+.hero-cloud { position: absolute; z-index: 1; inset: 0; width: 100%; height: 100%; pointer-events: auto; touch-action: none; filter: drop-shadow(0 24px 22px #315f7633); }
+.hero-cloud.is-dragging { z-index: 4; }
+.hero-cloud canvas { display: block; width: 100%; height: 100%; opacity: 0; transition: opacity .8s ease; }
+.hero-cloud.is-ready canvas { opacity: .9; }
+.hero-cloud .aircraft-model-caption { opacity: 0; transition: opacity .8s ease; }
+.hero-cloud.is-ready .aircraft-model-caption { opacity: 1; }
+.sky-stage:not(.has-flight) > .boarding-pass { position: relative; z-index: 2; }
+@media (prefers-reduced-motion: reduce) { .hero-cloud canvas, .hero-cloud .aircraft-model-caption { transition: none; } }
 .sky-active .sky-overlay, .sky-exiting .sky-overlay { background: linear-gradient(90deg, #e3f1f8ed 0%, #e4f2f8d3 31%, #e5f2f73d 62%, transparent 88%); }
 .sky-stage.night { color: #f8fcfa; background: #49677d; }
 .night .sky-art { filter: brightness(.58) saturate(.72) hue-rotate(12deg); }
@@ -957,8 +965,10 @@ button:disabled { opacity: .6; cursor: wait; }
 }
 @media (max-width: 760px) {
   .sky-stage.has-flight, .sky-stage.has-flight.live-stage { padding: 28px 28px 76px; }
+  .hero-cloud.is-ready canvas { opacity: .55; }
 }
 @media (max-width: 520px) {
+  .sky-stage:not(.has-flight) { padding-bottom: 185px; }
   .sky-stage.has-flight .sky-aircraft-layer { height: 205px; }
   .sky-stage.has-flight, .sky-stage.has-flight.live-stage { row-gap: 15px; padding: 24px 23px 62px; }
   .boarding-pass.hero-flight .boarding-pass-main { min-height: 380px; padding: 18px 20px 20px; }

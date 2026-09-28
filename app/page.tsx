@@ -16,6 +16,7 @@ import AircraftModel from "./aircraft-model";
 import { aircraftVisualForFlight } from "../lib/aircraft-visual";
 import ModelCredits from "./model-credits";
 import { preloadAircraftScenes } from "./aircraft-assets";
+import HeroCloud from "./hero-cloud";
 import WeatherUnitToggle from "./weather-unit-toggle";
 import { formatTemperature, formatWind, type WeatherUnit } from "../lib/weather-units";
 
@@ -159,6 +160,7 @@ function DemoHome({ onModeChange, weatherUnit, onWeatherUnitChange }: { onModeCh
       <section className={`sky-stage sky-${phase} ${flight ? "has-flight" : ""}`} aria-labelledby="hero-title">
         <div className="sky-art" aria-hidden="true" />
         <div className="sky-overlay" aria-hidden="true" />
+        {!flight && <HeroCloud />}
         <BoardingPassDisplay displayKey={displayKey} active={Boolean(flight && selected)} onDisplayed={(shownKey) => {
           if (shownKey !== displayKey) return;
           passReadyRef.current = true;
