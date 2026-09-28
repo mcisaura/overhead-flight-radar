@@ -4,6 +4,18 @@ Overhead shows aircraft currently reported within 5 nautical miles of a chosen l
 
 The project was inspired by British Airways' 2013 **#LookUp** campaign, which connected planes in the sky to information shown on a billboard.
 
+## Live and Demo at a glance
+
+| | Live | Demo |
+| --- | --- | --- |
+| Aircraft | Flights reported by AirLabs within 5 nautical miles of the selected location. The closest eligible aircraft is featured, and another takes over if it becomes closer. | Three preplanned fictional flights near the sample Chicago location: an airliner, a private plane, and a helicopter. |
+| Movement | Estimated between 30-second reports from the last known position, heading, and speed. A new report can correct the displayed position. | A planned crossing lasting 30 seconds per flight, with altitude and speed changing along the route. |
+| Weather | Current conditions from Open-Meteo for the selected location. | Labeled sample conditions stored with the app. |
+| Controls | **Use my location** and **Refresh**. A next-closest aircraft appears when one is available. | Choose a flight, pause or resume, scrub its position, replay, reset to entry, or clear the sky. |
+| Flight details | Reported information, which may be delayed or incomplete; closest-pass and exit estimates appear when they can be calculated. | Consistent details prepared for each fictional scenario. |
+
+Both modes use the same boarding-pass presentation, map, 3D aircraft interactions, quiet-sky clouds, and weather-unit toggle. The 3D models represent broad aircraft categories and may not match a live flight's exact aircraft type. Demo does not request live aircraft or weather data, though its map still loads OpenStreetMap tiles.
+
 ## Run locally
 
 Requires Node.js 22.13 or newer and npm:
@@ -44,7 +56,7 @@ The Demo contains three preplanned fictional flights near a sample Chicago locat
 
 ## Boarding pass
 
-The hero uses a boarding pass card in both its quiet and active states. The pass keeps the same top-left position across states and flight scenarios. The dark headline panel sits at the top and uses self-hosted Barlow Condensed lettering inspired by split-flap displays. Live and Demo share the same minimum card height and layout; the card grows when live details need more space. One short fade accompanies content changes, while reduced-motion preferences make the change immediate. With no flight, the card reads “A quiet sky. For now.” and its perforated stub shows the observation zone and the relevant controls. A small Three.js scene places three copies of the supplied low-poly cloud model behind the pass; the scene gives way to the aircraft when a flight appears. When a flight is present, the pass shows the reported airline and aircraft, origin and destination. Its stub keeps three identifier positions for the IATA flight code, a distinct ICAO callsign when available, and the aircraft type code, using a dash for missing values. Below a divider, larger altitude, ground speed, and distance values appear with the relevant controls: **Use my location** and **Refresh** in Live mode, or playback controls in Demo. The full model name remains at the top. Aircraft details such as winglets appear in italics after the base model name. Hover or focus the flight name and aircraft model to see their raw codes. Live details also show the age of the last report and whether the displayed position is estimated. The card does not invent a seat, gate, or departure time when these are not confirmed by the data source.
+The hero uses a boarding pass card in both its quiet and active states. The pass keeps the same top-left position across states and flight scenarios. The dark headline panel sits at the top and uses self-hosted Barlow Condensed lettering inspired by split-flap displays. Its upper and lower halves flip when the headline changes. Live and Demo share the same minimum card height and layout; the card grows when live details need more space. One short fade accompanies broader content changes, while reduced-motion preferences make these changes immediate. With no flight, the card reads “A quiet sky. For now.” and its perforated stub shows the observation zone and the relevant controls. A small Three.js scene places three copies of the supplied low-poly cloud model behind the pass; the scene gives way to the aircraft when a flight appears. When a flight is present, the pass shows the reported airline and aircraft, origin and destination. Its stub keeps three identifier positions for the IATA flight code, a distinct ICAO callsign when available, and the aircraft type code, using a dash for missing values. Below a divider, larger altitude, ground speed, and distance values appear with the relevant controls: **Use my location** and **Refresh** in Live mode, or playback controls in Demo. The full model name remains at the top. Aircraft details such as winglets appear in italics after the base model name. Hover or focus the flight name and aircraft model to see their raw codes. Live details also show the age of the last report and whether the displayed position is estimated. The card does not invent a seat, gate, or departure time when these are not confirmed by the data source.
 
 ## Weather in the header
 
