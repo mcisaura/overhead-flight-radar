@@ -4,6 +4,8 @@ Overhead shows aircraft currently reported within 5 nautical miles of a chosen l
 
 The project was inspired by British Airways' 2013 **#LookUp** campaign, which connected planes in the sky to information shown on a billboard.
 
+For a new chat or work session, start with [HANDOFF.md](HANDOFF.md). It records the current state, verification, and the next issue to check.
+
 ## Live and Demo at a glance
 
 | | Live | Demo |
@@ -22,11 +24,10 @@ Requires Node.js 22.13 or newer and npm:
 
 ```bash
 npm ci
-echo 'AIRLABS_API_KEY=your_key' > .env.local
 npm run dev
 ```
 
-Replace `your_key` with your AirLabs API key. Open `http://localhost:5173/` for the app. Live data requires internet access. Stop the development server with `Ctrl+C`. To verify the project:
+For Live mode, create `.env.local` with `AIRLABS_API_KEY=your_key` only if it does not already exist; do not overwrite a configured key. Open `http://localhost:5173/` for the app or `http://localhost:5173/concept/houston` for the Houston concept. Live data requires internet access. Stop the development server with `Ctrl+C`. To verify the project:
 
 ```bash
 npx tsc --noEmit
@@ -54,6 +55,8 @@ The live flight feed no longer calls ADSB.fi or ADSBdb.
 
 The Demo contains three preplanned fictional flights near a sample Chicago location: an O’Hare-bound airliner, a private plane crossing north of the observation point, and a low-level helicopter passing close to it. The airliner has an illustrative airport route; the local flights have zone entry and exit directions but no invented airport endpoints. Positions follow a straight track with altitude and speed interpolated through entry, closest approach, and exit; playback movement follows the changing speed. Each on-screen crossing lasts 30 seconds, regardless of aircraft type. Select a preset to watch, pause, resume, replay, or scrub its position. The boarding pass heading changes from “Drawing closer” to “Heading away” as the sample aircraft crosses the zone. Demo flights and weather are local fixtures; switching to Demo does not request live flight or weather data. Map tiles still come from OpenStreetMap.
 
+A separate Houston concept at `/concept/houston` presents three additional fictional 30-second crossings over downtown Houston: an Intercontinental arrival, a private Cessna, and a helicopter patrol. It uses its own sample weather, map center, and dusk-inspired layout. The existing Chicago Demo remains available on the main page; a link below its scenarios and a link in the Live footer open the Houston page. The Houston page also links back to the main app.
+
 ## Boarding pass
 
 The hero uses a boarding pass card in both its quiet and active states. The pass keeps the same top-left position across states and flight scenarios. The dark headline panel sits at the top and uses self-hosted Barlow Condensed lettering inspired by split-flap displays. Its upper and lower halves flip when the headline changes. Live and Demo share the same minimum card height and layout; the card grows when live details need more space. One short fade accompanies broader content changes, while reduced-motion preferences make these changes immediate. With no flight, the card reads “A quiet sky. For now.” and its perforated stub shows the observation zone and the relevant controls. A small Three.js scene places three copies of the supplied low-poly cloud model behind the pass; the scene gives way to the aircraft when a flight appears. When a flight is present, the pass shows the reported airline and aircraft, origin and destination. Its stub keeps three identifier positions for the IATA flight code, a distinct ICAO callsign when available, and the aircraft type code, using a dash for missing values. Below a divider, larger altitude, ground speed, and distance values appear with the relevant controls: **Use my location** and **Refresh** in Live mode, or playback controls in Demo. The full model name remains at the top. Aircraft details such as winglets appear in italics after the base model name. Hover or focus the flight name and aircraft model to see their raw codes. Live details also show the age of the last report and whether the displayed position is estimated. The card does not invent a seat, gate, or departure time when these are not confirmed by the data source.
@@ -78,6 +81,8 @@ Projection stops 90 seconds after the underlying report so it can continue throu
 - `app/flight-map.tsx`: interactive Leaflet map.
 - `app/aircraft-model.tsx`, `lib/aircraft-visual.ts`: Three.js rendering and selection of the supplied aircraft models in Live and Demo.
 - `app/demo-data.ts`: Demo flights and weather.
+- `app/concept/houston/page.tsx`, `app/concept/houston/houston-data.ts`, `app/concept/houston/houston.css`: separate Houston demo concept, fixtures, and styling.
+- `app/flip-heading.tsx`: the boarding-pass split-flap headline used in Live and both demos.
 - `lib/zone-progress.ts`, `lib/flight-estimate.ts`, `lib/closest-approach.ts`: crossing calculations, movement estimates, and closest-approach messages.
 
 Before public hosting, review the source terms and request limits for [AirLabs](https://airlabs.co/docs/flights), [Open-Meteo](https://open-meteo.com/en/terms), and [OpenStreetMap tiles](https://operations.osmfoundation.org/policies/tiles/). No deployment is configured here.
