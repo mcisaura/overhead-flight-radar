@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { MousePointer2 } from "lucide-react";
 import * as THREE from "three";
 import type { AircraftVisual } from "../lib/aircraft-visual";
 import { loadAircraftScene } from "./aircraft-assets";
@@ -395,6 +396,9 @@ export default function AircraftModel({ progress = 50, live = false, visual = "a
     <div className="aircraft-slipstream" aria-hidden="true" />
     <div className="aircraft-model-canvas" ref={containerRef} />
     {status === "unavailable" && <span className="aircraft-model-status">3D aircraft unavailable</span>}
-    <span className="aircraft-model-caption">3D aircraft illustration · drag to move · Shift/right-drag to rotate</span>
+    {status === "ready" && <span className="aircraft-model-caption">
+      <MousePointer2 size={17} strokeWidth={2.2} aria-hidden="true" />
+      <span><strong>3D aircraft illustration</strong><small>Drag to move · Shift/right-drag to rotate</small></span>
+    </span>}
   </div>;
 }

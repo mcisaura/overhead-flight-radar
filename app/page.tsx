@@ -5,8 +5,8 @@ import { ArrowRight, Check, CloudSun, Helicopter, MapPin, Navigation2, Pause, Pl
 import FlightMap from "./flight-map";
 import LiveSky, { type Place } from "./live-sky";
 import ModeToggle from "./mode-toggle";
-import { demoFlights, demoPlace, demoWeather, distanceFromDemoPlace } from "./demo-data";
-import { positionAtZoneProgress, zoneProgress, ZONE_RADIUS_KM } from "../lib/zone-progress";
+import { demoElapsedFractionAtProgress, demoFlights, demoPlace, demoProgressAtElapsedFraction, demoWeather, distanceFromDemoPlace, sampleDemoProfile } from "./demo-data";
+import { positionAtZoneProgress, zoneProgress } from "../lib/zone-progress";
 import FlightIdentity, { flightIdentityText } from "./flight-identity";
 import BoardingRoute from "./boarding-route";
 import { BoardingPassStats, BoardingPassStub } from "./boarding-pass-extras";
@@ -16,15 +16,22 @@ import AircraftModel from "./aircraft-model";
 import { aircraftVisualForFlight } from "../lib/aircraft-visual";
 import ModelCredits from "./model-credits";
 import { preloadAircraftScenes } from "./aircraft-assets";
+import WeatherUnitToggle from "./weather-unit-toggle";
+import { formatTemperature, formatWind, type WeatherUnit } from "../lib/weather-units";
+
+const DEMO_CROSSING_DURATION_MS = 30_000;
 
 export default function Home() {
-  const [mode, setMode] = useState<"live" | "sandbox">("live");
+  const [mode, setMode] = useState<"live" | "demo">("live");
   const [place, setPlace] = useState<Place>({ lat: demoPlace.lat, lon: demoPlace.lon, label: "Chicago · live sky", sample: true });
+  const [weatherUnit, setWeatherUnit] = useState<WeatherUnit>("imperial");
   useEffect(() => { preloadAircraftScenes(); }, []);
-  return mode === "live" ? <LiveSky onModeChange={setMode} place={place} onPlaceChange={setPlace} /> : <SandboxHome onModeChange={setMode} />;
+  return mode === "live"
+    ? <LiveSky onModeChange={setMode} place={place} onPlaceChange={setPlace} weatherUnit={weatherUnit} onWeatherUnitChange={setWeatherUnit} />
+    : <DemoHome onModeChange={setMode} weatherUnit={weatherUnit} onWeatherUnitChange={setWeatherUnit} />;
 }
 
-function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox") => void }) {
+function DemoHome({ onModeChange, weatherUnit, onWeatherUnitChange }: { onModeChange: (mode: "live" | "demo") => void; weatherUnit: WeatherUnit; onWeatherUnitChange: (unit: WeatherUnit) => void }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [phase, setPhase] = useState<"empty" | "active" | "exiting">("empty");
   const [flightRun, setFlightRun] = useState(0);
@@ -35,38 +42,42 @@ function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox"
   const modelReadyRef = useRef(false);
   const passReadyRef = useRef(false);
   const progressRef = useRef(0);
+  const elapsedRef = useRef(0);
   const selected = demoFlights.find((item) => item.id === selectedId) ?? null;
   const previewPosition = selected ? positionAtZoneProgress(demoPlace, selected.aircraft, progress) : null;
   const flight = selected ? {
     ...selected.aircraft,
     ...previewPosition,
+    ...sampleDemoProfile(selected.profile, progress),
     distanceKm: previewPosition ? distanceFromDemoPlace(previewPosition.lat, previewPosition.lon) : selected.aircraft.distanceKm,
   } : null;
   const crossing = flight ? zoneProgress(demoPlace, flight) : null;
   const routeKnown = Boolean(selected?.origin && selected?.destination);
+  const routeEntry = selected?.origin ?? selected?.scenario.localSegment?.entry ?? null;
+  const routeExit = selected?.destination ?? selected?.scenario.localSegment?.exit ?? null;
   const mapAircraft = flight && selected ? [{ ...flight, origin: selected.origin, destination: selected.destination }] : [];
-  const pathLength = selected ? zoneProgress(demoPlace, selected.aircraft)?.crossingKm ?? ZONE_RADIUS_KM * 2 : ZONE_RADIUS_KM * 2;
-  const crossingDurationMs = pathLength / ((selected?.aircraft.speedKts ?? 200) * 1.852) * 3_600_000 / 30;
   const crossingStatus = phase === "exiting" ? "Leaving your sky" : crossing?.motion === "approaching" ? "Drawing closer" : crossing?.motion === "leaving" ? "Heading away" : "Crossing your sky";
   const displayKey = flight && selected ? `${selected.id}:${flightRun}:${crossingStatus}` : "quiet";
 
   useEffect(() => {
-    if (!playing) return;
-    let lastTick = performance.now();
+    if (!playing || !selected) return;
+    let lastTick: number | null = null;
     const timer = window.setInterval(() => {
       const now = performance.now();
-      const elapsed = Math.min(now - lastTick, 100);
+      const elapsed = lastTick === null ? 50 : Math.min(now - lastTick, 100);
       lastTick = now;
-      const next = Math.min(100, progressRef.current + elapsed / crossingDurationMs * 100);
+      elapsedRef.current = Math.min(DEMO_CROSSING_DURATION_MS, elapsedRef.current + elapsed);
+      const next = elapsedRef.current === DEMO_CROSSING_DURATION_MS
+        ? 100 : demoProgressAtElapsedFraction(selected.profile, elapsedRef.current / DEMO_CROSSING_DURATION_MS);
       progressRef.current = next;
       setProgress(next);
-      if (next === 100) {
+      if (elapsedRef.current === DEMO_CROSSING_DURATION_MS) {
         setPlaying(false);
         setPhase("exiting");
       }
     }, 50);
     return () => window.clearInterval(timer);
-  }, [playing, crossingDurationMs, flightRun]);
+  }, [playing, selected, flightRun]);
 
   useEffect(() => {
     if (phase !== "exiting") return;
@@ -74,6 +85,7 @@ function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox"
       setSelectedId(null);
       setPhase("empty");
       progressRef.current = 0;
+      elapsedRef.current = 0;
       setProgress(0);
       setPreparing(false);
     }, 2000);
@@ -94,6 +106,7 @@ function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox"
     setPlaying(false);
     setPreparing(true);
     progressRef.current = 0;
+    elapsedRef.current = 0;
     setProgress(0);
     setSelectedId(id);
     setFlightRun((run) => run + 1);
@@ -106,6 +119,7 @@ function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox"
     setPlaying(false);
     setPreparing(false);
     progressRef.current = value;
+    elapsedRef.current = selected ? demoElapsedFractionAtProgress(selected.profile, value) * DEMO_CROSSING_DURATION_MS : 0;
     setProgress(value);
     if (value === 100) setPhase("exiting");
     else if (phase === "exiting") setPhase("active");
@@ -117,6 +131,7 @@ function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox"
     setPreparing(false);
     setSelectedId(null);
     progressRef.current = 0;
+    elapsedRef.current = 0;
     setProgress(0);
     setPhase("empty");
   }
@@ -128,13 +143,13 @@ function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox"
           <div className="brand"><span className="brand-mark"><Navigation2 size={19} strokeWidth={1.9} /></span><span>overhead<span className="brand-period">.</span></span></div>
           <div className="header-weather" aria-label="Sample weather">
             <CloudSun size={19} strokeWidth={1.8} aria-hidden="true" />
-            <strong className="header-weather-temp">{demoWeather.temperatureF}°</strong>
+            <strong className="header-weather-temp">{formatTemperature(demoWeather.temperatureF, weatherUnit)}</strong>
             <span className="header-weather-condition">Partly cloudy <small>· Sample weather</small></span>
             <span className="header-weather-stat">Cloud {demoWeather.cloudCover}%</span>
-            <span className="header-weather-stat">Wind {demoWeather.windMph} mph</span>
+            <span className="header-weather-stat">Wind {formatWind(demoWeather.windMph, weatherUnit)}</span>
           </div>
           <div className="topbar-right">
-            <ModeToggle mode="sandbox" onChange={onModeChange} />
+            <ModeToggle mode="demo" onChange={onModeChange} />
             <span className="top-divider" />
             <span className="topbar-place"><MapPin size={15} />{demoPlace.label}</span>
           </div>
@@ -154,8 +169,8 @@ function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox"
               <h1 id="hero-title" className="boarding-pass-heading"><span>{crossingStatus}</span></h1>
               <FlightIdentity {...flight} />
               <div className="boarding-pass-divider" aria-hidden="true" />
-              <BoardingRoute origin={selected.origin} destination={selected.destination} />
-              {!routeKnown && <p className="boarding-pass-route-note">No published route in this scenario</p>}
+              <BoardingRoute origin={routeEntry} destination={routeExit} zoneSegment={!routeKnown} />
+              {!routeKnown && <p className="boarding-pass-route-note">{selected.scenario.routeNote}</p>}
             </div>
             <BoardingPassStub callsign={flight.callsign} aircraftType={flight.aircraftType}>
               <div className="hero-flight-details">
@@ -163,7 +178,7 @@ function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox"
                 <div className="hero-playback">
                   <button type="button" className="zone-play" disabled={phase === "exiting" || preparing} onClick={() => setPlaying((value) => !value)}>{playing ? <Pause size={15} /> : <Play size={15} />}{preparing ? "Preparing…" : playing ? "Pause" : "Resume"}</button>
                   <button type="button" className="zone-reset" onClick={() => selectFlight(selected.id)}><RotateCcw size={15} />Replay</button>
-                  <span>30× speed · {Math.round(crossingDurationMs / 1000)} sec crossing</span>
+                  <span>30 sec demo crossing</span>
                 </div>
               </div>
             </BoardingPassStub>
@@ -187,7 +202,6 @@ function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox"
           modelReadyRef.current = true;
           startWhenReady();
         }} /></div>}
-        {!flight && <div className="quiet-orbit" aria-hidden="true"><span /><span /><span /><i /></div>}
         {flight && <HeroProgressLine key={`${selectedId}-${flightRun}`} progress={progress} label={`${flight.callsign || "Aircraft"} crossing the zone`} valueText={`${Math.round(progress)}%, ${crossingStatus.toLowerCase()}`} />}
       </section>
 
@@ -217,16 +231,16 @@ function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox"
             <div className="detail-title"><Navigation2 size={18} strokeWidth={1.8} /><h3 title={flight?.callsign || undefined}>{flight ? flightIdentityText(flight) : "Flight details"}</h3></div>
             {flight && selected ? <>
             <div className="airport-row">
-              <div><strong className="airport-code">{selected.origin?.code ?? "···"}</strong><span className="airport-city">{selected.origin?.city ?? "Local departure"}</span></div>
+              <div><strong className="airport-code">{routeEntry?.code ?? "···"}</strong><span className="airport-city">{routeEntry?.city ?? "Entry unknown"}</span></div>
               <ArrowRight className="airport-connector" size={25} strokeWidth={1.3} aria-hidden="true" />
-              <div><strong className="airport-code">{selected.destination?.code ?? "···"}</strong><span className="airport-city">{selected.destination?.city ?? "Destination not listed"}</span></div>
+              <div><strong className="airport-code">{routeExit?.code ?? "···"}</strong><span className="airport-city">{routeExit?.city ?? "Exit unknown"}</span></div>
             </div>
             <div className="stat-row">
               <div><span>Altitude</span><strong>{flight.altitudeFt.toLocaleString()} ft</strong></div>
               <div><span>Ground speed</span><strong>{flight.speedKts?.toLocaleString()} kt</strong></div>
               <div><span>Distance</span><strong>{flight.distanceKm.toFixed(1)} km</strong></div>
             </div>
-            <p className="data-note">{routeKnown ? "Illustrative route" : "No route in this scenario"}</p>
+            <p className="data-note">{selected.scenario.routeNote}</p>
             </> : <p className="empty-copy">No flight details yet. Start a sample flight to see its journey.</p>}
           </article>
           {flight && <div className="map-preview-controls">
@@ -236,7 +250,7 @@ function SandboxHome({ onModeChange }: { onModeChange: (mode: "live" | "sandbox"
         </aside>
       </div>
 
-      <footer className="site-footer"><span className="footer-brand">overhead<span className="brand-period">.</span></span><span>Map: OpenStreetMap</span><ModelCredits /></footer>
+      <footer className="site-footer"><span className="footer-brand">overhead<span className="brand-period">.</span></span><WeatherUnitToggle value={weatherUnit} onChange={onWeatherUnitChange} /><span>Map: OpenStreetMap</span><ModelCredits /></footer>
     </main>
   );
 }

@@ -142,19 +142,13 @@ export async function GET(request: NextRequest) {
         const speedKts = typeof item.speed === "number" ? item.speed / 1.852 : null;
         const projected = seenSeconds === null ? null : estimatePosition({ lat: item.lat!, lon: item.lng!, heading, speedKts, seenSeconds }, 0);
         const projectedDistanceKm = projected ? haversine(lat, lon, projected.lat, projected.lon) : Infinity;
-        const approaching = projected && zoneProgress({ lat, lon }, { ...projected, heading })?.motion === "approaching";
-        return { item, distanceKm, altitudeFt, seenSeconds, projectedDistanceKm, approaching };
+        return { item, distanceKm, altitudeFt, seenSeconds, projectedDistanceKm };
       })
-      .filter((entry) => entry.distanceKm <= ZONE_RADIUS_KM && entry.seenSeconds !== null && entry.seenSeconds <= 60)
-      .sort((a, b) => a.distanceKm - b.distanceKm);
+      .filter((entry) => entry.projectedDistanceKm <= ZONE_RADIUS_KM && entry.seenSeconds !== null && entry.seenSeconds <= 60)
+      .sort((a, b) => a.projectedDistanceKm - b.projectedDistanceKm || a.item.hex!.localeCompare(b.item.hex!));
     nearbyCount = candidates.length;
-    const trackedHex = request.nextUrl.searchParams.get("selected")?.toLowerCase();
-    const tracked = candidates.find((candidate) => candidate.item.hex?.toLowerCase() === trackedHex && candidate.projectedDistanceKm <= ZONE_RADIUS_KM);
-    const selected = tracked ?? candidates
-      .filter((candidate) => candidate.approaching && candidate.projectedDistanceKm <= ZONE_RADIUS_KM)
-      .sort((a, b) => a.projectedDistanceKm - b.projectedDistanceKm)[0];
+    const selected = candidates[0];
     const routeCandidates = candidates.slice(0, 16);
-    if (selected && !routeCandidates.includes(selected)) routeCandidates.push(selected);
     const airportCodes = [...new Set(routeCandidates.flatMap(({ item }) => [item.dep_iata?.trim(), item.arr_iata?.trim()]).filter((code): code is string => Boolean(code)))];
     const airportList = await Promise.all(airportCodes.map((code) => getAirport(apiKey, code)));
     const airportsByCode = new Map(airportList.map((airport) => [airport.code, airport]));
