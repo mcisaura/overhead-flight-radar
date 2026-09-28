@@ -15,11 +15,12 @@ import BoardingPassDisplay from "./boarding-pass-display";
 import FlipHeading from "./flip-heading";
 import AircraftModel from "./aircraft-model";
 import { aircraftVisualForFlight } from "../lib/aircraft-visual";
-import ModelCredits from "./model-credits";
+import ProjectCredits from "./project-credits";
 import { preloadAircraftScenes } from "./aircraft-assets";
 import HeroCloud from "./hero-cloud";
 import WeatherUnitToggle from "./weather-unit-toggle";
 import { formatTemperature, formatWind, type WeatherUnit } from "../lib/weather-units";
+import HeroBackgroundToggle, { type HeroBackground } from "./hero-background-toggle";
 
 const DEMO_CROSSING_DURATION_MS = 30_000;
 
@@ -27,13 +28,14 @@ export default function Home() {
   const [mode, setMode] = useState<"live" | "demo">("live");
   const [place, setPlace] = useState<Place>({ lat: demoPlace.lat, lon: demoPlace.lon, label: "Houston · live sky", sample: true });
   const [weatherUnit, setWeatherUnit] = useState<WeatherUnit>("imperial");
+  const [heroBackground, setHeroBackground] = useState<HeroBackground>("original");
   useEffect(() => { preloadAircraftScenes(); }, []);
   return mode === "live"
-    ? <LiveSky onModeChange={setMode} place={place} onPlaceChange={setPlace} weatherUnit={weatherUnit} onWeatherUnitChange={setWeatherUnit} />
-    : <DemoHome onModeChange={setMode} weatherUnit={weatherUnit} onWeatherUnitChange={setWeatherUnit} />;
+    ? <LiveSky onModeChange={setMode} place={place} onPlaceChange={setPlace} weatherUnit={weatherUnit} onWeatherUnitChange={setWeatherUnit} heroBackground={heroBackground} onHeroBackgroundChange={setHeroBackground} />
+    : <DemoHome onModeChange={setMode} weatherUnit={weatherUnit} onWeatherUnitChange={setWeatherUnit} heroBackground={heroBackground} onHeroBackgroundChange={setHeroBackground} />;
 }
 
-function DemoHome({ onModeChange, weatherUnit, onWeatherUnitChange }: { onModeChange: (mode: "live" | "demo") => void; weatherUnit: WeatherUnit; onWeatherUnitChange: (unit: WeatherUnit) => void }) {
+function DemoHome({ onModeChange, weatherUnit, onWeatherUnitChange, heroBackground, onHeroBackgroundChange }: { onModeChange: (mode: "live" | "demo") => void; weatherUnit: WeatherUnit; onWeatherUnitChange: (unit: WeatherUnit) => void; heroBackground: HeroBackground; onHeroBackgroundChange: (background: HeroBackground) => void }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [phase, setPhase] = useState<"empty" | "active" | "exiting">("empty");
   const [flightRun, setFlightRun] = useState(0);
@@ -139,7 +141,7 @@ function DemoHome({ onModeChange, weatherUnit, onWeatherUnitChange }: { onModeCh
   }
 
   return (
-    <main className="app-shell">
+    <main className={`app-shell hero-background-${heroBackground}`}>
       <header className="topbar">
         <div className="topbar-main">
           <div className="brand"><span className="brand-mark"><Navigation2 size={19} strokeWidth={1.9} /></span><span>overhead<span className="brand-period">.</span></span></div>
@@ -249,7 +251,7 @@ function DemoHome({ onModeChange, weatherUnit, onWeatherUnitChange }: { onModeCh
         </aside>
       </div>
 
-      <footer className="site-footer"><span className="footer-brand">overhead<span className="brand-period">.</span></span><WeatherUnitToggle value={weatherUnit} onChange={onWeatherUnitChange} /><span>Map: OpenStreetMap</span><ModelCredits /></footer>
+      <footer className="site-footer"><span className="footer-brand">overhead<span className="brand-period">.</span></span><HeroBackgroundToggle value={heroBackground} onChange={onHeroBackgroundChange} /><WeatherUnitToggle value={weatherUnit} onChange={onWeatherUnitChange} /><ProjectCredits /></footer>
     </main>
   );
 }

@@ -66,6 +66,14 @@ button:disabled { opacity: .6; cursor: wait; }
 }
 .sky-art, .sky-overlay { position: absolute; inset: 0; pointer-events: none; }
 .sky-art { background: url("/sky-backdrop.png") center center / cover no-repeat; transform: scale(1.015); }
+.hero-background-houston .sky-art,
+.hero-background-low-poly .sky-art {
+  background-position: center bottom;
+  background-size: cover;
+  transform: none;
+}
+.hero-background-houston .sky-art { background-image: url("/hero-houston-skyline.png"); }
+.hero-background-low-poly .sky-art { background-image: url("/hero-low-poly-sky.png"); }
 .sky-overlay { background: linear-gradient(90deg, #e3f1f8c9 0%, #e4f2f8a6 30%, #e5f2f726 58%, transparent 82%); }
 .hero-cloud { position: absolute; z-index: 1; inset: 0; width: 100%; height: 100%; pointer-events: auto; touch-action: none; filter: drop-shadow(0 24px 22px #315f7633); }
 .hero-cloud.is-dragging { z-index: 4; }
@@ -298,13 +306,21 @@ button:disabled { opacity: .6; cursor: wait; }
 .manual-form button { height: 44px; padding: 0 18px; border: 0; border-radius: 8px; background: var(--ocean-deep); color: white; font-size: 13px; font-weight: 700; }
 .manual-form button:hover { background: #103b4f; }
 .site-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px 24px; border-top: 1px solid var(--rule); padding: 25px clamp(24px, 5vw, 80px); color: var(--ink-soft); font-size: 12px; }
+.hero-background-control { display: inline-flex; align-items: center; gap: 10px; white-space: nowrap; font-weight: 650; }
+.hero-background-select-wrap { min-height: 36px; display: inline-flex; align-items: center; gap: 7px; padding: 0 9px 0 11px; border: 1px solid var(--rule); border-radius: 8px; background: #f1f5f4; color: var(--ocean-deep); }
+.hero-background-select-wrap:hover, .hero-background-select-wrap:focus-within { border-color: #9bb9bf; background: #e5eeed; }
+.hero-background-select-wrap:focus-within { outline: 2px solid color-mix(in srgb, var(--ocean) 45%, transparent); outline-offset: 2px; }
+.hero-background-select-wrap select { min-width: 126px; appearance: none; border: 0; outline: 0; background: transparent; color: inherit; font: inherit; font-weight: 750; cursor: pointer; }
+.hero-background-chevron { flex: 0 0 auto; pointer-events: none; }
 .weather-unit-control { display: inline-flex; align-items: center; gap: 10px; white-space: nowrap; font-weight: 650; }
 .weather-unit-toggle { display: inline-flex; padding: 3px; border: 1px solid var(--rule); border-radius: 8px; background: #f1f5f4; }
 .weather-unit-toggle button { min-width: 35px; min-height: 29px; border: 0; border-radius: 5px; background: transparent; color: var(--ink-soft); font-size: 12px; font-weight: 800; }
 .weather-unit-toggle button[aria-pressed="true"] { background: #fff; color: var(--ocean-deep); box-shadow: 0 1px 5px #1737461c; }
 .weather-unit-toggle button:hover:not([aria-pressed="true"]) { color: var(--ocean-deep); background: #e5eeed; }
-.model-attribution { max-width: 410px; line-height: 1.5; text-align: right; }
-.model-attribution a { color: var(--ocean-deep); text-underline-offset: 2px; }
+.project-credits { display: grid; flex: 1 1 560px; grid-template-columns: minmax(190px, .8fr) minmax(340px, 1.4fr); gap: 8px 20px; max-width: 760px; color: color-mix(in srgb, var(--ink-soft) 78%, transparent); font-size: 10.5px; line-height: 1.35; text-align: left; }
+.project-credit-group { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.project-credit-group strong { color: var(--ink-soft); font-size: 9px; font-weight: 800; letter-spacing: .09em; line-height: 1.2; text-transform: uppercase; }
+.project-credits a { color: color-mix(in srgb, var(--ocean-deep) 82%, var(--ink-soft)); text-underline-offset: 2px; }
 .footer-brand { color: var(--ink); font-family: var(--display); font-size: 23px; font-weight: 650; letter-spacing: -.03em; }
 
 @keyframes load { to { transform: translateX(100%); } }
@@ -410,7 +426,7 @@ button:disabled { opacity: .6; cursor: wait; }
   .location-tools { align-items: start; flex-direction: column; }
   .update-note { text-align: left; }
   .site-footer { align-items: start; flex-direction: column; padding: 24px 22px; }
-  .model-attribution { text-align: left; }
+  .project-credits { grid-template-columns: 1fr; max-width: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -530,7 +546,6 @@ button:disabled { opacity: .6; cursor: wait; }
 .live-shell .flight-sidebar { min-height: 500px; }
 .live-shell .flight-sidebar .empty-copy { min-height: 190px; }
 .live-weather-empty { margin: 0; color: var(--ink-soft); font-size: 13px; }
-.live-attribution a { color: var(--ocean-deep); text-underline-offset: 2px; }
 @media (max-width: 760px) {
   .live-stage { min-height: 690px; height: auto; padding-bottom: 80px; }
   .live-stage .hero-inner { width: auto; max-width: 590px; }
@@ -598,10 +613,16 @@ button:disabled { opacity: .6; cursor: wait; }
 .boarding-pass-stats span { color: #69838d; font-size: 9px; font-weight: 850; letter-spacing: .09em; white-space: nowrap; }
 .boarding-pass-stats strong { color: var(--ocean-deep); font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .boarding-pass-freshness { margin: 13px 0 0; color: var(--ink-soft); font-size: 11px; line-height: 1.35; }
-.boarding-pass-stub { position: relative; padding: 18px 27px 21px; border-top: 2px dashed #b8cfd4; background: #fffefbf0; }
-.boarding-pass-stub::before, .boarding-pass-stub::after { content: ""; position: absolute; top: -10px; width: 18px; height: 18px; border: 1px solid #b9d1d6; border-radius: 50%; background: #d9ebf3; }
-.boarding-pass-stub::before { left: -10px; }
-.boarding-pass-stub::after { right: -10px; }
+.boarding-pass-stub {
+  position: relative;
+  padding: 20px 27px 21px;
+  background:
+    repeating-linear-gradient(90deg, #a9c4ca 0 4px, transparent 4px 8px) top left / 100% 3px no-repeat,
+    #fffefbf0;
+}
+.boarding-pass-stub::before, .boarding-pass-stub::after { content: ""; position: absolute; top: -11px; width: 21px; height: 21px; border: 2px solid #b2ccd1; border-radius: 50%; background: #d9ebf3; }
+.boarding-pass-stub::before { left: -12px; }
+.boarding-pass-stub::after { right: -12px; }
 .boarding-pass-stub-codes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .empty-boarding-pass .boarding-pass-stub-codes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .boarding-pass-stub-codes > div { display: flex; flex-direction: column; min-width: 0; min-height: 43px; gap: 5px; }
@@ -986,16 +1007,53 @@ button:disabled { opacity: .6; cursor: wait; }
   .sky-stage:not(.has-flight) { padding-bottom: 185px; }
   .sky-stage.has-flight .sky-aircraft-layer { height: 205px; }
   .sky-stage.has-flight, .sky-stage.has-flight.live-stage { row-gap: 15px; padding: 24px 23px 62px; }
-  .boarding-pass.hero-flight .boarding-pass-main { min-height: 380px; padding: 18px 20px 20px; }
+  .sky-stage.has-flight > .boarding-pass { min-height: 0; }
+  .boarding-pass.hero-flight .boarding-pass-main { min-height: 0; padding: 15px 16px 16px; }
+  .sky-stage.has-flight .boarding-pass .boarding-pass-heading,
+  .sky-stage.has-flight.live-stage .boarding-pass .boarding-pass-heading {
+    --flip-padding: 11px 14px;
+    min-height: 88px;
+    margin-bottom: 13px;
+    padding: 11px 14px;
+    font-size: clamp(28px, 7.5vw, 34px);
+  }
+  .sky-stage.has-flight .boarding-pass .hero-flight-identity { min-height: 48px; }
+  .sky-stage.has-flight .boarding-pass .hero-flight-identity strong { font-size: 15px; }
+  .sky-stage.has-flight .boarding-pass-divider { margin: 13px 0 12px; }
+  .sky-stage.has-flight .boarding-route { min-height: 82px; }
+  .sky-stage.has-flight .boarding-route-stop strong { font-size: clamp(36px, 10.5vw, 48px); }
+  .sky-stage.has-flight .boarding-route-city {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+  .sky-stage.has-flight .boarding-pass-stub { padding: 14px 16px 16px; }
+  .sky-stage.has-flight .boarding-pass-stub-codes > div { min-height: 38px; gap: 3px; }
+  .sky-stage.has-flight .boarding-pass-stub-details { margin-top: 12px; padding-top: 12px; }
   .sky-stage.has-flight .aircraft-scene { height: 205px; }
   .live-aircraft-scene { height: 205px; }
   .sky-stage.has-flight .aircraft-wrap { width: 85%; }
   .sky-stage.has-flight .live-aircraft-scene img { max-height: 210px; }
   .hero-progress-baseline .hero-baseline-percent { display: block; }
-  .hero-flight-details { padding: 13px; }
+  .hero-flight-details { padding: 10px; }
   .hero-flight-details .boarding-pass-stats > div { padding: 0 7px; }
   .hero-flight-details .boarding-pass-stats strong { font-size: clamp(16px, 4.3vw, 18px); }
   .hero-flight-details .boarding-pass-stats span { font-size: 8px; }
-  .hero-flight-details .live-actions { flex-wrap: wrap; }
+  .hero-flight-details .boarding-pass-freshness { margin-top: 6px; }
+  .hero-flight-details .live-actions { flex-wrap: wrap; margin-top: 8px; }
   .hero-flight-details .refresh-button { width: auto; padding: 0 12px; font-size: 12px; }
+  .next-aircraft-queue {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: baseline;
+    gap: 2px 10px;
+    margin-top: 9px;
+    padding-top: 8px;
+  }
+  .next-aircraft-label { grid-column: 1; grid-row: 1 / span 2; }
+  .next-aircraft-main { grid-column: 2; margin-top: 0; gap: 8px; }
+  .next-aircraft-main strong { font-size: 14px; }
+  .next-aircraft-main span { font-size: 10px; }
+  .next-aircraft-queue p { grid-column: 2; margin-top: 0; font-size: 9px; }
 }

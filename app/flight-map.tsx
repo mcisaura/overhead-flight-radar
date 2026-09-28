@@ -51,6 +51,10 @@ type Props = {
   onSelect?: (hex: string) => void;
 };
 
+type RouteDrawing =
+  | { kind: "route"; inbound: Leaflet.Polyline; outbound: Leaflet.Polyline }
+  | { kind: "heading"; path: Leaflet.Polyline };
+
 const planeShape = '<svg viewBox="0 0 32 32" width="27" height="27" aria-hidden="true"><path d="M16 2.5 19.2 13l9.4 5.1v3l-10.8-3.2-.8 8.2 4 2.3v2.1L16 29l-5 1.5v-2.1l4-2.3-.8-8.2-10.8 3.2v-3L12.8 13 16 2.5Z" fill="currentColor" stroke="white" stroke-width="1.2" stroke-linejoin="round"/></svg>';
 
 function formatName(plane: MapAircraft) {
@@ -76,6 +80,8 @@ export default function FlightMap({ lat, lon, aircraft, routeAircraft, closestHe
   const mapRef = useRef<Leaflet.Map | null>(null);
   const markerLayerRef = useRef<Leaflet.LayerGroup | null>(null);
   const routeLayerRef = useRef<Leaflet.LayerGroup | null>(null);
+  const airportLayerRef = useRef<Leaflet.LayerGroup | null>(null);
+  const routeDrawingsRef = useRef<Map<string, RouteDrawing>>(new Map());
   const markersRef = useRef<Map<string, Leaflet.Marker>>(new Map());
   const markerStyleRef = useRef<Map<string, string>>(new Map());
   const markerLabelRef = useRef<Map<string, string>>(new Map());
@@ -112,6 +118,7 @@ export default function FlightMap({ lat, lon, aircraft, routeAircraft, closestHe
     const markers = markersRef.current;
     const markerStyles = markerStyleRef.current;
     const markerLabels = markerLabelRef.current;
+    const routeDrawings = routeDrawingsRef.current;
     void import("leaflet").then((L) => {
       if (cancelled || !containerRef.current) return;
       leafletRef.current = L;
@@ -128,6 +135,7 @@ export default function FlightMap({ lat, lon, aircraft, routeAircraft, closestHe
       L.circleMarker([lat, lon], { radius: 8, color: "#fff", weight: 3, fillColor: "#1e6e8b", fillOpacity: 1 })
         .bindTooltip(locationLabel ?? (demo ? "Sample location" : "Your location"), { direction: "top" }).addTo(map);
       routeLayerRef.current = L.layerGroup().addTo(map);
+      airportLayerRef.current = L.layerGroup().addTo(map);
       markerLayerRef.current = L.layerGroup().addTo(map);
       setReady(true);
     });
@@ -138,6 +146,8 @@ export default function FlightMap({ lat, lon, aircraft, routeAircraft, closestHe
       mapRef.current = null;
       markerLayerRef.current = null;
       routeLayerRef.current = null;
+      airportLayerRef.current = null;
+      routeDrawings.clear();
       markers.clear();
       markerStyles.clear();
       markerLabels.clear();
@@ -154,38 +164,92 @@ export default function FlightMap({ lat, lon, aircraft, routeAircraft, closestHe
   const routeDestination = hasCoordinates(selected?.destination) ? selected.destination : null;
   const originLat = routeOrigin?.lat ?? null;
   const originLon = routeOrigin?.lon ?? null;
+  const originCode = routeOrigin?.code ?? "";
   const destinationLat = routeDestination?.lat ?? null;
   const destinationLon = routeDestination?.lon ?? null;
-  const routePlanes = routeAircraft ?? aircraft;
+  const destinationCode = routeDestination?.code ?? "";
+  const movingAircraft = new Map(aircraft.map((plane) => [plane.hex, plane]));
+  const routePlanes = (routeAircraft ?? aircraft).map((plane) => {
+    const moving = movingAircraft.get(plane.hex);
+    return moving ? { ...plane, lat: moving.lat, lon: moving.lon, heading: moving.heading } : plane;
+  });
 
   useEffect(() => {
     const L = leafletRef.current;
     const layer = routeLayerRef.current;
     if (!ready || !nearViewport || !L || !layer) return;
-    layer.clearLayers();
+    const visible = new Set(routePlanes.map((plane) => plane.hex));
+    for (const [hex, drawing] of routeDrawingsRef.current) {
+      if (visible.has(hex)) continue;
+      if (drawing.kind === "route") {
+        layer.removeLayer(drawing.inbound);
+        layer.removeLayer(drawing.outbound);
+      } else {
+        layer.removeLayer(drawing.path);
+      }
+      routeDrawingsRef.current.delete(hex);
+    }
     for (const plane of routePlanes) {
       const highlighted = plane.hex === activeHex;
       const color = highlighted ? "#b75f43" : "#58879a";
       const weight = highlighted ? 3 : 1.5;
+      const opacity = highlighted ? .9 : .55;
+      const existing = routeDrawingsRef.current.get(plane.hex);
       if (hasCoordinates(plane.origin) && hasCoordinates(plane.destination)) {
-        L.polyline([[plane.origin.lat, plane.origin.lon], [plane.lat, plane.lon]],
-          { color, weight, opacity: highlighted ? .9 : .55, interactive: false }).addTo(layer);
-        L.polyline([[plane.lat, plane.lon], [plane.destination.lat, plane.destination.lon]],
-          { color, weight, opacity: highlighted ? .9 : .55, dashArray: "6 7", interactive: false }).addTo(layer);
+        if (existing?.kind === "route") {
+          existing.inbound.setLatLngs([[plane.origin.lat, plane.origin.lon], [plane.lat, plane.lon]]);
+          existing.outbound.setLatLngs([[plane.lat, plane.lon], [plane.destination.lat, plane.destination.lon]]);
+          existing.inbound.setStyle({ color, weight, opacity });
+          existing.outbound.setStyle({ color, weight, opacity });
+        } else {
+          if (existing?.kind === "heading") layer.removeLayer(existing.path);
+          const inbound = L.polyline([[plane.origin.lat, plane.origin.lon], [plane.lat, plane.lon]],
+            { color, weight, opacity, interactive: false }).addTo(layer);
+          const outbound = L.polyline([[plane.lat, plane.lon], [plane.destination.lat, plane.destination.lon]],
+            { color, weight, opacity, dashArray: "6 7", interactive: false }).addTo(layer);
+          routeDrawingsRef.current.set(plane.hex, { kind: "route", inbound, outbound });
+        }
       } else if (plane.heading !== null) {
-        L.polyline([headingPoint(plane, -ZONE_RADIUS_KM), [plane.lat, plane.lon], headingPoint(plane, ZONE_RADIUS_KM)],
-          { color, weight, opacity: highlighted ? .75 : .4, dashArray: "3 7", interactive: false }).addTo(layer);
+        const points = [headingPoint(plane, -ZONE_RADIUS_KM), [plane.lat, plane.lon] as [number, number], headingPoint(plane, ZONE_RADIUS_KM)];
+        if (existing?.kind === "heading") {
+          existing.path.setLatLngs(points);
+          existing.path.setStyle({ color, weight, opacity: highlighted ? .75 : .4 });
+        } else {
+          if (existing?.kind === "route") {
+            layer.removeLayer(existing.inbound);
+            layer.removeLayer(existing.outbound);
+          }
+          const path = L.polyline(points,
+            { color, weight, opacity: highlighted ? .75 : .4, dashArray: "3 7", interactive: false }).addTo(layer);
+          routeDrawingsRef.current.set(plane.hex, { kind: "heading", path });
+        }
+      } else if (existing) {
+        if (existing.kind === "route") {
+          layer.removeLayer(existing.inbound);
+          layer.removeLayer(existing.outbound);
+        } else {
+          layer.removeLayer(existing.path);
+        }
+        routeDrawingsRef.current.delete(plane.hex);
       }
     }
-    const routeSelected = routePlanes.find((plane) => plane.hex === activeHex);
-    if (routeAvailable && routeSelected) {
-      for (const airport of [routeSelected.origin, routeSelected.destination]) {
-        if (!hasCoordinates(airport)) continue;
-        L.circleMarker([airport.lat, airport.lon], { radius: 5, color: "#173746", weight: 2, fillColor: "#fffefa", fillOpacity: 1 })
-          .bindTooltip(airport.code, { permanent: activeView === "route", direction: "top", offset: [0, -6] }).addTo(layer);
-      }
+  }, [routePlanes, ready, nearViewport, activeHex]);
+
+  useEffect(() => {
+    const L = leafletRef.current;
+    const layer = airportLayerRef.current;
+    if (!ready || !nearViewport || !L || !layer) return;
+    layer.clearLayers();
+    if (!routeAvailable) return;
+    for (const airport of [
+      { lat: originLat, lon: originLon, code: originCode },
+      { lat: destinationLat, lon: destinationLon, code: destinationCode },
+    ]) {
+      if (airport.lat === null || airport.lon === null) continue;
+      L.circleMarker([airport.lat, airport.lon], { radius: 5, color: "#173746", weight: 2, fillColor: "#fffefa", fillOpacity: 1 })
+        .bindTooltip(airport.code, { permanent: activeView === "route", direction: "top", offset: [0, -6] }).addTo(layer);
     }
-  }, [routePlanes, ready, nearViewport, activeHex, routeAvailable, activeView]);
+  }, [ready, nearViewport, routeAvailable, activeView, originLat, originLon, originCode, destinationLat, destinationLon, destinationCode]);
 
   useEffect(() => {
     const map = mapRef.current;

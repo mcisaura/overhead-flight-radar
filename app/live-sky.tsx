@@ -15,10 +15,11 @@ import BoardingPassDisplay from "./boarding-pass-display";
 import FlipHeading from "./flip-heading";
 import AircraftModel from "./aircraft-model";
 import { aircraftVisualForFlight } from "../lib/aircraft-visual";
-import ModelCredits from "./model-credits";
+import ProjectCredits from "./project-credits";
 import WeatherUnitToggle from "./weather-unit-toggle";
 import { formatTemperature, formatWind, type WeatherUnit } from "../lib/weather-units";
 import HeroCloud from "./hero-cloud";
+import HeroBackgroundToggle, { type HeroBackground } from "./hero-background-toggle";
 
 export type Place = { lat: number; lon: number; label: string; sample: boolean };
 type LiveFlight = {
@@ -51,7 +52,7 @@ function weatherLabel(code: number) {
   return "Stormy";
 }
 
-export default function LiveSky({ onModeChange, place, onPlaceChange, weatherUnit, onWeatherUnitChange }: { onModeChange: (mode: "live" | "demo") => void; place: Place; onPlaceChange: (place: Place) => void; weatherUnit: WeatherUnit; onWeatherUnitChange: (unit: WeatherUnit) => void }) {
+export default function LiveSky({ onModeChange, place, onPlaceChange, weatherUnit, onWeatherUnitChange, heroBackground, onHeroBackgroundChange }: { onModeChange: (mode: "live" | "demo") => void; place: Place; onPlaceChange: (place: Place) => void; weatherUnit: WeatherUnit; onWeatherUnitChange: (unit: WeatherUnit) => void; heroBackground: HeroBackground; onHeroBackgroundChange: (background: HeroBackground) => void }) {
   const [data, setData] = useState<SkyResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -64,11 +65,29 @@ export default function LiveSky({ onModeChange, place, onPlaceChange, weatherUni
   const takeoverRefreshHex = useRef<string | null>(null);
 
   useEffect(() => {
-    const tick = () => { if (!document.hidden) setClockMs(Date.now()); };
-    const timer = window.setInterval(tick, 250);
-    document.addEventListener("visibilitychange", tick);
-    return () => { window.clearInterval(timer); document.removeEventListener("visibilitychange", tick); };
-  }, []);
+    if (!receivedAt) return;
+    let frame = 0;
+    let lastFrame = 0;
+    const tick = (time: number) => {
+      if (!document.hidden && time - lastFrame >= 1000 / 30) {
+        lastFrame = time;
+        setClockMs(Date.now());
+      }
+      frame = window.requestAnimationFrame(tick);
+    };
+    const resume = () => {
+      if (!document.hidden) {
+        lastFrame = 0;
+        setClockMs(Date.now());
+      }
+    };
+    frame = window.requestAnimationFrame(tick);
+    document.addEventListener("visibilitychange", resume);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      document.removeEventListener("visibilitychange", resume);
+    };
+  }, [receivedAt]);
 
   useEffect(() => {
     let active = true;
@@ -173,7 +192,7 @@ export default function LiveSky({ onModeChange, place, onPlaceChange, weatherUni
   const nextAircraft = flight ? aircraft
     .filter((plane) => plane.hex !== flight.hex && plane.distanceKm <= ZONE_RADIUS_KM && plane.seenSeconds <= 60)
     .sort((a, b) => a.distanceKm - b.distanceKm || a.hex.localeCompare(b.hex))[0] : null;
-  return <main className="app-shell live-shell">
+  return <main className={`app-shell live-shell hero-background-${heroBackground}`}>
     <header className="topbar">
       <div className="topbar-main">
         <div className="brand"><span className="brand-mark"><Navigation2 size={19} strokeWidth={1.9} /></span><span>overhead<span className="brand-period">.</span></span></div>
@@ -254,6 +273,6 @@ export default function LiveSky({ onModeChange, place, onPlaceChange, weatherUni
       </article></aside>
     </div>
 
-    <footer className="site-footer"><span className="footer-brand">overhead<span className="brand-period">.</span></span><WeatherUnitToggle value={weatherUnit} onChange={onWeatherUnitChange} /><span className="live-attribution">Data: <a href="https://airlabs.co/">AirLabs</a> · <a href="https://open-meteo.com/">Open-Meteo</a> · Map: <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a></span><ModelCredits /></footer>
+    <footer className="site-footer"><span className="footer-brand">overhead<span className="brand-period">.</span></span><HeroBackgroundToggle value={heroBackground} onChange={onHeroBackgroundChange} /><WeatherUnitToggle value={weatherUnit} onChange={onWeatherUnitChange} /><ProjectCredits /></footer>
   </main>;
 }
