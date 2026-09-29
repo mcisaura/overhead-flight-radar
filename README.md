@@ -35,7 +35,7 @@ npm ci
 npm run dev
 ```
 
-For Live mode, create `.env.local` with `AIRLABS_API_KEY=your_key` only if it does not already exist; do not overwrite a configured key. Open `http://localhost:5173/` for the app. Live data requires internet access. Stop the development server with `Ctrl+C`. To verify the project:
+For Live mode, copy `.env.example` to `.env.local` if it does not already exist, then replace the placeholder with your AirLabs key. Never overwrite an existing configured key. Open `http://localhost:5173/` for the app. Live data requires internet access. Stop the development server with `Ctrl+C`. To verify the project:
 
 ```bash
 npx tsc --noEmit
@@ -43,6 +43,14 @@ npm test
 npm run lint
 npm run build
 ```
+
+## Repository and publishing
+
+The repository includes application source, tests, assets, attribution, and the safe `.env.example` template. GitHub Actions runs the test, type check, lint, and build commands on pushes and pull requests. `.env.local`, dependencies, build output, and local Cloudflare state are ignored by Git. Keep the AirLabs key in local environment configuration or a server-side hosting secret; never add it to a commit or a browser variable. The Demo works without a key.
+
+No GitHub remote or public deployment is configured by this project. Before publishing the site, check AirLabs usage already consumed in the current billing period: the app's shared 900-call guard only counts requests made after its Durable Object is deployed and does not see calls from other applications on the same AirLabs account. Verify that the deployed quota binding and rate limits work before opening Live to the public.
+
+The included 3D models have their own licenses and credits below; a code license would not replace those terms. This repository currently has no general code license.
 
 ## Live data
 
@@ -102,7 +110,7 @@ Aircraft are removed from the active hero and map when their last report becomes
 
 Before public hosting, review the source terms and request limits for [AirLabs](https://airlabs.co/docs/flights), [Open-Meteo](https://open-meteo.com/en/terms), and [OpenStreetMap tiles](https://operations.osmfoundation.org/policies/tiles/). No deployment is configured here.
 
-The Boeing 737-200 model is by LucasSS on Sketchfab, supplied as `boeing_737-200_white.glb` under the Sketchfab Standard License. See the attribution embedded in the GLB asset for its source URL.
+The Boeing 737-200 model is by LucasSS on [Sketchfab](https://sketchfab.com/3d-models/boeing-737-200-white-81030e446b7a40d29d83840e3ed878b3), supplied as `boeing_737-200_white.glb` under the [Sketchfab Standard License](https://sketchfab.com/licenses). See the attribution embedded in the GLB asset for its source URL.
 
 The Cessna 310 model is by BorealRiver on [Sketchfab](https://sketchfab.com/3d-models/cessna-310-airplane-low-poly-bbf73d06537c4a2ba86b96a3b97209c1), supplied as `cessna_310_airplane_-_low_poly.glb` under CC BY 4.0. The helicopter model is by linus1178 on [Sketchfab](https://sketchfab.com/3d-models/helicopter-dec45a28e6f346648c3d6585426157b8), supplied as `helicopter.glb` under CC BY 4.0. Their GLB metadata also includes author, license, and source information.
 
