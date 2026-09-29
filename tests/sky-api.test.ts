@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { after, test } from "node:test";
 import { NextRequest } from "next/server";
 import { GET } from "../app/api/sky/route";
+import { projectLiveAircraft } from "../lib/live-snapshot";
+import type { SkyResponse } from "../lib/sky-contract";
 
 const originalFetch = globalThis.fetch;
 const originalKey = process.env.AIRLABS_API_KEY;
@@ -10,6 +12,8 @@ after(() => { globalThis.fetch = originalFetch; process.env.AIRLABS_API_KEY = or
 type SkyBody = {
   flight: { hex: string; distanceKm: number; zoneProgress: object | null; estimatedPosition: { lon: number }; reportedPosition: { lon: number }; routeStatus: string; origin: object | null; destination: object | null };
   aircraft: { distanceKm: number; lat: number; lon: number; reportedPosition: { lat: number; lon: number }; originCode: string | null; routeStatus: string }[];
+  updatedAt: string;
+  snapshotAgeMs: number;
 };
 
 function request(lat: number, lon: number, client = "test-client") {
@@ -53,6 +57,28 @@ test("reported aircraft outside the zone can move inside; spatial fields agree",
   assert.ok(body.flight.zoneProgress);
   assert.ok(Math.abs(body.aircraft[0].lon - body.flight.estimatedPosition.lon) < 0.001);
   assert.ok(Math.abs(body.aircraft[0].reportedPosition.lon - body.flight.reportedPosition.lon) < 0.001);
+});
+
+test("metadata delay is included in the live snapshot age", async () => {
+  globalThis.fetch = async (input) => {
+    const url = new URL(String(input));
+    if (url.hostname === "api.open-meteo.com") return Response.json({ current: { temperature_2m: 70 } });
+    if (url.pathname.endsWith("/flights")) return Response.json({ response: [{
+      hex: "slow-metadata", lat: 37, lng: -122, dir: 90, speed: 500,
+      updated: Math.floor(Date.now() / 1000) - 20, status: "active", dep_iata: "SLO",
+    }] });
+    if (url.pathname.endsWith("/airports")) {
+      await new Promise((resolve) => setTimeout(resolve, 120));
+      return Response.json({ response: [] });
+    }
+    return Response.json({ response: [] });
+  };
+  const body = await (await GET(request(37, -122, "slow-metadata"))).json() as SkyResponse;
+  assert.ok(body.snapshotAgeMs >= 100, `snapshot age was ${body.snapshotAgeMs} ms`);
+  assert.ok(Date.parse(body.updatedAt) <= Date.now() - 100);
+  const now = Date.now();
+  const projected = projectLiveAircraft(body.aircraft, { lat: 37, lon: -122 }, now - body.snapshotAgeMs, now);
+  assert.ok(projected[0].seenSeconds > body.aircraft[0].seenSeconds);
 });
 
 test("airport lookup failure leaves a route unverified and hides its endpoints", async () => {
@@ -147,6 +173,26 @@ test("search and crossing work on both sides of the date line", async () => {
   assert.equal(calls.filter((url) => url.pathname.endsWith("/flights")).length, 2);
 });
 
+test("a failed date-line search still returns aircraft from the other side", async () => {
+  globalThis.fetch = async (input) => {
+    const url = new URL(String(input));
+    if (url.hostname === "api.open-meteo.com") return Response.json({ current: { temperature_2m: 70 } });
+    if (url.pathname.endsWith("/flights")) {
+      const west = Number(url.searchParams.get("bbox")!.split(",")[1]);
+      return west < 0 ? new Response("", { status: 503 }) : Response.json({ response: [{
+        hex: "partial-date-line", lat: 1, lng: 179.98, dir: 0, speed: 0,
+        updated: Math.floor(Date.now() / 1000), status: "active",
+      }] });
+    }
+    return Response.json({ response: [] });
+  };
+  const response = await GET(request(1, 179.98, "partial-date-line"));
+  assert.equal(response.status, 200);
+  const body = await response.json() as SkyResponse;
+  assert.equal(body.flight?.hex, "partial-date-line");
+  assert.ok(body.warnings.some((warning) => warning.includes("incomplete")));
+});
+
 test("metadata enrichment stays bounded with a crowded sky", async () => {
   const calls: URL[] = [];
   const now = Math.floor(Date.now() / 1000);
@@ -165,6 +211,36 @@ test("metadata enrichment stays bounded with a crowded sky", async () => {
   assert.equal(body.aircraft.length, 20);
   assert.ok(calls.filter((url) => url.pathname.endsWith("/airports")).length <= 16);
   assert.equal(body.aircraft[19].routeStatus, "unverified");
+});
+
+test("a slow airport lookup does not block later lookups from starting", async () => {
+  let releaseFirst = () => {};
+  const firstLookup = new Promise<void>((resolve) => { releaseFirst = resolve; });
+  let firstFinished = false;
+  let fifthStartedBeforeFirstFinished = false;
+  const guard = setTimeout(releaseFirst, 500);
+  try {
+    globalThis.fetch = async (input) => {
+      const url = new URL(String(input));
+      if (url.hostname === "api.open-meteo.com") return Response.json({ current: { temperature_2m: 70 } });
+      if (url.pathname.endsWith("/flights")) return Response.json({ response: Array.from({ length: 5 }, (_, index) => ({
+        hex: `pipeline-${index}`, lat: 38, lng: -123, dir: 0, speed: 0,
+        updated: Math.floor(Date.now() / 1000), status: "active", dep_iata: `PIPE${index}`,
+      })) });
+      if (url.pathname.endsWith("/airports")) {
+        const code = url.searchParams.get("iata_code");
+        if (code === "PIPE0") { await firstLookup; firstFinished = true; }
+        if (code === "PIPE4") { fifthStartedBeforeFirstFinished = !firstFinished; releaseFirst(); }
+        return Response.json({ response: [] });
+      }
+      return Response.json({ response: [] });
+    };
+    const response = await GET(request(38, -123, "pipeline"));
+    assert.equal(response.status, 200);
+    assert.equal(fifthStartedBeforeFirstFinished, true);
+  } finally {
+    clearTimeout(guard);
+  }
 });
 
 test("simultaneous sky requests share a four-call metadata ceiling", async () => {

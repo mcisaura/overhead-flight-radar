@@ -190,8 +190,14 @@ export async function GET(request: NextRequest) {
   }
 
   const warnings: string[] = [];
-  const flights = Promise.all(bounds(lat, lon).map((bbox) => getAirLabs<AirLabsFlight[]>("flights", apiKey, { bbox, _fields: flightFields }, 30)))
-    .then((groups) => [...new Map(groups.flat().filter((item) => item.hex).map((item) => [item.hex, item])).values()]);
+  const flights = Promise.allSettled(bounds(lat, lon).map((bbox) => getAirLabs<AirLabsFlight[]>("flights", apiKey, { bbox, _fields: flightFields }, 30)))
+    .then((results) => {
+      const groups = results.filter((result): result is PromiseFulfilledResult<AirLabsFlight[]> => result.status === "fulfilled");
+      if (!groups.length) throw (results[0] as PromiseRejectedResult).reason;
+      for (const result of results) if (result.status === "rejected") logUpstream("flights", result.reason);
+      if (groups.length !== results.length) warnings.push("Live coverage may be incomplete.");
+      return [...new Map(groups.flatMap((result) => result.value).filter((item) => item.hex).map((item) => [item.hex, item])).values()];
+    });
   const weatherUrl = new URL("https://api.open-meteo.com/v1/forecast");
   weatherUrl.searchParams.set("latitude", lat.toFixed(4));
   weatherUrl.searchParams.set("longitude", lon.toFixed(4));
@@ -199,6 +205,7 @@ export async function GET(request: NextRequest) {
   weatherUrl.searchParams.set("temperature_unit", "fahrenheit");
   weatherUrl.searchParams.set("wind_speed_unit", "mph");
   const [aircraftResult, weatherResult] = await Promise.allSettled([flights, getJson<WeatherResponse>(weatherUrl.toString(), 600)]);
+  const snapshotAt = Date.now();
 
   let flight: SkyFlight | null = null;
   let nearbyCount = 0;
@@ -208,7 +215,7 @@ export async function GET(request: NextRequest) {
       .filter((item) => item.hex && typeof item.lat === "number" && Number.isFinite(item.lat) && typeof item.lng === "number" && Number.isFinite(item.lng) && (item.status === "en-route" || item.status === "active"))
       .map((item) => {
         const altitudeFt = typeof item.alt === "number" && Number.isFinite(item.alt) ? item.alt * 3.28084 : null;
-        const seenSeconds = typeof item.updated === "number" ? Math.max(0, Math.round(Date.now() / 1000 - item.updated)) : null;
+        const seenSeconds = typeof item.updated === "number" ? Math.max(0, Math.round(snapshotAt / 1000 - item.updated)) : null;
         const heading = typeof item.dir === "number" && Number.isFinite(item.dir) ? item.dir : null;
         const speedKts = typeof item.speed === "number" && Number.isFinite(item.speed) && item.speed >= 0 ? item.speed / 1.852 : null;
         const projected = seenSeconds === null ? null : estimatePosition({ lat: item.lat!, lon: item.lng!, heading, speedKts, seenSeconds }, 0);
@@ -221,10 +228,7 @@ export async function GET(request: NextRequest) {
     const selected = candidates[0];
     const routeCandidates = candidates.slice(0, MAX_ROUTE_LOOKUPS);
     const airportCodes = [...new Set(routeCandidates.flatMap(({ item }) => [item.dep_iata?.trim(), item.arr_iata?.trim()]).filter((code): code is string => Boolean(code)))];
-    const airportList = [];
-    for (let index = 0; index < airportCodes.length; index += 4) {
-      airportList.push(...await Promise.all(airportCodes.slice(index, index + 4).map((code) => getAirport(apiKey, code))));
-    }
+    const airportList = await Promise.all(airportCodes.map((code) => getAirport(apiKey, code)));
     const airportsByCode = new Map(airportList.map((airport) => [airport.code, airport]));
     aircraft = candidates.map(({ item, projected, projectedDistanceKm, altitudeFt, seenSeconds, speedKts }) => {
       const originCode = item.dep_iata?.trim() || null;
@@ -293,6 +297,6 @@ export async function GET(request: NextRequest) {
   } else { logUpstream("weather", weatherResult.reason); warnings.push("Weather is temporarily unavailable."); }
 
   if (aircraftResult.status === "rejected" && weatherResult.status === "rejected") return NextResponse.json({ error: "Sky data is temporarily unavailable." }, { status: 503 });
-  const body: SkyResponse = { flight, aircraft, nearbyCount, weather, updatedAt: new Date().toISOString(), warnings };
+  const body: SkyResponse = { flight, aircraft, nearbyCount, weather, updatedAt: new Date(snapshotAt).toISOString(), snapshotAgeMs: Date.now() - snapshotAt, warnings };
   return NextResponse.json(body, { headers: { "Cache-Control": "no-store" } });
 }

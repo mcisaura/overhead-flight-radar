@@ -33,3 +33,13 @@ test("a moving second aircraft can become the closest and take over", () => {
   assert.equal(closestLiveAircraft(projectLiveAircraft([first, second], center, receivedAt, receivedAt))?.hex, "first");
   assert.equal(closestLiveAircraft(projectLiveAircraft([first, second], center, receivedAt, receivedAt + 25_000))?.hex, "second");
 });
+
+test("closest-aircraft selection preserves the distance and identifier tie break", () => {
+  const aircraft = [
+    { hex: "z", distanceKm: 2, seenSeconds: 10 },
+    { hex: "a", distanceKm: 2, seenSeconds: 10 },
+    { hex: "old", distanceKm: 0, seenSeconds: 61 },
+  ];
+  assert.equal(closestLiveAircraft(aircraft)?.hex, "a");
+  assert.equal(closestLiveAircraft(aircraft, "a")?.hex, "z");
+});

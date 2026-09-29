@@ -14,7 +14,10 @@ export function projectLiveAircraft<T extends ReportedAircraft>(aircraft: T[], p
 }
 
 export function closestLiveAircraft<T extends { hex: string; distanceKm: number; seenSeconds: number }>(aircraft: T[], excludeHex?: string) {
-  return aircraft
-    .filter((plane) => plane.hex !== excludeHex && plane.distanceKm <= ZONE_RADIUS_KM && plane.seenSeconds <= 60)
-    .sort((a, b) => a.distanceKm - b.distanceKm || a.hex.localeCompare(b.hex))[0] ?? null;
+  let closest: T | null = null;
+  for (const plane of aircraft) {
+    if (plane.hex === excludeHex || !(plane.distanceKm <= ZONE_RADIUS_KM) || !(plane.seenSeconds <= 60)) continue;
+    if (!closest || plane.distanceKm < closest.distanceKm || (plane.distanceKm === closest.distanceKm && plane.hex.localeCompare(closest.hex) < 0)) closest = plane;
+  }
+  return closest;
 }

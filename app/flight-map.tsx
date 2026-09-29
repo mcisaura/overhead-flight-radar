@@ -40,7 +40,6 @@ type Props = {
   lat: number;
   lon: number;
   aircraft: MapAircraft[];
-  routeAircraft?: MapAircraft[];
   closestHex: string | null;
   loading: boolean;
   unavailable: boolean;
@@ -75,7 +74,7 @@ function headingPoint(plane: MapAircraft, distanceKm: number) {
     plane.lon + Math.sin(radians) * distanceKm / kmPerLon] as [number, number];
 }
 
-export default function FlightMap({ lat, lon, aircraft, routeAircraft, closestHex, loading, unavailable, demo = false, locationLabel, showDetails = true, exiting = false, onSelect }: Props) {
+export default function FlightMap({ lat, lon, aircraft, closestHex, loading, unavailable, demo = false, locationLabel, showDetails = true, exiting = false, onSelect }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<Leaflet.Map | null>(null);
   const markerLayerRef = useRef<Leaflet.LayerGroup | null>(null);
@@ -168,17 +167,11 @@ export default function FlightMap({ lat, lon, aircraft, routeAircraft, closestHe
   const destinationLat = routeDestination?.lat ?? null;
   const destinationLon = routeDestination?.lon ?? null;
   const destinationCode = routeDestination?.code ?? "";
-  const movingAircraft = new Map(aircraft.map((plane) => [plane.hex, plane]));
-  const routePlanes = (routeAircraft ?? aircraft).map((plane) => {
-    const moving = movingAircraft.get(plane.hex);
-    return moving ? { ...plane, lat: moving.lat, lon: moving.lon, heading: moving.heading } : plane;
-  });
-
   useEffect(() => {
     const L = leafletRef.current;
     const layer = routeLayerRef.current;
     if (!ready || !nearViewport || !L || !layer) return;
-    const visible = new Set(routePlanes.map((plane) => plane.hex));
+    const visible = new Set(aircraft.map((plane) => plane.hex));
     for (const [hex, drawing] of routeDrawingsRef.current) {
       if (visible.has(hex)) continue;
       if (drawing.kind === "route") {
@@ -189,7 +182,7 @@ export default function FlightMap({ lat, lon, aircraft, routeAircraft, closestHe
       }
       routeDrawingsRef.current.delete(hex);
     }
-    for (const plane of routePlanes) {
+    for (const plane of aircraft) {
       const highlighted = plane.hex === activeHex;
       const color = highlighted ? "#b75f43" : "#58879a";
       const weight = highlighted ? 3 : 1.5;
@@ -233,7 +226,7 @@ export default function FlightMap({ lat, lon, aircraft, routeAircraft, closestHe
         routeDrawingsRef.current.delete(plane.hex);
       }
     }
-  }, [routePlanes, ready, nearViewport, activeHex]);
+  }, [aircraft, ready, nearViewport, activeHex]);
 
   useEffect(() => {
     const L = leafletRef.current;

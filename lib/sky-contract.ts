@@ -59,5 +59,6 @@ export type SkyResponse = {
   nearbyCount: number;
   weather: { temperatureF: number; cloudCover: number; windMph: number; code: number; isDay: boolean } | null;
   updatedAt: string;
+  snapshotAgeMs: number;
   warnings: string[];
 };
