@@ -27,6 +27,7 @@ The user said this will be a public, low-traffic portfolio piece with a 1,000-ca
 
 ## Latest verification
 
+- Airline lookup fix on 29 September: `getAirline` in `app/api/sky/route.ts` used the IATA code before ICAO. IATA codes are reused, so callsign JTL218 (Jet Linx, IATA “JL”) was labelled “Japan Airlines” in the Live view. It now queries by ICAO when present and falls back to IATA. A new API test fails without the fix and passes with it; 31/31 tests, TypeScript, and lint pass.
 - Visual pass on 29 September (latest): Live and Demo were reviewed in the in-app browser at 1440, 800, and 375px, light and dark, against the running dev server. Fixes made and re-verified in the browser:
   - Demo sidebar values are rounded (previously showed e.g. `3,885.25 ft`, `192.436 kt`).
   - All distances are nautical miles via `formatDistanceNm` in `lib/flight-display.ts` (new test in `tests/flight-display.test.ts`).
@@ -50,7 +51,7 @@ The user said this will be a public, low-traffic portfolio piece with a 1,000-ca
 - After the unified project credits were added, TypeScript and lint passed (with the same existing `<img>` warning), and the production build passed (with the same existing large-chunk warning).
 - The moving map-line fix was visually verified in the Houston arrival demo: over a 700 ms sample the marker moved from `(384,264)` to `(387,259)`, and both route segments changed their shared endpoint to those exact coordinates. TypeScript, lint, and the production build pass; only the same existing `<img>` and large-chunk warnings remain.
 - The theme toggle and dark-mode styles passed TypeScript, lint (with the existing `<img>` warning), and the production build (with the existing large-chunk warning). The most recent contrast changes passed `npm run build`. A visual review of those changes remains open: browser access to the local app was denied because the browser security check was unavailable, including on retry. The last pass was a CSS audit, not a screenshot review.
-- The local development server is stopped. `.env.local` already exists locally; preserve it and never put the API key in documentation or chat output.
+- The local development server was stopped at the end of the 29 September session (Ctrl+C in the owner's Terminal). `.env.local` already exists locally; preserve it and never put the API key in documentation or chat output.
 
 ## First check next time
 
