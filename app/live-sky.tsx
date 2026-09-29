@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowRight, CloudSun, LocateFixed, MapPin, Navigation2, RefreshCw } from "lucide-react";
 import FlightMap, { type MapAircraft } from "./flight-map";
 import ModeToggle from "./mode-toggle";
+import ThemeToggle from "./theme-toggle";
 import { distanceKm, estimatePosition } from "../lib/flight-estimate";
 import { ZONE_RADIUS_KM, zoneProgress } from "../lib/zone-progress";
 import FlightIdentity, { flightIdentityText } from "./flight-identity";
@@ -205,7 +206,7 @@ export default function LiveSky({ onModeChange, place, onPlaceChange, weatherUni
             <span className="header-weather-stat">Wind {formatWind(data.weather.windMph, weatherUnit)}</span>
           </> : <span className="header-weather-condition">{loading ? "Loading weather…" : "Weather unavailable"}</span>}
         </div>
-        <div className="topbar-right"><ModeToggle mode="live" onChange={onModeChange} /><span className="top-divider" /><span className="topbar-place"><MapPin size={15} />{place.label}</span></div>
+        <div className="topbar-right"><ModeToggle mode="live" onChange={onModeChange} /><ThemeToggle /><span className="top-divider" /><span className="topbar-place"><MapPin size={15} />{place.label}</span></div>
       </div>
     </header>
 

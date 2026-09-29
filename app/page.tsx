@@ -21,6 +21,7 @@ import HeroCloud from "./hero-cloud";
 import WeatherUnitToggle from "./weather-unit-toggle";
 import { formatTemperature, formatWind, type WeatherUnit } from "../lib/weather-units";
 import HeroBackgroundToggle, { type HeroBackground } from "./hero-background-toggle";
+import ThemeToggle from "./theme-toggle";
 
 const DEMO_CROSSING_DURATION_MS = 30_000;
 
@@ -154,6 +155,7 @@ function DemoHome({ onModeChange, weatherUnit, onWeatherUnitChange, heroBackgrou
           </div>
           <div className="topbar-right">
             <ModeToggle mode="demo" onChange={onModeChange} />
+            <ThemeToggle />
             <span className="top-divider" />
             <span className="topbar-place"><MapPin size={15} />{demoPlace.label}</span>
           </div>
