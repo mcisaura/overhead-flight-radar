@@ -4,6 +4,8 @@
 
 Overhead is a coherent, working prototype. Its Live data, Demo playback, map, and boarding pass have clear roles. TypeScript, lint, and the production build pass. Before public hosting, the live API needs protection against upstream quota exhaustion. The next priorities are stale aircraft handling, search coverage, and route verification.
 
+> **Status, 29 September 2026:** This is the original review snapshot, kept for reference. All findings have since been addressed: F1 (Cloudflare rate limits, bounded metadata fan-out, and a 900-call rolling AirLabs budget in a Durable Object), F2 (stale-aircraft expiry and recovery), F3 (date-line-safe expanded search), F4 (explicit route states), F5 (spatial fields from one estimated position, shared `lib/sky-contract.ts`), F6 (real elapsed Demo time), F7 (structured failure logs), and F8 (starter UI, database, auth helper, Sites build plugin, and install scripts removed). 29 tests now cover the API, live snapshot, budget, and Demo clock. Browser workflow tests and a deployed-quota check remain open; see HANDOFF.md. Line numbers and file paths below refer to the code as reviewed.
+
 This document records the review findings and a remediation sequence for a future work session. No application code was changed during the review.
 
 ## 1  Executive Summary

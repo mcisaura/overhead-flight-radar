@@ -38,19 +38,29 @@ npm run dev
 For Live mode, copy `.env.example` to `.env.local` if it does not already exist, then replace the placeholder with your AirLabs key. Never overwrite an existing configured key. Open `http://localhost:5173/` for the app. Live data requires internet access. Stop the development server with `Ctrl+C`. To verify the project:
 
 ```bash
-npx tsc --noEmit
-npm test
+npm run check        # runs all four checks below in order
+npm test             # 29 Node test-runner tests (API, live snapshot, budget, Demo clock)
+npm run typecheck    # tsc --noEmit
 npm run lint
-npm run build
+npm run build        # production Worker build into dist/
 ```
+
+`npm start` serves the built Worker locally with Wrangler after `npm run build`.
 
 ## Repository and publishing
 
-The repository includes application source, tests, assets, attribution, and the safe `.env.example` template. GitHub Actions runs the test, type check, lint, and build commands on pushes and pull requests. `.env.local`, dependencies, build output, and local Cloudflare state are ignored by Git. Keep the AirLabs key in local environment configuration or a server-side hosting secret; never add it to a commit or a browser variable. The Demo works without a key.
+The repository contains application source, tests, assets and their attribution, and the safe `.env.example` template. GitHub Actions (`.github/workflows/checks.yml`) runs tests, type checks, lint, and the build on every push and pull request. `.env.local`, dependencies, build output, local Cloudflare state, and local agent/tool folders are ignored by Git. Keep the AirLabs key in `.env.local` or a server-side hosting secret; never commit it or expose it to the browser. The Demo works without a key.
 
-No GitHub remote or public deployment is configured by this project. Before publishing the site, check AirLabs usage already consumed in the current billing period: the app's shared 900-call guard only counts requests made after its Durable Object is deployed and does not see calls from other applications on the same AirLabs account. Verify that the deployed quota binding and rate limits work before opening Live to the public.
+The build targets Cloudflare Workers through [vinext](https://www.npmjs.com/package/vinext) and `@cloudflare/vite-plugin`. `vite.config.ts` declares the Worker bindings: two rate limiters (`SKY_CLIENT_LIMIT`, `SKY_LOCATION_LIMIT`) and the `AIRLABS_BUDGET` Durable Object exported from `worker.ts`. No GitHub remote or public deployment is configured yet, and a real Cloudflare deployment has not been exercised. Before opening Live to the public:
 
-The included 3D models have their own licenses and credits below; a code license would not replace those terms. This repository currently has no general code license.
+1. Check how much of the AirLabs allowance is already used this billing period. The app's 900-call guard only counts requests made after its Durable Object is deployed and cannot see other applications on the same account.
+2. Store the key as a Worker secret (`npx wrangler secret put AIRLABS_API_KEY`) and confirm the deployed API can read it.
+3. Confirm the rate-limit bindings and the budget Durable Object work in the deployed Worker, then monitor usage and the `upstream_failure`, `rate_limited`, and `airlabs_budget_exhausted` log events.
+4. Review the [AirLabs](https://airlabs.co/docs/flights), [Open-Meteo](https://open-meteo.com/en/terms), and [OpenStreetMap tile](https://operations.osmfoundation.org/policies/tiles/) terms.
+
+## License
+
+The application code has no open-source license yet, so default copyright applies. The 3D models, fonts, and data services keep their own terms, listed under **Asset credits** below; a future code license would not replace them. The cloud model is CC BY-NC 4.0, so the site should stay non-commercial while it is used.
 
 ## Live data
 
@@ -104,13 +114,18 @@ Aircraft are removed from the active hero and map when their last report becomes
 - `app/hero-background-toggle.tsx`, `public/hero-houston-skyline.png`, `public/hero-low-poly-sky.png`: the footer background selector and its two alternate hero assets.
 - `app/project-credits.tsx`: the always-visible footer attribution groups.
 - `app/demo-data.ts`: Demo flights and weather.
-- `app/flip-heading.tsx`: the boarding-pass split-flap headline used in Live and both demos.
+- `lib/sky-contract.ts`: the shared `GET /api/sky` response types.
+- `vite.config.ts`, `cloudflare-env.d.ts`: build configuration and Worker binding types.
+- `tests/`: API, live-snapshot, AirLabs budget, and Demo clock tests.
+- `app/flip-heading.tsx`: the boarding-pass split-flap headline used in Live and Demo.
 - `lib/zone-progress.ts`, `lib/flight-estimate.ts`, `lib/closest-approach.ts`: crossing calculations, movement estimates, and closest-approach messages.
 - `lib/route-plausibility.ts`: validation that suppresses clearly stale or mismatched reported airport pairs.
 
-Before public hosting, review the source terms and request limits for [AirLabs](https://airlabs.co/docs/flights), [Open-Meteo](https://open-meteo.com/en/terms), and [OpenStreetMap tiles](https://operations.osmfoundation.org/policies/tiles/). No deployment is configured here.
+## Asset credits
 
-The Boeing 737-200 model is by LucasSS on [Sketchfab](https://sketchfab.com/3d-models/boeing-737-200-white-81030e446b7a40d29d83840e3ed878b3), supplied as `boeing_737-200_white.glb` under the [Sketchfab Standard License](https://sketchfab.com/licenses). See the attribution embedded in the GLB asset for its source URL.
+The Boeing 737-200 model is by LucasSS on [Sketchfab](https://sketchfab.com/3d-models/boeing-737-200-white-81030e446b7a40d29d83840e3ed878b3), supplied by the project owner as `boeing_737-200_white.glb` under the [Sketchfab Standard License](https://sketchfab.com/licenses), with permission to include it in this project and repository. Its source is also embedded in the GLB asset.
+
+Fonts (DM Sans, Fraunces, Barlow Condensed) are self-hosted under the SIL Open Font License; their license files are in `public/fonts/`.
 
 The Cessna 310 model is by BorealRiver on [Sketchfab](https://sketchfab.com/3d-models/cessna-310-airplane-low-poly-bbf73d06537c4a2ba86b96a3b97209c1), supplied as `cessna_310_airplane_-_low_poly.glb` under CC BY 4.0. The helicopter model is by linus1178 on [Sketchfab](https://sketchfab.com/3d-models/helicopter-dec45a28e6f346648c3d6585426157b8), supplied as `helicopter.glb` under CC BY 4.0. Their GLB metadata also includes author, license, and source information.
 
