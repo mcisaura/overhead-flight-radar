@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type * as Leaflet from "leaflet";
 import { MapPin, Navigation2 } from "lucide-react";
 import { ZONE_RADIUS_KM } from "../lib/zone-progress";
-import { airlineIdentity, displayAircraftType, displayFlightName, type AirlineIdentity } from "../lib/flight-display";
+import { airlineIdentity, displayAircraftType, displayFlightName, formatDistanceNm, type AirlineIdentity } from "../lib/flight-display";
 import AircraftModelLabel from "./aircraft-model-label";
 import "leaflet/dist/leaflet.css";
 
@@ -130,7 +130,7 @@ export default function FlightMap({ lat, lon, aircraft, closestHex, loading, una
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       }).addTo(map);
       L.control.zoom({ position: "bottomright" }).addTo(map);
-      L.circle([lat, lon], { radius: ZONE_RADIUS_KM * 1000, color: "#317f98", weight: 1, dashArray: "5 7", fillColor: "#74adc0", fillOpacity: 0.075, interactive: false }).addTo(map);
+      L.circle([lat, lon], { radius: ZONE_RADIUS_KM * 1000, color: "#317f98", weight: 1, dashArray: "5 7", fillColor: "#74adc0", fillOpacity: 0.075, interactive: false, className: "zone-circle" }).addTo(map);
       L.circleMarker([lat, lon], { radius: 8, color: "#fff", weight: 3, fillColor: "#1e6e8b", fillOpacity: 1 })
         .bindTooltip(locationLabel ?? (demo ? "Sample location" : "Your location"), { direction: "top" }).addTo(map);
       routeLayerRef.current = L.layerGroup().addTo(map);
@@ -316,11 +316,11 @@ export default function FlightMap({ lat, lon, aircraft, closestHex, loading, una
             <span className="map-card-label">{demo ? "SAMPLE FLIGHT" : selected.hex === closestHex ? "TRACKED AIRCRAFT" : "SELECTED AIRCRAFT"}</span>
             <strong title={selected.callsign || undefined} tabIndex={selected.callsign ? 0 : undefined}>{formatName(selected)}</strong>
             <span className="map-card-type"><span title={selected.aircraftType || undefined} tabIndex={selected.aircraftType ? 0 : undefined}><AircraftModelLabel label={selected.displayType || displayAircraftType(selected.aircraftType, selected.aircraftModel)} /></span>{selected.registration && selected.registration !== selected.callsign ? ` · ${selected.registration}` : ""}</span>
-            <div className="map-card-stats">
+            {selected.hex !== closestHex && <div className="map-card-stats">
               <span><small>Altitude</small>{selected.altitudeFt == null ? "—" : `${Math.round(selected.altitudeFt).toLocaleString()} ft`}</span>
               <span><small>Speed</small>{selected.speedKts == null ? "—" : `${Math.round(selected.speedKts)} kt`}</span>
-              <span><small>Distance</small>{selected.distanceKm.toFixed(1)} km</span>
-            </div>
+              <span><small>Distance</small>{formatDistanceNm(selected.distanceKm)}</span>
+            </div>}
             <span className="map-card-age">{demo ? "Simulated aircraft position" : `${selected.estimated ? "Estimated position" : "Reported position"} · last report ${Math.round(selected.seenSeconds)} sec ago`}</span>
           </> : <>
             <MapPin size={20} aria-hidden="true" />

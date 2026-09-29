@@ -14,6 +14,7 @@ import HeroProgressLine from "./hero-progress-line";
 import BoardingPassDisplay from "./boarding-pass-display";
 import FlipHeading from "./flip-heading";
 import { aircraftVisualForFlight } from "../lib/aircraft-visual";
+import { formatDistanceNm } from "../lib/flight-display";
 import ProjectCredits from "./project-credits";
 import WeatherUnitToggle from "./weather-unit-toggle";
 import { formatTemperature, formatWind, type WeatherUnit } from "../lib/weather-units";
@@ -158,7 +159,7 @@ function DemoHome({ onModeChange, weatherUnit, onWeatherUnitChange, heroBackgrou
             <ModeToggle mode="demo" onChange={onModeChange} />
             <ThemeToggle />
             <span className="top-divider" />
-            <span className="topbar-place"><MapPin size={15} />{demoPlace.label}</span>
+            <span className="topbar-place" title={demoPlace.label}><MapPin size={15} /><span className="topbar-place-text">{demoPlace.label}</span></span>
           </div>
         </div>
       </header>
@@ -240,9 +241,9 @@ function DemoHome({ onModeChange, weatherUnit, onWeatherUnitChange, heroBackgrou
               <div><strong className="airport-code">{routeExit?.code ?? "···"}</strong><span className="airport-city">{routeExit?.city ?? "Exit unknown"}</span></div>
             </div>
             <div className="stat-row">
-              <div><span>Altitude</span><strong>{flight.altitudeFt.toLocaleString()} ft</strong></div>
-              <div><span>Ground speed</span><strong>{flight.speedKts?.toLocaleString()} kt</strong></div>
-              <div><span>Distance</span><strong>{flight.distanceKm.toFixed(1)} km</strong></div>
+              <div><span>Altitude</span><strong>{Math.round(flight.altitudeFt).toLocaleString()} ft</strong></div>
+              <div><span>Ground speed</span><strong>{flight.speedKts == null ? "—" : `${Math.round(flight.speedKts)} kt`}</strong></div>
+              <div><span>Distance</span><strong>{formatDistanceNm(flight.distanceKm)}</strong></div>
             </div>
             <p className="data-note">{selected.scenario.routeNote}</p>
             </> : <p className="empty-copy">No flight details yet. Start a sample flight to see its journey.</p>}

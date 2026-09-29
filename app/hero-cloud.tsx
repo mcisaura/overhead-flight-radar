@@ -334,7 +334,7 @@ export default function HeroCloud() {
   return <div className="hero-cloud" ref={rootRef} role="img" aria-label="Interactive 3D clouds. Left-click drag to move; right-click drag to rotate.">
     <span className="aircraft-model-caption">
       <MousePointer2 size={17} strokeWidth={2.2} aria-hidden="true" />
-      <span><strong>3D cloud illustration</strong><small>Left-click drag to move · Right-click drag to rotate</small></span>
+      <span><strong>3D cloud illustration</strong><small className="hint-mouse">Left-click drag to move · Right-click drag to rotate</small><small className="hint-touch">Drag to move</small></span>
     </span>
   </div>;
 }

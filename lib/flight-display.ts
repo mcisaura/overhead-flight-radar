@@ -60,3 +60,10 @@ export function splitAircraftDescription(label: string) {
 export function airlineLogoUrl(iata: string | null | undefined) {
   return iata && /^[A-Z0-9]{2}$/.test(iata) ? `https://airlabs.co/img/airline/m/${iata}.png` : null;
 }
+
+const KM_PER_NAUTICAL_MILE = 1.852;
+
+/** Distances are shown in nautical miles to match knots, feet, and the 5 nm zone. */
+export function formatDistanceNm(km: number) {
+  return `${(km / KM_PER_NAUTICAL_MILE).toFixed(1)} nm`;
+}

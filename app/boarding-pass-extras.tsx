@@ -1,11 +1,11 @@
 import type { ReactNode } from "react";
-import { airlineIdentity, type AirlineIdentity } from "../lib/flight-display";
+import { airlineIdentity, formatDistanceNm, type AirlineIdentity } from "../lib/flight-display";
 
 export function BoardingPassStats({ altitudeFt, speedKts, distanceKm }: { altitudeFt: number | null; speedKts: number | null; distanceKm: number }) {
   return <div className="boarding-pass-stats" aria-label="Flight position details">
     <div><span>ALTITUDE</span><strong>{altitudeFt == null ? "—" : `${Math.round(altitudeFt).toLocaleString()} ft`}</strong></div>
     <div><span>GROUND SPEED</span><strong>{speedKts == null ? "—" : `${Math.round(speedKts)} kt`}</strong></div>
-    <div><span>DISTANCE</span><strong>{distanceKm.toFixed(1)} km</strong></div>
+    <div><span>DISTANCE</span><strong>{formatDistanceNm(distanceKm)}</strong></div>
   </div>;
 }
 

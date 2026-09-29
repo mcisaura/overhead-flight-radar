@@ -1183,3 +1183,57 @@ button:disabled { opacity: .6; cursor: wait; }
   .next-aircraft-main span { font-size: 10px; }
   .next-aircraft-queue p { grid-column: 2; margin-top: 0; font-size: 9px; }
 }
+
+/* Visual pass, 29 Sep 2026: header fit, phone map and hero, quiet pass height, touch hints. */
+
+/* Interaction hints: mouse wording by default, touch wording on touch screens. */
+.aircraft-model-caption .hint-touch { display: none; }
+@media (hover: none) and (pointer: coarse) {
+  .aircraft-model-caption .hint-mouse { display: none; }
+  .aircraft-model-caption .hint-touch { display: block; }
+}
+
+/* Mid-width header: keep weather from running into the controls. */
+.header-weather { overflow: hidden; }
+@media (min-width: 641px) and (max-width: 900px) {
+  .topbar-main { gap: 16px; }
+  .header-weather-condition { display: none; }
+  .topbar-right { gap: 14px; }
+  .theme-toggle { width: 38px; padding: 0; }
+  .theme-toggle span { display: none; }
+}
+
+/* Phones: show the place on the controls row. */
+@media (max-width: 520px) {
+  .topbar-right { min-width: 0; }
+  .topbar-place { display: inline-flex; min-width: 0; max-width: 150px; font-size: 11px; gap: 6px; }
+  .topbar-place-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .topbar-place svg { display: inline; flex: none; width: 13px; height: 13px; }
+}
+
+/* The quiet pass sizes to its content instead of holding an empty gap. */
+.empty-boarding-pass, .live-stage .empty-boarding-pass { min-height: 0; }
+@media (max-width: 520px) {
+  .boarding-pass.empty-boarding-pass, .live-stage .boarding-pass.empty-boarding-pass { min-height: 0; }
+}
+
+/* Phones: the hint would cover the model, which already invites dragging. */
+@media (max-width: 520px) {
+  .sky-stage.has-flight .aircraft-model-caption { display: none; }
+}
+
+/* The map card sizes to its content; tracked-aircraft stats live on the pass and sidebar. */
+.map-flight-card { min-height: 0; }
+
+/* Phones: a compact map card that leaves the map and zoom controls visible. */
+@media (max-width: 520px) {
+  .map-flight-card { left: 10px; right: auto; bottom: 26px; width: calc(100% - 66px); padding: 10px 12px; }
+  .map-flight-card > strong { font-size: 18px; letter-spacing: -.02em; }
+  .map-flight-card .map-card-label { font-size: 9px; }
+  .map-flight-card .map-card-type { font-size: 11px; }
+  .map-flight-card .map-card-stats { margin-top: 8px; padding-top: 8px; }
+  .map-flight-card .map-card-age { display: none; }
+}
+
+/* Dark mode: a visible 5 nm zone ring. */
+[data-theme="dark"] .flight-map path.zone-circle { stroke: #8fd0e3; stroke-opacity: .85; fill: #74adc0; fill-opacity: .12; }
