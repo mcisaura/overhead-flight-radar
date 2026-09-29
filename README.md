@@ -1,6 +1,6 @@
 # Overhead
 
-Overhead shows aircraft currently reported within 5 nautical miles of a chosen location. Live mode opens on downtown Houston, labeled as a reference location. Select **Use my location** to see the sky near you. The header contains the Live/Demo toggle, selected place, and a compact weather strip. Demo has three fictional Houston flights and sample weather.
+Overhead shows aircraft currently reported within 5 nautical miles of a chosen location. Live mode opens on downtown Houston, labeled as a reference location. Select **Use my location** to see the sky near you. The header contains the Live/Demo toggle, light/dark theme toggle, selected place, and a compact weather strip. Demo has three fictional Houston flights and sample weather.
 
 The project was inspired by British Airways' 2013 **#LookUp** campaign, which connected planes in the sky to information shown on a billboard.
 
@@ -17,6 +17,10 @@ For a new chat or work session, start with [HANDOFF.md](HANDOFF.md). It records 
 | Flight details | Reported information, which may be delayed or incomplete; closest-pass and exit estimates appear when they can be calculated. | Consistent details prepared for each fictional scenario. |
 
 Both modes use the same boarding-pass presentation, map, 3D aircraft interactions, quiet-sky clouds, and weather-unit toggle. The 3D models represent broad aircraft categories and may not match a live flight's exact aircraft type. Demo does not request live aircraft or weather data, though its map still loads OpenStreetMap tiles.
+
+## Appearance
+
+The header's sun/moon toggle switches both Live and Demo between light and dark modes. The choice carries across the two modes while the page remains open; a full refresh starts in light mode again. It is not saved to browser storage or based on the device theme. Dark mode adjusts the sky, boarding pass and split-flap display, flight cards, map controls and tiles, and footer. On narrow screens the theme toggle shows only its icon, with an accessible label.
 
 The footer's **Hero background** selector provides direct access to the original photographic sky, a warm Houston skyline concept, and a low-poly illustrated sky. The choice is shared between Live and Demo for the current page session. The two alternate images are bottom-centered so their skyline and horizon edges remain visible across desktop and mobile crops.
 
@@ -78,6 +82,7 @@ Projection stops 90 seconds after the underlying report so it can continue throu
 
 - `app/live-sky.tsx`: live header and weather, hero, polling, location choice, and details.
 - `app/page.tsx`: mode toggle, Demo header and weather, and Demo experience.
+- `app/theme-provider.tsx`, `app/theme-toggle.tsx`, `app/globals.css`: page-session theme state, header toggle, and light/dark styles.
 - `app/boarding-pass-display.tsx`, `app/boarding-route.tsx`, `app/boarding-pass-extras.tsx`: boarding pass transitions, route, stats, and stub.
 - `app/flight-identity.tsx`, `app/aircraft-model-label.tsx`, `lib/flight-display.ts`: readable flight and aircraft labels, codes, and airline presentation.
 - `app/api/sky/route.ts`: server-side live API aggregation and caching.

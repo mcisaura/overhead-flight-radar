@@ -2,6 +2,10 @@
 
 Use this note when continuing the project in a new chat. The app lives in `flight-overhead/` inside the “Flight Proj” ChatGPT project mirror. The parent `AGENTS.md` makes `sources/` read-only; work in `flight-overhead/`. This directory is not a Git repository.
 
+## Reminder for the next session
+
+The user wants to work through the repository-wide code review. Read `Flight_Code_Review.md` first (or `Flight_Code_Review.docx` for the formatted copy). Start with finding F1, the public live API's upstream quota risk, then address F2–F5 and their workflow tests. The review is documentation only; no application fixes have been made. Keep the visual theme check below on the follow-up list.
+
 ## Current product
 
 - `/` has **Live** and a **Houston Demo**. Live defaults to downtown Houston and uses AirLabs flights near the selected location, Open-Meteo weather, and a five-nautical-mile observation zone. The nearest eligible aircraft is featured and can be replaced when another becomes closer.
@@ -16,6 +20,7 @@ Use this note when continuing the project in a new chat. The app lives in `fligh
 - The boarding-pass stub seam uses a denser 4px/4px repeating perforation pattern with larger outlined side cutouts, making the tear edge more visually pronounced.
 - Active boarding passes use a separate compact layout below 520px: the quiet-state minimum height is removed, heading/route spacing is reduced, long airport names are clamped to two lines, and the next-aircraft queue becomes a compact grid. The reproduced SWA3049 mobile case measured about 488px for the card and 794px for the complete hero at a 390×844 viewport, instead of the oversized card pushing the hero far below the fold.
 - Both Live and Demo footers use `app/project-credits.tsx` to credit the project services and assets. Every attribution remains visible in two compact, muted, left-aligned groups: **Data & maps** for AirLabs, Open-Meteo, OpenStreetMap, and Leaflet; and **3D assets** for Three.js plus each aircraft/cloud model creator and applicable license.
+- A sun/moon toggle in both headers switches the whole app between light and dark modes. The theme state lives in `app/theme-provider.tsx`, starts light on every full page load, and carries between Live and Demo until refresh. It is not persisted. Dark styles in `app/globals.css` cover the sky, boarding pass and split-flap display, flight cards, map, controls, and footer. The latest CSS pass improved dark-mode contrast for Demo preset accents, boarding-pass labels, map key, progress line, and status text.
 - All three views share the boarding pass, split-flap headline animation, 3D aircraft category models, drag/rotate interaction, map, quiet-sky clouds, and weather-unit control. The models are illustrations, not exact representations of every reported type.
 
 ## Latest verification
@@ -23,16 +28,18 @@ Use this note when continuing the project in a new chat. The app lives in `fligh
 - After the Houston consolidation, `npx tsc --noEmit`, `npm run lint`, and `npm run build` passed. Lint still reports the existing `<img>` performance warning in `app/flight-identity.tsx`; the build still reports the existing large-chunk warning. A clean development-server restart returned HTTP 200 for `/` and HTTP 404 for the removed `/concept/houston` route. Live and Demo both rendered in the in-app browser, the three Houston scenarios appeared, the United arrival loaded correctly, and the browser console had no errors.
 - After the unified project credits were added, TypeScript and lint passed (with the same existing `<img>` warning), and the production build passed (with the same existing large-chunk warning).
 - The moving map-line fix was visually verified in the Houston arrival demo: over a 700 ms sample the marker moved from `(384,264)` to `(387,259)`, and both route segments changed their shared endpoint to those exact coordinates. TypeScript, lint, and the production build pass; only the same existing `<img>` and large-chunk warnings remain.
+- The theme toggle and dark-mode styles passed TypeScript, lint (with the existing `<img>` warning), and the production build (with the existing large-chunk warning). The most recent contrast changes passed `npm run build`. A visual review of those changes remains open: browser access to the local app was denied because the browser security check was unavailable, including on retry. The last pass was a CSS audit, not a screenshot review.
 - The local development server was stopped after the latest documentation update. Restart it with `npm run dev` from `flight-overhead/` when needed. `.env.local` already exists locally; preserve it and never put the API key in documentation or chat output.
 
 ## First check next time
 
-Confirm that `/` renders in both Live and Demo modes after the Houston consolidation. The `next/link` imports associated with the former concept links have been removed.
+When browser access is available, inspect light and dark modes in both Live and Demo at desktop and mobile widths. Confirm the split-flap display and Demo presets remain legible, switching modes retains the chosen theme, and a full refresh returns to light mode.
 
 ## Key files
 
 - `app/page.tsx`, `app/demo-data.ts`: Houston Demo and mode switch.
 - `app/live-sky.tsx`, `app/api/sky/route.ts`: Live UI and server data.
+- `app/theme-provider.tsx`, `app/theme-toggle.tsx`, `app/globals.css`: page-session theme, header toggle, and dark-mode styles.
 - `app/flip-heading.tsx`, `app/boarding-pass-display.tsx`, `app/globals.css`: headline flip, boarding-pass transitions, and shared styles.
 - `app/aircraft-model.tsx`, `app/hero-cloud.tsx`, `app/flight-map.tsx`: 3D aircraft, interactive clouds, and map.
 
