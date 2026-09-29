@@ -41,7 +41,7 @@ next-env.d.ts
 *.tsbuildinfo
 /.wrangler/
 /Flight_Code_Review.docx
-# Checkout-local execution profile and tool state; never publish them.
+# Local tool and agent state; never publish it.
 /.sites-runtime/
 /.agents/
 /.codex/
