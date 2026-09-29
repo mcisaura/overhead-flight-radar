@@ -2,9 +2,11 @@
 
 Use this note when continuing the project in a new chat. The app lives in `flight-overhead/` inside the “Flight Proj” ChatGPT project mirror. The parent `AGENTS.md` makes `sources/` read-only; work in `flight-overhead/`. This directory is not a Git repository.
 
-## Reminder for the next session
+## Current review work
 
-The user wants to work through the repository-wide code review. Read `Flight_Code_Review.md` first (or `Flight_Code_Review.docx` for the formatted copy). Start with finding F1, the public live API's upstream quota risk, then address F2–F5 and their workflow tests. The review is documentation only; no application fixes have been made. Keep the visual theme check below on the follow-up list.
+The user wants to keep all functionality while making the project simpler and more efficient. `Flight_Code_Review.md` is the original review snapshot. On 29 September, F1–F7 received initial fixes and tests: local and Cloudflare per-location request limits, bounded metadata lookups, worker-wide concurrency and queue length, expanded date-line-safe search, stale-aircraft expiry, explicit route states, spatial fields based on the selected estimated position, real elapsed Demo playback, and structured upstream failure logs. A shared `lib/sky-contract.ts` now defines the live response. Twenty-two focused tests pass with `npm test`. The initial page chunk fell from about 671 KB to about 59 KB after the 3D scenes were made lazy; the 3D loader remains a separate roughly 597 KB chunk. The build still warns about that chunk.
+
+Remaining work: visually verify Live and Demo at desktop and mobile widths when browser access returns; add browser workflow coverage for theme, geolocation denial, mode switching, Demo pause/scrub/replay, and hidden-tab playback; validate deployed rate-limit behavior and monitor AirLabs usage before public hosting. Cloudflare limits are per location and do not impose an account-wide quota cap. The user explicitly approved F8 cleanup after automatic approval review initially rejected deletion. Unused starter UI components, database examples, auth helper, related files, and 24 direct package dependencies were removed; npm pruned 180 packages. Tests, TypeScript, lint, and the production build passed after cleanup, with the existing image and separate 3D chunk warnings.
 
 ## Current product
 
@@ -25,11 +27,12 @@ The user wants to work through the repository-wide code review. Read `Flight_Cod
 
 ## Latest verification
 
+- On 29 September, `npm test` passed 22 tests covering API validation, aircraft entry and closer-plane handoff, missing and old reports, date-line search, route verification and recovery, lookup failure and timeout, metadata fan-out, concurrency and overload, partial upstream failures, cache reuse, request limits, spatial response consistency, stale snapshot expiry/recovery, and Demo elapsed time. TypeScript and the production build passed after the API and scene-loading changes. The generated worker configuration contains both Cloudflare rate-limit bindings. The build still reports the separate large 3D-loader chunk. Browser security checks prevented opening the local app, so no visual review of this pass is claimed.
 - After the Houston consolidation, `npx tsc --noEmit`, `npm run lint`, and `npm run build` passed. Lint still reports the existing `<img>` performance warning in `app/flight-identity.tsx`; the build still reports the existing large-chunk warning. A clean development-server restart returned HTTP 200 for `/` and HTTP 404 for the removed `/concept/houston` route. Live and Demo both rendered in the in-app browser, the three Houston scenarios appeared, the United arrival loaded correctly, and the browser console had no errors.
 - After the unified project credits were added, TypeScript and lint passed (with the same existing `<img>` warning), and the production build passed (with the same existing large-chunk warning).
 - The moving map-line fix was visually verified in the Houston arrival demo: over a 700 ms sample the marker moved from `(384,264)` to `(387,259)`, and both route segments changed their shared endpoint to those exact coordinates. TypeScript, lint, and the production build pass; only the same existing `<img>` and large-chunk warnings remain.
 - The theme toggle and dark-mode styles passed TypeScript, lint (with the existing `<img>` warning), and the production build (with the existing large-chunk warning). The most recent contrast changes passed `npm run build`. A visual review of those changes remains open: browser access to the local app was denied because the browser security check was unavailable, including on retry. The last pass was a CSS audit, not a screenshot review.
-- The local development server was stopped after the latest documentation update. Restart it with `npm run dev` from `flight-overhead/` when needed. `.env.local` already exists locally; preserve it and never put the API key in documentation or chat output.
+- The local development server was running on port 5173 during the 29 September work session. Check whether that process is still live before starting another. `.env.local` already exists locally; preserve it and never put the API key in documentation or chat output.
 
 ## First check next time
 
