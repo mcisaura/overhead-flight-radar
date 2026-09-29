@@ -71,6 +71,30 @@ test("reported aircraft outside the zone can move inside; spatial fields agree",
   assert.ok(Math.abs(body.aircraft[0].reportedPosition.lon - body.flight.reportedPosition.lon) < 0.001);
 });
 
+test("airline lookup prefers the unique ICAO code over a shared IATA code", async () => {
+  const now = Math.floor(Date.now() / 1000);
+  const calls: URL[] = [];
+  globalThis.fetch = async (input) => {
+    const url = new URL(String(input));
+    calls.push(url);
+    if (url.hostname === "api.open-meteo.com") return Response.json({ current: { temperature_2m: 70 } });
+    if (url.pathname.endsWith("/flights")) return Response.json({ response: [{ hex: "test-jtl", lat: 12, lng: 12, dir: 90, speed: 200, updated: now - 5, status: "active", alt: 3000, flight_icao: "JTL218", airline_icao: "JTL", airline_iata: "JL", flight_number: "218" }] });
+    if (url.pathname.endsWith("/airlines")) {
+      return url.searchParams.get("icao_code") === "JTL"
+        ? Response.json({ response: [{ name: "Jet Linx Aviation", icao_code: "JTL", iata_code: "JL" }] })
+        : Response.json({ response: [{ name: "Japan Airlines", icao_code: "JAL", iata_code: "JL" }] });
+    }
+    return Response.json({ response: [] });
+  };
+  const response = await GET(request(12, 12, "airline-icao"));
+  assert.equal(response.status, 200);
+  const body = await response.json() as { flight: { airline: { name: string } | null } };
+  assert.equal(body.flight.airline?.name, "Jet Linx Aviation");
+  const airlineCall = calls.find((url) => url.pathname.endsWith("/airlines"));
+  assert.equal(airlineCall?.searchParams.get("icao_code"), "JTL");
+  assert.equal(airlineCall?.searchParams.get("iata_code"), null);
+});
+
 test("metadata delay is included in the live snapshot age", async () => {
   globalThis.fetch = async (input) => {
     const url = new URL(String(input));

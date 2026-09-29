@@ -161,7 +161,8 @@ async function getAirport(apiKey: string, code: string) {
 async function getAirline(apiKey: string, icao: string | null, iata: string | null) {
   if (!icao && !iata) return null;
   try {
-    const params: Record<string, string> = iata ? { iata_code: iata } : { icao_code: icao! };
+    // ICAO airline codes are unique; IATA codes are reused (Jet Linx and Japan Airlines both use JL).
+    const params: Record<string, string> = icao ? { icao_code: icao } : { iata_code: iata! };
     const rows = await getAirLabs<AirLabsAirline[]>("airlines", apiKey, { ...params, _fields: "name,iata_code,icao_code" }, 86_400);
     const row = rows[0];
     return row ? airlineIdentity(row.icao_code || icao, row.iata_code || iata, row.name) : null;
