@@ -27,6 +27,16 @@ The user said this will be a public, low-traffic portfolio piece with a 1,000-ca
 
 ## Latest verification
 
+- Visual pass on 29 September (latest): Live and Demo were reviewed in the in-app browser at 1440, 800, and 375px, light and dark, against the running dev server. Fixes made and re-verified in the browser:
+  - Demo sidebar values are rounded (previously showed e.g. `3,885.25 ft`, `192.436 kt`).
+  - All distances are nautical miles via `formatDistanceNm` in `lib/flight-display.ts` (new test in `tests/flight-display.test.ts`).
+  - Map card omits the stat row for the tracked aircraft (kept for a different selected aircraft), has no fixed minimum height, and is compact on phones so the marker and zoom controls stay visible.
+  - Header no longer overlaps between 641–900px; phones show the place label with an ellipsis.
+  - Quiet boarding pass sizes to its content (phone Demo: 610px → 393px).
+  - 3D hints say “Drag to move” on touch screens and are hidden on phones during a flight so they don't cover the model.
+  - Dark-mode 5 nm zone ring has higher contrast (`zone-circle` class on the Leaflet circle).
+  - Layout fixes are grouped at the end of `app/globals.css` under “Visual pass, 29 Sep 2026”.
+  - 30/30 tests, TypeScript, and lint pass; no console errors. The production build still needs `npm run check` on the Mac.
 - Publishing cleanup on 29 September (later session):
   - **Aircraft model:** the project owner chose to keep the original Boeing 737-200 model (`public/models/boeing_737-200_white.glb`, LucasSS, Sketchfab Standard License) and confirmed permission to use it and include it in the public repository. `app/aircraft-assets.ts`, the footer credit, and README attribution point to it. The briefly substituted `low_poly_airplane.glb` was moved out of the repository to `../unused-assets/` and is not referenced.
   - **Template leftovers removed:** `build/sites-vite-plugin.ts` (mock “sign in with ChatGPT” middleware) and its license, `.openai/hosting.json`, and all of `scripts/` (execution-profile, pnpm/CI installers, Sites environment wrappers, bounded build). `vite.config.ts` no longer declares placeholder D1/R2 bindings or managed-Linux server settings; `cloudflare-env.d.ts` drops `DB` and `BUCKET`.
@@ -44,7 +54,7 @@ The user said this will be a public, low-traffic portfolio piece with a 1,000-ca
 
 ## First check next time
 
-Run `npm run check` on the Mac (confirms the build after the template cleanup), then commit any result and push when ready. When browser access is available, inspect light and dark modes in both Live and Demo at desktop and mobile widths. Confirm the split-flap display and Demo presets remain legible, switching modes retains the chosen theme, and a full refresh returns to light mode.
+Run `npm run check` on the Mac (confirms the build after the template cleanup), then commit any result and push when ready. A desktop/800px/phone visual pass was completed on 29 September. Remaining visual ideas (not done): a README screenshot or GIF, and the slightly lighter stats panel on the dark boarding pass.
 
 ## Key files
 
