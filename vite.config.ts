@@ -33,6 +33,10 @@ const localBindingConfig = {
         },
       ]
     : [],
+  ratelimits: [
+    { name: "SKY_CLIENT_LIMIT", namespace_id: "2718281801", simple: { limit: 12, period: 60 as const } },
+    { name: "SKY_LOCATION_LIMIT", namespace_id: "2718281802", simple: { limit: 120, period: 60 as const } },
+  ],
 };
 
 export default defineConfig(async () => {

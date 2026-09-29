@@ -1,47 +1,28 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { ArrowRight, CloudSun, LocateFixed, MapPin, Navigation2, RefreshCw } from "lucide-react";
-import FlightMap, { type MapAircraft } from "./flight-map";
+import FlightMap from "./flight-map";
 import ModeToggle from "./mode-toggle";
 import ThemeToggle from "./theme-toggle";
-import { distanceKm, estimatePosition } from "../lib/flight-estimate";
 import { ZONE_RADIUS_KM, zoneProgress } from "../lib/zone-progress";
+import { closestLiveAircraft, projectLiveAircraft } from "../lib/live-snapshot";
 import FlightIdentity, { flightIdentityText } from "./flight-identity";
 import BoardingRoute from "./boarding-route";
 import { BoardingPassStats, BoardingPassStub } from "./boarding-pass-extras";
-import type { AirlineIdentity } from "../lib/flight-display";
+import type { SkyResponse } from "../lib/sky-contract";
 import HeroProgressLine from "./hero-progress-line";
 import BoardingPassDisplay from "./boarding-pass-display";
 import FlipHeading from "./flip-heading";
-import AircraftModel from "./aircraft-model";
 import { aircraftVisualForFlight } from "../lib/aircraft-visual";
 import ProjectCredits from "./project-credits";
 import WeatherUnitToggle from "./weather-unit-toggle";
 import { formatTemperature, formatWind, type WeatherUnit } from "../lib/weather-units";
-import HeroCloud from "./hero-cloud";
 import HeroBackgroundToggle, { type HeroBackground } from "./hero-background-toggle";
 
 export type Place = { lat: number; lon: number; label: string; sample: boolean };
-type LiveFlight = {
-  hex: string; callsign: string | null; registration: string | null; aircraftType: string | null;
-  airline?: AirlineIdentity | null; flightNumber?: string | null; flightIata?: string | null; aircraftModel?: string | null;
-  altitudeFt: number | null; speedKts: number | null; distanceKm: number; elevationDeg: number | null;
-  seenSeconds: number; origin: { code: string; city: string } | null;
-  destination: { code: string; city: string } | null;
-  routeStatus: string;
-  zoneProgress: { percent: number; remainingKm: number; crossingKm: number; closestKm: number; motion?: "approaching" | "leaving" } | null;
-};
-type SkyResponse = {
-  flight: LiveFlight | null;
-  aircraft: MapAircraft[];
-  nearbyCount: number;
-  weather: { temperatureF: number; cloudCover: number; windMph: number; code: number; isDay: boolean } | null;
-  updatedAt: string;
-  warnings: string[];
-};
-const noAircraft: MapAircraft[] = [];
-
+const AircraftModel = lazy(() => import("./aircraft-model"));
+const HeroCloud = lazy(() => import("./hero-cloud"));
 function weatherLabel(code: number) {
   if (code === 0) return "Clear sky";
   if (code <= 3) return "Partly cloudy";
@@ -138,24 +119,11 @@ export default function LiveSky({ onModeChange, place, onPlaceChange, weatherUni
     );
   }, [onPlaceChange]);
 
-  const elapsedSeconds = receivedAt ? Math.max(0, (clockMs - receivedAt) / 1000) : 0;
-  const aircraft = (data?.aircraft ?? []).map((plane) => {
-    const position = estimatePosition(plane, elapsedSeconds);
-    return {
-      ...plane,
-      lat: position.lat,
-      lon: position.lon,
-      distanceKm: distanceKm(place, position),
-      seenSeconds: position.ageSeconds,
-      estimated: position.estimated,
-    };
-  });
+  const aircraft = projectLiveAircraft(data?.aircraft ?? [], place, receivedAt, clockMs);
   const selectedAircraft = aircraft.find((plane) => plane.hex === data?.flight?.hex);
   const inZone = Boolean(selectedAircraft && selectedAircraft.distanceKm <= ZONE_RADIUS_KM);
   const flight = inZone ? data?.flight ?? null : null;
-  const closestAircraft = aircraft
-    .filter((plane) => plane.distanceKm <= ZONE_RADIUS_KM && plane.seenSeconds <= 60)
-    .sort((a, b) => a.distanceKm - b.distanceKm || a.hex.localeCompare(b.hex))[0];
+  const closestAircraft = closestLiveAircraft(aircraft);
   useEffect(() => {
     const hex = data?.flight?.hex;
     if (hex && !inZone && !error && exitRefreshHex.current !== hex) {
@@ -174,7 +142,7 @@ export default function LiveSky({ onModeChange, place, onPlaceChange, weatherUni
       setRefreshKey((key) => key + 1);
     }
   }, [flight, closestAircraft?.hex, error]);
-  const routeKnown = Boolean(flight?.origin && flight?.destination);
+  const routeKnown = flight?.routeStatus === "verified";
   const routeImplausible = flight?.routeStatus === "implausible";
   const flightName = flight ? flightIdentityText(flight) : "Aircraft";
   const crossing = selectedAircraft ? zoneProgress(place, selectedAircraft) : flight?.zoneProgress ?? null;
@@ -190,9 +158,7 @@ export default function LiveSky({ onModeChange, place, onPlaceChange, weatherUni
     : "Route endpoints are unavailable for this aircraft.";
   const minutesToZoneExit = crossing && selectedAircraft?.speedKts && selectedAircraft.speedKts > 0
     ? crossing.remainingKm / (selectedAircraft.speedKts * 1.852 / 60) : null;
-  const nextAircraft = flight ? aircraft
-    .filter((plane) => plane.hex !== flight.hex && plane.distanceKm <= ZONE_RADIUS_KM && plane.seenSeconds <= 60)
-    .sort((a, b) => a.distanceKm - b.distanceKm || a.hex.localeCompare(b.hex))[0] : null;
+  const nextAircraft = flight ? closestLiveAircraft(aircraft, flight.hex) : null;
   return <main className={`app-shell live-shell hero-background-${heroBackground}`}>
     <header className="topbar">
       <div className="topbar-main">
@@ -212,7 +178,7 @@ export default function LiveSky({ onModeChange, place, onPlaceChange, weatherUni
 
     <section className={`sky-stage live-stage ${flight ? "sky-active has-flight" : "sky-empty"}`} aria-labelledby="hero-title">
       <div className="sky-art" aria-hidden="true" /><div className="sky-overlay" aria-hidden="true" />
-      {!flight && <HeroCloud />}
+      {!flight && <Suspense fallback={null}><HeroCloud /></Suspense>}
       <BoardingPassDisplay displayKey={flight ? `${flight.hex}:${flightHeading}` : "quiet"} active={Boolean(flight)}>
       <div className="boarding-pass-main">
         <FlipHeading text={flight ? flightHeading : "A quiet sky.\nFor now."} />
@@ -249,12 +215,12 @@ export default function LiveSky({ onModeChange, place, onPlaceChange, weatherUni
           </div>
         </div>}
       </BoardingPassDisplay>
-      {flight && <div className="sky-aircraft-layer"><AircraftModel key={`${flight.hex}-${aircraftVisualForFlight(flight)}`} progress={progress} visual={aircraftVisualForFlight(flight)} live /></div>}
+      {flight && <div className="sky-aircraft-layer"><Suspense fallback={null}><AircraftModel key={`${flight.hex}-${aircraftVisualForFlight(flight)}`} progress={progress} visual={aircraftVisualForFlight(flight)} live /></Suspense></div>}
       {flight && <HeroProgressLine key={flight.hex} progress={progress} label={`${flightName} crossing the 5 nautical mile zone`} valueText={progress == null ? "Progress unavailable" : `${progress.toFixed(1)}% through the zone, estimated from the latest reported position and heading`} live />}
     </section>
 
     <div className="sky-dashboard">
-      <FlightMap lat={place.lat} lon={place.lon} aircraft={aircraft} routeAircraft={data?.aircraft ?? noAircraft} closestHex={flight?.hex ?? null} loading={loading && !data} unavailable={Boolean(error)} locationLabel={place.sample ? "Downtown Houston" : "Your location"} />
+      <FlightMap lat={place.lat} lon={place.lon} aircraft={aircraft} routeAircraft={aircraft} closestHex={flight?.hex ?? null} loading={loading && !data} unavailable={Boolean(error)} locationLabel={place.sample ? "Downtown Houston" : "Your location"} />
       <aside className="flight-sidebar" aria-label="Live flight details"><article className="detail-panel flight-panel">
         <div className="detail-title"><Navigation2 size={18} strokeWidth={1.8} /><h3 title={flight?.callsign || undefined}>{flightName}</h3></div>
         {flight ? <><div className="airport-row"><div><strong className="airport-code">{flight.origin?.code ?? "···"}</strong><span className="airport-city">{flight.origin?.city ?? "Origin unknown"}</span></div><ArrowRight className="airport-connector" size={25} strokeWidth={1.3} aria-hidden="true" /><div><strong className="airport-code">{flight.destination?.code ?? "···"}</strong><span className="airport-city">{flight.destination?.city ?? "Destination unknown"}</span></div></div>

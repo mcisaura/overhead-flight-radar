@@ -8,7 +8,8 @@ function track(center: Point, aircraft: AircraftPosition, radiusKm: number) {
   const kmPerDegreeLat = 111.32;
   const kmPerDegreeLon = kmPerDegreeLat * Math.cos(center.lat * Math.PI / 180);
   if (Math.abs(kmPerDegreeLon) < 0.001) return null;
-  const east = (aircraft.lon - center.lon) * kmPerDegreeLon;
+  const lonDelta = ((aircraft.lon - center.lon + 540) % 360) - 180;
+  const east = lonDelta * kmPerDegreeLon;
   const north = (aircraft.lat - center.lat) * kmPerDegreeLat;
   const radians = aircraft.heading * Math.PI / 180;
   const directionEast = Math.sin(radians);
@@ -34,5 +35,5 @@ export function positionAtZoneProgress(center: Point, aircraft: AircraftPosition
   const alongKm = -path.halfChordKm + 2 * path.halfChordKm * fraction;
   const east = path.directionEast * alongKm + path.directionNorth * path.crossKm;
   const north = path.directionNorth * alongKm - path.directionEast * path.crossKm;
-  return { lat: center.lat + north / path.kmPerDegreeLat, lon: center.lon + east / path.kmPerDegreeLon };
+  return { lat: center.lat + north / path.kmPerDegreeLat, lon: ((center.lon + east / path.kmPerDegreeLon + 540) % 360) - 180 };
 }

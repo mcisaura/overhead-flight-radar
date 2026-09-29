@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { ArrowRight, Check, CloudSun, Helicopter, MapPin, Navigation2, Pause, Plane, PlaneLanding, Play, RotateCcw } from "lucide-react";
 import FlightMap from "./flight-map";
 import LiveSky, { type Place } from "./live-sky";
@@ -13,24 +13,23 @@ import { BoardingPassStats, BoardingPassStub } from "./boarding-pass-extras";
 import HeroProgressLine from "./hero-progress-line";
 import BoardingPassDisplay from "./boarding-pass-display";
 import FlipHeading from "./flip-heading";
-import AircraftModel from "./aircraft-model";
 import { aircraftVisualForFlight } from "../lib/aircraft-visual";
 import ProjectCredits from "./project-credits";
-import { preloadAircraftScenes } from "./aircraft-assets";
-import HeroCloud from "./hero-cloud";
 import WeatherUnitToggle from "./weather-unit-toggle";
 import { formatTemperature, formatWind, type WeatherUnit } from "../lib/weather-units";
 import HeroBackgroundToggle, { type HeroBackground } from "./hero-background-toggle";
 import ThemeToggle from "./theme-toggle";
+import { advanceDemoElapsed } from "../lib/demo-clock";
 
 const DEMO_CROSSING_DURATION_MS = 30_000;
+const AircraftModel = lazy(() => import("./aircraft-model"));
+const HeroCloud = lazy(() => import("./hero-cloud"));
 
 export default function Home() {
   const [mode, setMode] = useState<"live" | "demo">("live");
   const [place, setPlace] = useState<Place>({ lat: demoPlace.lat, lon: demoPlace.lon, label: "Houston · live sky", sample: true });
   const [weatherUnit, setWeatherUnit] = useState<WeatherUnit>("imperial");
   const [heroBackground, setHeroBackground] = useState<HeroBackground>("original");
-  useEffect(() => { preloadAircraftScenes(); }, []);
   return mode === "live"
     ? <LiveSky onModeChange={setMode} place={place} onPlaceChange={setPlace} weatherUnit={weatherUnit} onWeatherUnitChange={setWeatherUnit} heroBackground={heroBackground} onHeroBackgroundChange={setHeroBackground} />
     : <DemoHome onModeChange={setMode} weatherUnit={weatherUnit} onWeatherUnitChange={setWeatherUnit} heroBackground={heroBackground} onHeroBackgroundChange={setHeroBackground} />;
@@ -66,12 +65,12 @@ function DemoHome({ onModeChange, weatherUnit, onWeatherUnitChange, heroBackgrou
 
   useEffect(() => {
     if (!playing || !selected) return;
-    let lastTick: number | null = null;
-    const timer = window.setInterval(() => {
+    let lastTick = performance.now();
+    const tick = () => {
       const now = performance.now();
-      const elapsed = lastTick === null ? 50 : Math.min(now - lastTick, 100);
+      const nextElapsed = advanceDemoElapsed(elapsedRef.current, lastTick, now, DEMO_CROSSING_DURATION_MS);
       lastTick = now;
-      elapsedRef.current = Math.min(DEMO_CROSSING_DURATION_MS, elapsedRef.current + elapsed);
+      elapsedRef.current = nextElapsed;
       const next = elapsedRef.current === DEMO_CROSSING_DURATION_MS
         ? 100 : demoProgressAtElapsedFraction(selected.profile, elapsedRef.current / DEMO_CROSSING_DURATION_MS);
       progressRef.current = next;
@@ -80,8 +79,10 @@ function DemoHome({ onModeChange, weatherUnit, onWeatherUnitChange, heroBackgrou
         setPlaying(false);
         setPhase("exiting");
       }
-    }, 50);
-    return () => window.clearInterval(timer);
+    };
+    const timer = window.setInterval(tick, 50);
+    document.addEventListener("visibilitychange", tick);
+    return () => { window.clearInterval(timer); document.removeEventListener("visibilitychange", tick); };
   }, [playing, selected, flightRun]);
 
   useEffect(() => {
@@ -165,7 +166,7 @@ function DemoHome({ onModeChange, weatherUnit, onWeatherUnitChange, heroBackgrou
       <section className={`sky-stage sky-${phase} ${flight ? "has-flight" : ""}`} aria-labelledby="hero-title">
         <div className="sky-art" aria-hidden="true" />
         <div className="sky-overlay" aria-hidden="true" />
-        {!flight && <HeroCloud />}
+        {!flight && <Suspense fallback={null}><HeroCloud /></Suspense>}
         <BoardingPassDisplay displayKey={displayKey} active={Boolean(flight && selected)} onDisplayed={(shownKey) => {
           if (shownKey !== displayKey) return;
           passReadyRef.current = true;
@@ -201,10 +202,10 @@ function DemoHome({ onModeChange, weatherUnit, onWeatherUnitChange, heroBackgrou
             </div>
           </div>}
         </BoardingPassDisplay>
-        {flight && selected && <div className="sky-aircraft-layer"><AircraftModel key={selected.id} progress={progress} visual={aircraftVisualForFlight(flight)} entranceRun={flightRun} onReady={() => {
+        {flight && selected && <div className="sky-aircraft-layer"><Suspense fallback={null}><AircraftModel key={selected.id} progress={progress} visual={aircraftVisualForFlight(flight)} entranceRun={flightRun} onReady={() => {
           modelReadyRef.current = true;
           startWhenReady();
-        }} /></div>}
+        }} /></Suspense></div>}
         {flight && <HeroProgressLine key={`${selectedId}-${flightRun}`} progress={progress} label={`${flight.callsign || "Aircraft"} crossing the zone`} valueText={`${Math.round(progress)}%, ${crossingStatus.toLowerCase()}`} />}
       </section>
 
