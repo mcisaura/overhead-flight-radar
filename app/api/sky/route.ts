@@ -5,6 +5,7 @@ import { distanceKm, estimatePosition } from "../../../lib/flight-estimate";
 import { airlineIdentity, displayAircraftType, displayFlightName } from "../../../lib/flight-display";
 import { reportedRouteIsPlausible } from "../../../lib/route-plausibility";
 import type { SkyAircraft, SkyFlight, SkyResponse } from "../../../lib/sky-contract";
+import { AirLabsBudgetExceeded, reserveAirLabsCall } from "../../../lib/airlabs-quota";
 
 export const runtime = "edge";
 
@@ -85,7 +86,7 @@ async function allowCloudflareRequest(client: string) {
 function logUpstream(endpoint: string, error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
   const status = message.match(/\b(429|5\d\d|4\d\d)\b/)?.[1] ?? null;
-  const kind = status === "429" ? "quota" : message === "Metadata queue full" ? "capacity"
+  const kind = status === "429" || error instanceof AirLabsBudgetExceeded || /limit_exceeded/i.test(message) ? "quota" : message === "Metadata queue full" ? "capacity"
     : (error instanceof Error && error.name === "TimeoutError") || /timeout/i.test(message) ? "timeout" : "unavailable";
   console.error(JSON.stringify({ event: "upstream_failure", endpoint, status, kind }));
 }
@@ -105,15 +106,16 @@ async function withMetadataSlot<T>(work: () => Promise<T>): Promise<T> {
   }
 }
 
-async function getJson<T>(url: string, seconds: number, timeout = 9000): Promise<T> {
+async function getJson<T>(url: string, seconds: number, timeout = 9000, beforeFetch?: () => Promise<void>): Promise<T> {
   const cached = upstreamCache.get(url);
   if (cached && cached.expiresAt > Date.now()) return cached.value as Promise<T>;
 
-  const value = fetch(url, { signal: AbortSignal.timeout(timeout), headers: { Accept: "application/json" } })
-    .then((response) => {
+  const value = (async () => {
+      await beforeFetch?.();
+      const response = await fetch(url, { signal: AbortSignal.timeout(timeout), headers: { Accept: "application/json" } });
       if (!response.ok) throw new Error(`Upstream ${response.status}`);
       return response.json() as Promise<T>;
-    })
+    })()
     .catch((error) => {
       if (upstreamCache.get(url)?.value === value) upstreamCache.delete(url);
       throw error;
@@ -131,12 +133,13 @@ async function getJson<T>(url: string, seconds: number, timeout = 9000): Promise
 async function getAirLabs<T>(endpoint: string, apiKey: string, params: Record<string, string>, cacheSeconds: number) {
   const url = airLabsUrl(endpoint, apiKey, params);
   const result = endpoint === "flights"
-    ? await getJson<AirLabsResponse<T>>(url, cacheSeconds, 9000)
-    : await withMetadataSlot(() => getJson<AirLabsResponse<T>>(url, cacheSeconds, 2500));
+    ? await getJson<AirLabsResponse<T>>(url, cacheSeconds, 9000, reserveAirLabsCall)
+    : await withMetadataSlot(() => getJson<AirLabsResponse<T>>(url, cacheSeconds, 2500, reserveAirLabsCall));
   if (result.error || result.response == null) {
     // AirLabs can return an error in a successful HTTP response. Do not keep
     // that response in the one-day metadata cache.
     upstreamCache.delete(url);
+    if (result.error?.code === "month_limit_exceeded") throw new AirLabsBudgetExceeded(3600);
     throw new Error(result.error ? `AirLabs ${result.error.code || "error"}` : "AirLabs response unavailable");
   }
   return result.response;
@@ -193,7 +196,10 @@ export async function GET(request: NextRequest) {
   const flights = Promise.allSettled(bounds(lat, lon).map((bbox) => getAirLabs<AirLabsFlight[]>("flights", apiKey, { bbox, _fields: flightFields }, 30)))
     .then((results) => {
       const groups = results.filter((result): result is PromiseFulfilledResult<AirLabsFlight[]> => result.status === "fulfilled");
-      if (!groups.length) throw (results[0] as PromiseRejectedResult).reason;
+      if (!groups.length) {
+        const failures = results as PromiseRejectedResult[];
+        throw failures.find((result) => result.reason instanceof AirLabsBudgetExceeded)?.reason ?? failures[0].reason;
+      }
       for (const result of results) if (result.status === "rejected") logUpstream("flights", result.reason);
       if (groups.length !== results.length) warnings.push("Live coverage may be incomplete.");
       return [...new Map(groups.flatMap((result) => result.value).filter((item) => item.hex).map((item) => [item.hex, item])).values()];
@@ -206,6 +212,12 @@ export async function GET(request: NextRequest) {
   weatherUrl.searchParams.set("wind_speed_unit", "mph");
   const [aircraftResult, weatherResult] = await Promise.allSettled([flights, getJson<WeatherResponse>(weatherUrl.toString(), 600)]);
   const snapshotAt = Date.now();
+  if (aircraftResult.status === "rejected" && aircraftResult.reason instanceof AirLabsBudgetExceeded) {
+    console.warn(JSON.stringify({ event: "airlabs_budget_exhausted" }));
+    return NextResponse.json({ error: "The monthly live-data allowance has been used. Please try again later." }, {
+      status: 429, headers: { "Retry-After": String(aircraftResult.reason.retryAfterSeconds), "Cache-Control": "no-store" },
+    });
+  }
 
   let flight: SkyFlight | null = null;
   let nearbyCount = 0;

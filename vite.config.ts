@@ -14,7 +14,7 @@ const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
 const managedLinux = readExecutionProfile() === "managed-linux";
 
 const localBindingConfig = {
-  main: "vinext/server/fetch-handler",
+  main: "./worker.ts",
   compatibility_flags: ["nodejs_compat"],
   d1_databases: d1
     ? [
@@ -37,6 +37,8 @@ const localBindingConfig = {
     { name: "SKY_CLIENT_LIMIT", namespace_id: "2718281801", simple: { limit: 12, period: 60 as const } },
     { name: "SKY_LOCATION_LIMIT", namespace_id: "2718281802", simple: { limit: 120, period: 60 as const } },
   ],
+  durable_objects: { bindings: [{ name: "AIRLABS_BUDGET", class_name: "AirLabsBudget" }] },
+  migrations: [{ tag: "airlabs-budget-v1", new_sqlite_classes: ["AirLabsBudget"] }],
 };
 
 export default defineConfig(async () => {

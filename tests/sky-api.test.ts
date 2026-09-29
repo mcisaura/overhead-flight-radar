@@ -43,6 +43,18 @@ test("invalid coordinates do not call upstream", async () => {
   assert.equal(response.status, 400);
 });
 
+test("the provider's monthly limit reaches the Live UI as an allowance error", async () => {
+  globalThis.fetch = async (input) => {
+    const url = new URL(String(input));
+    return url.hostname === "api.open-meteo.com"
+      ? Response.json({ current: { temperature_2m: 70 } })
+      : Response.json({ error: { code: "month_limit_exceeded" } });
+  };
+  const response = await GET(request(10, 10, "provider-month-limit"));
+  assert.equal(response.status, 429);
+  assert.match((await response.json() as { error: string }).error, /monthly live-data allowance/);
+});
+
 test("reported aircraft outside the zone can move inside; spatial fields agree", async () => {
   const now = Math.floor(Date.now() / 1000);
   const calls = fixtureFetch({ hex: "test-move", lat: 0, lng: -0.12, dir: 90, speed: 1111.2, updated: now - 30, status: "active", alt: 1000 });
