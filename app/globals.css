@@ -1338,9 +1338,9 @@ button, input, select,
 .boarding-pass-action-row { display: flex; align-items: center; gap: 12px; }
 .boarding-pass-stub .hero-playback,
 .boarding-pass-stub .live-actions { flex-wrap: nowrap; }
-.boarding-pass-action-row > button,
-.boarding-pass-stub .hero-playback > button,
-.boarding-pass-stub .live-actions > button { flex-shrink: 0; }
+.boarding-pass-action-row .boarding-pass-action-buttons > button,
+.boarding-pass-stub .hero-playback .boarding-pass-action-buttons > button,
+.boarding-pass-stub .live-actions .boarding-pass-action-buttons > button { flex-shrink: 0; white-space: nowrap; overflow: hidden; }
 @media (min-width: 521px) {
   .boarding-pass .boarding-pass-heading,
   .live-stage .boarding-pass .boarding-pass-heading { min-height: 104px; margin-bottom: 14px; }
@@ -1357,11 +1357,11 @@ button, input, select,
 @media (max-width: 520px) {
   .boarding-barcode { flex-basis: 150px; width: 150px; }
   .boarding-pass-action-row { gap: 8px; }
-  .boarding-pass-action-row > .primary-button { padding: 0 8px; font-size: 10px; }
-  .boarding-pass-action-row > .primary-button svg { display: none; }
-  .boarding-pass-stub .hero-playback > button { gap: 4px; padding: 0 7px; font-size: 10px; }
-  .boarding-pass-stub .hero-playback > button svg { width: 12px; }
-  .boarding-pass-stub .live-actions > button { padding: 0 7px; font-size: 10px; }
+  .boarding-pass-action-row .boarding-pass-action-buttons > .primary-button { padding: 0 8px; font-size: 10px; }
+  .boarding-pass-action-row .boarding-pass-action-buttons > .primary-button svg { display: none; }
+  .boarding-pass-stub .hero-playback .boarding-pass-action-buttons > button { gap: 4px; padding: 0 7px; font-size: 10px; }
+  .boarding-pass-stub .hero-playback .boarding-pass-action-buttons > button svg { width: 12px; }
+  .boarding-pass-stub .live-actions .boarding-pass-action-buttons > button { padding: 0 7px; font-size: 10px; }
   .boarding-barcode svg { height: 32px; }
   .sky-stage.has-flight, .sky-stage.has-flight.live-stage { padding-top: 32px; padding-bottom: 62px; }
   .boarding-pass.hero-flight .boarding-pass-main { padding-top: 12px; padding-bottom: 12px; }
@@ -1373,3 +1373,16 @@ button, input, select,
   .sky-stage.has-flight.live-stage .boarding-pass .boarding-pass-heading { min-height: 80px; margin-bottom: 10px; }
   .sky-stage.has-flight .boarding-route { min-height: 72px; }
 }
+
+/* Crossfade identity fields without fading the ticket, heading, or controls. */
+.boarding-pass, .live-stage .boarding-pass { position: relative; }
+.boarding-pass-outgoing { position: absolute; inset: 0; pointer-events: none; }
+
+/* Preserve real button text while the action group's measured width springs into place. */
+.boarding-pass-actions { display: flex; align-items: center; gap: 8px; }
+.boarding-pass-buttons-shell { flex: 0 0 auto; overflow: hidden; border-radius: 8px; }
+.boarding-pass-action-buttons { display: flex; align-items: center; gap: 7px; width: max-content; }
+.boarding-pass-action-buttons > button { flex-shrink: 0; white-space: nowrap; overflow: hidden; }
+
+.boarding-pass-action-buttons > button:focus-visible { outline-offset: -3px; }
+.boarding-pass-action-buttons > .primary-button:hover { transform: none; }

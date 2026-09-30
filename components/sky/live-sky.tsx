@@ -9,7 +9,7 @@ import { ZONE_RADIUS_KM, zoneProgress } from "../../lib/zone-progress";
 import { closestLiveAircraft, projectLiveAircraft } from "../../lib/live-snapshot";
 import FlightLink from "../boarding-pass/flight-link";
 import FlightIdentity, { flightIdentityText } from "../boarding-pass/flight-identity";
-import BoardingBarcode from "../boarding-pass/boarding-barcode";
+import BoardingPassActions from "../boarding-pass/boarding-pass-actions";
 import BoardingRoute from "../boarding-pass/boarding-route";
 import { BoardingPassStats, BoardingPassStub } from "../boarding-pass/boarding-pass-extras";
 import type { SkyResponse } from "../../lib/sky-contract";
@@ -204,7 +204,7 @@ export default function LiveSky({ onModeChange, place, onPlaceChange, weatherUni
           <div className="hero-flight-details">
             <BoardingPassStats altitudeFt={flight.altitudeFt} speedKts={flight.speedKts} distanceKm={shownDistanceKm} />
             <p className="boarding-pass-freshness">Last reported {Math.round(shownAgeSeconds)} sec ago · {positionEstimated ? "Estimated position" : "Reported position"}{coverageWarning ? " · Coverage may be incomplete" : ""}</p>
-            <div className="live-actions"><button type="button" className="primary-button" onClick={useLocation} disabled={locating}><LocateFixed size={17} />{locating ? "Finding your location…" : "Use my location"}</button><button type="button" className="refresh-button" onClick={() => setRefreshKey((key) => key + 1)}><RefreshCw size={15} />Refresh</button><BoardingBarcode /></div>
+            <BoardingPassActions className="live-actions"><button type="button" className="primary-button" onClick={useLocation} disabled={locating}><LocateFixed size={17} />{locating ? "Finding your location…" : "Use my location"}</button><button type="button" className="refresh-button" onClick={() => setRefreshKey((key) => key + 1)}><RefreshCw size={15} />Refresh</button></BoardingPassActions>
             {locationError && <p className="live-location-error" role="status">{locationError}</p>}
             {nextAircraft && <div className="next-aircraft-queue" aria-label="Next closest aircraft">
               <span className="next-aircraft-label">NEXT CLOSEST</span>
@@ -219,7 +219,7 @@ export default function LiveSky({ onModeChange, place, onPlaceChange, weatherUni
             <div><span>OBSERVATION ZONE</span><strong>5 nautical miles</strong></div>
           </div>
           <div className="boarding-pass-stub-details">
-            <div className="live-actions"><button type="button" className="primary-button" onClick={useLocation} disabled={locating}><LocateFixed size={17} />{locating ? "Finding your location…" : "Use my location"}</button><button type="button" className="refresh-button" onClick={() => setRefreshKey((key) => key + 1)}><RefreshCw size={15} />Refresh</button><BoardingBarcode /></div>
+            <BoardingPassActions className="live-actions"><button type="button" className="primary-button" onClick={useLocation} disabled={locating}><LocateFixed size={17} />{locating ? "Finding your location…" : "Use my location"}</button><button type="button" className="refresh-button" onClick={() => setRefreshKey((key) => key + 1)}><RefreshCw size={15} />Refresh</button></BoardingPassActions>
             {locationError && <p className="live-location-error" role="status">{locationError}</p>}
           </div>
         </div>}

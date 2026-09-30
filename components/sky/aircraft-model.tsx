@@ -413,7 +413,7 @@ export default function AircraftModel({ progress = 50, live = false, visual = "a
     };
   }, [live, visual]);
 
-  return <div className={`aircraft-model ${status === "ready" ? "is-ready" : ""}`} ref={rootRef} role="img" aria-label={`3D illustration of ${visual === "helicopter" ? "a helicopter" : visual === "private" ? "a small aircraft" : "a commercial aircraft"} flying across the sky`}>
+  return <div className={`aircraft-model ${status === "ready" ? "is-ready" : ""}`} ref={rootRef} role="img" aria-label={`3D illustration of ${visual === "helicopter" ? "a helicopter" : visual === "small" ? "a small aircraft" : "a large aircraft"} flying across the sky`}>
     <div className="aircraft-slipstream" aria-hidden="true" />
     <div className="aircraft-model-canvas" ref={containerRef} />
     {status === "unavailable" && <span className="aircraft-model-status">3D aircraft unavailable</span>}

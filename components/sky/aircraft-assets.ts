@@ -4,7 +4,7 @@ import type { AircraftVisual } from "../../lib/aircraft-visual";
 
 const modelFiles: Record<AircraftVisual, string> = {
   airliner: "/models/boeing_737-200_white.glb",
-  private: "/models/cessna_310_airplane_-_low_poly.glb",
+  small: "/models/cessna_310_airplane_-_low_poly.glb",
   helicopter: "/models/helicopter.glb",
 };
 

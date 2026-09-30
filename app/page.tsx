@@ -8,7 +8,7 @@ import ModeToggle from "../components/controls/mode-toggle";
 import { demoElapsedFractionAtProgress, demoFlights, demoPlace, demoProgressAtElapsedFraction, demoWeather, distanceFromDemoPlace, sampleDemoProfile } from "../lib/demo-data";
 import { positionAtZoneProgress, zoneProgress } from "../lib/zone-progress";
 import FlightIdentity, { flightIdentityText } from "../components/boarding-pass/flight-identity";
-import BoardingBarcode from "../components/boarding-pass/boarding-barcode";
+import BoardingPassActions from "../components/boarding-pass/boarding-pass-actions";
 import BoardingRoute from "../components/boarding-pass/boarding-route";
 import { BoardingPassStats, BoardingPassStub } from "../components/boarding-pass/boarding-pass-extras";
 import HeroProgressLine from "../components/sky/hero-progress-line";
@@ -186,11 +186,10 @@ function DemoHome({ onModeChange, weatherUnit, onWeatherUnitChange, heroBackgrou
             <BoardingPassStub demo callsign={flight.callsign} aircraftType={flight.aircraftType}>
               <div className="hero-flight-details">
                 <BoardingPassStats altitudeFt={flight.altitudeFt} speedKts={flight.speedKts} distanceKm={flight.distanceKm} />
-                <div className="hero-playback">
+                <BoardingPassActions className="hero-playback">
                   <button type="button" className="zone-play" disabled={phase === "exiting" || preparing} onClick={() => setPlaying((value) => !value)}>{playing ? <Pause size={15} /> : <Play size={15} />}{preparing ? "Preparing…" : playing ? "Pause" : "Resume"}</button>
                   <button type="button" className="zone-reset" onClick={() => selectFlight(selected.id)}><RotateCcw size={15} />Replay</button>
-                  <BoardingBarcode />
-                </div>
+                </BoardingPassActions>
               </div>
             </BoardingPassStub>
         : <div className="boarding-pass-stub">
@@ -198,9 +197,10 @@ function DemoHome({ onModeChange, weatherUnit, onWeatherUnitChange, heroBackgrou
               <div><span>SKY STATUS</span><strong>No aircraft in the zone</strong></div>
               <div><span>OBSERVATION ZONE</span><strong>5 nautical miles</strong></div>
             </div>
-            <div className="boarding-pass-stub-details boarding-pass-action-row">
+            <div className="boarding-pass-stub-details">
+              <BoardingPassActions className="boarding-pass-action-row">
               <button type="button" className="primary-button" onClick={() => document.getElementById("presets-title")?.scrollIntoView({ behavior: "smooth", block: "start" })}>Simulate an arrival <ArrowRight size={18} /></button>
-              <BoardingBarcode />
+              </BoardingPassActions>
             </div>
           </div>}
         </BoardingPassDisplay>
@@ -216,10 +216,10 @@ function DemoHome({ onModeChange, weatherUnit, onWeatherUnitChange, heroBackgrou
         <div className="preset-list" role="group" aria-label="Sample flights">
           {demoFlights.map((item) => {
             const kind = aircraftVisualForFlight(item.aircraft);
-            const Icon = kind === "helicopter" ? Helicopter : kind === "private" ? Plane : PlaneLanding;
+            const Icon = kind === "helicopter" ? Helicopter : kind === "small" ? Plane : PlaneLanding;
             return <button key={item.id} type="button" className={`preset-button preset-${kind} ${selectedId === item.id ? "active" : ""}`} aria-pressed={selectedId === item.id} onClick={() => selectFlight(item.id)}>
               <span className="preset-icon"><Icon size={25} strokeWidth={1.65} /></span>
-              <span className="preset-copy"><span className="preset-category">{kind === "airliner" ? "Commercial" : kind === "private" ? "Private" : "Rotorcraft"}</span><strong>{item.label}</strong><small>{item.description}</small></span>
+              <span className="preset-copy"><span className="preset-category">{kind === "airliner" ? "Large aircraft" : kind === "small" ? "Smaller aircraft" : "Rotorcraft"}</span><strong>{item.label}</strong><small>{item.description}</small></span>
               <span className="preset-action" aria-hidden="true">{selectedId === item.id ? <Check size={17} /> : <ArrowRight size={17} />}</span>
             </button>;
           })}
