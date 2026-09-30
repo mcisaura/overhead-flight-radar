@@ -1,6 +1,34 @@
-# Overhead handoff
+# Overhead development notes
 
-Use this note when continuing the project in a new chat. The app lives in `flight-overhead/` inside the “Flight Proj” ChatGPT project mirror. The parent `AGENTS.md` makes `sources/` read-only; work in `flight-overhead/`. Git has been initialized locally on `main`, with no GitHub remote or upload yet. Tests, type checks, and lint pass, and the code is ready for a public repository; a local `npm run build` on the Mac should be confirmed before the first push (see Latest verification).
+Use this note when continuing the project in a new chat, with Codex or Claude. The app lives in `flight-overhead/` inside the “Flight Proj” ChatGPT project mirror. The parent `AGENTS.md` makes `sources/` read-only; work in `flight-overhead/`. `../unused-assets/` holds a spare low-poly airplane model; leave it.
+
+## Start here (30 September 2026)
+
+**What it is.** A Vite/vinext (Next-style) React app deployed as a Cloudflare Worker. Live mode shows aircraft within 5 nm using AirLabs plus Open-Meteo weather. Demo mode plays three fictional Houston flights. The hero is a boarding pass with a split-flap headline, 3D aircraft and clouds (Three.js), a Leaflet map, and dark mode. Distances are in nautical miles.
+
+**Layout.** `app/` holds the page, layout, `globals.css`, and `api/sky/route.ts`. `components/` has `boarding-pass/`, `sky/`, `map/`, and `controls/`. `lib/` holds the logic, API contract, AirLabs budget, and Demo data. There are also `tests/`, `public/` (`fonts/`, `images/`, `models/`, `aircraft/`), `docs/`, and `worker.ts` (the Worker entry plus the AirLabs budget Durable Object).
+
+**Commands.** `npm run dev` (http://localhost:5173), `npm test` (31 tests), `npm run typecheck`, `npm run lint`, `npm run build`, and `npm run check` (runs all four). Expected warnings: one `<img>` lint warning in `components/boarding-pass/flight-identity.tsx`, and a large 3D-loader chunk warning at build.
+
+**State.**
+- Git: branch `main`, no remote, nothing pushed.
+- Tests, types, lint, and a browser check pass after the 30 Sept folder reorganisation. The owner still needs to run `npm run check` once to confirm the production build.
+- The AirLabs key lives only in `.env.local` (gitignored). Never print it, commit it, or put it in docs.
+- Live is capped at 900 AirLabs calls per rolling 31 days, and every uncached call spends one. Avoid reloading Live repeatedly while testing; prefer Demo.
+
+**Git history.** On 30 Sept the history was rebuilt from the Codex session logs so commits land on the days the work happened (Sept 22 onward). The owner wrote the commit messages. Documentation changes were then split into their own `docs:` commits, co-authored by the tool that wrote them. That history has been checked (every commit type-checks; no secrets) and must not be rewritten again without asking.
+
+**Git rules (the owner's convention; follow exactly).**
+- Author and committer: `mcisaura <sankarpete@gmail.com>`.
+- Code commits: no `Co-authored-by` or other AI attribution. Turn off the tool's default attribution (Codex: `commit_attribution`; Claude Code: its attribution setting).
+- Docs-only commits (`README.md`, `docs/`): add `Co-authored-by: Codex <noreply@openai.com>` or `Co-authored-by: Claude <noreply@anthropic.com>`, matching whichever tool made the change. Keep docs changes in their own commit, messaged `docs: <topic>`.
+- The owner writes commit messages. Ask for one, or propose a short lowercase one in their style (e.g. `folder cleanups`).
+- Don't push, add a remote, or rewrite history without asking.
+
+**Open items.**
+1. The owner runs `npm run check`, then creates the GitHub repo and pushes `main`. Their email must be verified on GitHub for the commits to count.
+2. Before deploying Live publicly, follow README → “Repository and publishing”: check AirLabs usage, store `AIRLABS_API_KEY` as a Worker secret, and verify the rate limits and budget in the deployed Worker.
+3. Optional: browser workflow tests (theme, geolocation denial, mode switching, Demo pause/scrub/replay); a README screenshot or GIF; the dark-mode boarding-pass stats panel is slightly lighter than the rest of the card.
 
 ## Current review work
 
@@ -56,7 +84,7 @@ The user said this will be a public, low-traffic portfolio piece with a 1,000-ca
 
 ## First check next time
 
-Run `npm run check` on the Mac (confirms the build after the template cleanup), then commit any result and push when ready. A desktop/800px/phone visual pass was completed on 29 September. Remaining visual ideas (not done): a README screenshot or GIF, and the slightly lighter stats panel on the dark boarding pass.
+See **Open items** under “Start here” above.
 
 ## Key files
 
