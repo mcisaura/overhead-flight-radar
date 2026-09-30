@@ -4,7 +4,7 @@ Overhead shows aircraft currently reported within 5 nautical miles of a chosen l
 
 The project was inspired by British Airways' 2013 **#LookUp** campaign, which connected planes in the sky to information shown on a billboard.
 
-For a new chat or work session, start with [HANDOFF.md](HANDOFF.md). It records the current state, verification, and the next issue to check.
+For a new chat or work session, start with [docs/development-notes.md](docs/development-notes.md). It records the current state, verification, and the next issue to check.
 
 ## Live and Demo at a glance
 
@@ -102,24 +102,41 @@ Demo flights have accelerated playback controls. While the page is visible and a
 Projection stops 90 seconds after the underlying report; if heading or speed is missing, the position stays at the last report. These are straight-line estimates, not confirmed flight tracks: turns, climbs, speed changes, delayed reports, and coverage gaps can make the displayed position wrong. The marker and progress may shift when a new report corrects the estimate. The interface labels estimates in the flight details, and reduced-motion preferences turn off transitions.
 Aircraft are removed from the active hero and map when their last report becomes more than 90 seconds old. The Live API includes time spent fetching metadata in that age, so slow enrichment does not make a report appear newer. The interface then asks for Refresh, and a successful refresh can restore them.
 
+## Project layout
+
+```
+app/                 page.tsx (mode switch and Demo), layout.tsx, globals.css, api/sky/route.ts
+components/
+  boarding-pass/     the pass, route, stub, split-flap headline, flight and aircraft labels
+  sky/               Live view, 3D aircraft and clouds, progress line and walker
+  map/               Leaflet flight map
+  controls/          mode, theme, weather-unit, and hero-background toggles
+  project-credits.tsx
+lib/                 flight maths, API contract, AirLabs budget, display helpers, Demo data
+tests/               Node test-runner tests
+public/              fonts/, images/ (hero backgrounds), models/ (3D), aircraft/, favicon
+docs/                development notes and the Sept 28 code review
+worker.ts            Cloudflare Worker entry and the AirLabs budget Durable Object
+```
+
 ## Main files
 
-- `app/live-sky.tsx`: live header and weather, hero, manual refresh, location choice, and details.
+- `components/sky/live-sky.tsx`: live header and weather, hero, manual refresh, location choice, and details.
 - `app/page.tsx`: mode toggle, Demo header and weather, and Demo experience.
-- `app/theme-provider.tsx`, `app/theme-toggle.tsx`, `app/globals.css`: page-session theme state, header toggle, and light/dark styles.
-- `app/boarding-pass-display.tsx`, `app/boarding-route.tsx`, `app/boarding-pass-extras.tsx`: boarding pass transitions, route, stats, and stub.
-- `app/flight-identity.tsx`, `app/aircraft-model-label.tsx`, `lib/flight-display.ts`: readable flight and aircraft labels, codes, and airline presentation.
+- `components/controls/theme-provider.tsx`, `components/controls/theme-toggle.tsx`, `app/globals.css`: page-session theme state, header toggle, and light/dark styles.
+- `components/boarding-pass/boarding-pass-display.tsx`, `components/boarding-pass/boarding-route.tsx`, `components/boarding-pass/boarding-pass-extras.tsx`: boarding pass transitions, route, stats, and stub.
+- `components/boarding-pass/flight-identity.tsx`, `components/boarding-pass/aircraft-model-label.tsx`, `lib/flight-display.ts`: readable flight and aircraft labels, codes, and airline presentation.
 - `app/api/sky/route.ts`: server-side live API aggregation and caching.
 - `worker.ts`, `lib/airlabs-quota.ts`, `lib/airlabs-budget-window.ts`: shared AirLabs request budget.
-- `app/flight-map.tsx`: interactive Leaflet map.
-- `app/aircraft-model.tsx`, `lib/aircraft-visual.ts`: Three.js rendering and selection of the supplied aircraft models in Live and Demo.
-- `app/hero-background-toggle.tsx`, `public/hero-houston-skyline.png`, `public/hero-low-poly-sky.png`: the footer background selector and its two alternate hero assets.
-- `app/project-credits.tsx`: the always-visible footer attribution groups.
-- `app/demo-data.ts`: Demo flights and weather.
+- `components/map/flight-map.tsx`: interactive Leaflet map.
+- `components/sky/aircraft-model.tsx`, `lib/aircraft-visual.ts`: Three.js rendering and selection of the supplied aircraft models in Live and Demo.
+- `components/controls/hero-background-toggle.tsx`, `public/images/hero-houston-skyline.png`, `public/images/hero-low-poly-sky.png`: the footer background selector and its two alternate hero assets.
+- `components/project-credits.tsx`: the always-visible footer attribution groups.
+- `lib/demo-data.ts`: Demo flights and weather.
 - `lib/sky-contract.ts`: the shared `GET /api/sky` response types.
 - `vite.config.ts`, `cloudflare-env.d.ts`: build configuration and Worker binding types.
 - `tests/`: API, live-snapshot, AirLabs budget, Demo clock, and display tests.
-- `app/flip-heading.tsx`: the boarding-pass split-flap headline used in Live and Demo.
+- `components/boarding-pass/flip-heading.tsx`: the boarding-pass split-flap headline used in Live and Demo.
 - `lib/zone-progress.ts`, `lib/flight-estimate.ts`, `lib/closest-approach.ts`: crossing calculations, movement estimates, and closest-approach messages.
 - `lib/route-plausibility.ts`: validation that suppresses clearly stale or mismatched reported airport pairs.
 
