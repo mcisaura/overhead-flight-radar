@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { airlineIdentity, airlineLogoUrl, displayAircraftType, displayFlightName, type AirlineIdentity } from "../../lib/flight-display";
+import FlightLink from "./flight-link";
 import AircraftModelLabel from "./aircraft-model-label";
 
 type Props = {
+  demo?: boolean;
   callsign: string | null;
   aircraftType: string | null;
   registration?: string | null;
@@ -29,6 +31,6 @@ export default function FlightIdentity(props: Props) {
     {airline && <span className="airline-badge" style={{ color: airline.color, borderColor: airline.color, boxShadow: `inset 0 -5px 0 ${airline.accent}, 0 4px 11px #17374622` }} title={airline.name}>
       {logo && failedLogo !== logo ? <img src={logo} alt={`${airline.name} logo`} onError={() => setFailedLogo(logo)} /> : <span className="airline-badge-fallback" aria-label={airline.name}>{airline.iata || airline.name.slice(0, 2).toUpperCase()}</span>}
     </span>}
-    <div className="flight-identity-copy"><strong title={props.callsign || undefined} tabIndex={props.callsign ? 0 : undefined}>{name}</strong><span title={props.aircraftType || undefined} tabIndex={props.aircraftType ? 0 : undefined}><AircraftModelLabel label={model} /></span></div>
+    <div className="flight-identity-copy"><strong><FlightLink callsign={props.callsign} registration={props.registration} demo={props.demo}>{name}</FlightLink></strong><span><AircraftModelLabel code={props.aircraftType} label={model} /></span></div>
   </div>;
 }

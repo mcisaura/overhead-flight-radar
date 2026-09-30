@@ -7,7 +7,9 @@ import ModeToggle from "../controls/mode-toggle";
 import ThemeToggle from "../controls/theme-toggle";
 import { ZONE_RADIUS_KM, zoneProgress } from "../../lib/zone-progress";
 import { closestLiveAircraft, projectLiveAircraft } from "../../lib/live-snapshot";
+import FlightLink from "../boarding-pass/flight-link";
 import FlightIdentity, { flightIdentityText } from "../boarding-pass/flight-identity";
+import BoardingBarcode from "../boarding-pass/boarding-barcode";
 import BoardingRoute from "../boarding-pass/boarding-route";
 import { BoardingPassStats, BoardingPassStub } from "../boarding-pass/boarding-pass-extras";
 import type { SkyResponse } from "../../lib/sky-contract";
@@ -195,19 +197,19 @@ export default function LiveSky({ onModeChange, place, onPlaceChange, weatherUni
           <div className="boarding-pass-divider" aria-hidden="true" />
           <BoardingRoute origin={flight.origin} destination={flight.destination} />
           {!routeKnown && <p className="boarding-pass-route-note">{routeImplausible ? "Reported route does not match the aircraft’s position" : "Flight path could not be confirmed"}</p>}
-        </> : <p className="hero-description">{error || coverageWarning || (loading ? "Finding aircraft in the 5 nautical mile zone." : refreshNeeded ? "This live snapshot has expired. Refresh to check the sky again." : `No aircraft currently reported within 5 nautical miles of ${place.sample ? "downtown Houston" : "your location"}.`)}</p>}
+        </> : (error || coverageWarning) ? <p className="hero-description" role="status">{error || coverageWarning}</p> : null}
       </div>
       {flight ?
-        <BoardingPassStub callsign={flight.callsign} flightNumber={flight.flightNumber} flightIata={flight.flightIata} airline={flight.airline} aircraftType={flight.aircraftType}>
+        <BoardingPassStub aircraftModel={flight.aircraftModel} registration={flight.registration} callsign={flight.callsign} flightNumber={flight.flightNumber} flightIata={flight.flightIata} airline={flight.airline} aircraftType={flight.aircraftType}>
           <div className="hero-flight-details">
             <BoardingPassStats altitudeFt={flight.altitudeFt} speedKts={flight.speedKts} distanceKm={shownDistanceKm} />
-            <p className="boarding-pass-freshness">Last reported {Math.round(shownAgeSeconds)} sec ago · {positionEstimated ? "Position estimated between reports" : "Reported position"}{coverageWarning ? " · Coverage may be incomplete" : ""} · Refresh for new data</p>
-            <div className="live-actions"><button type="button" className="primary-button" onClick={useLocation} disabled={locating}><LocateFixed size={17} />{locating ? "Finding your location…" : "Use my location"}</button><button type="button" className="refresh-button" onClick={() => setRefreshKey((key) => key + 1)}><RefreshCw size={15} />Refresh</button></div>
+            <p className="boarding-pass-freshness">Last reported {Math.round(shownAgeSeconds)} sec ago · {positionEstimated ? "Estimated position" : "Reported position"}{coverageWarning ? " · Coverage may be incomplete" : ""}</p>
+            <div className="live-actions"><button type="button" className="primary-button" onClick={useLocation} disabled={locating}><LocateFixed size={17} />{locating ? "Finding your location…" : "Use my location"}</button><button type="button" className="refresh-button" onClick={() => setRefreshKey((key) => key + 1)}><RefreshCw size={15} />Refresh</button><BoardingBarcode /></div>
             {locationError && <p className="live-location-error" role="status">{locationError}</p>}
             {nextAircraft && <div className="next-aircraft-queue" aria-label="Next closest aircraft">
               <span className="next-aircraft-label">NEXT CLOSEST</span>
-              <div className="next-aircraft-main"><strong>{nextAircraft.callsign || nextAircraft.registration || nextAircraft.hex.toUpperCase()}</strong><span>{nextAircraft.originCode || "···"} → {nextAircraft.destinationCode || "···"}</span></div>
-              <p>{formatDistanceNm(nextAircraft.distanceKm)} away · Takes over if closer</p>
+              <div className="next-aircraft-main"><strong><FlightLink callsign={nextAircraft.callsign} registration={nextAircraft.registration}>{nextAircraft.callsign || nextAircraft.registration || nextAircraft.hex.toUpperCase()}</FlightLink></strong><span>{nextAircraft.originCode || "···"} → {nextAircraft.destinationCode || "···"}</span></div>
+              <p>{formatDistanceNm(nextAircraft.distanceKm)} away</p>
             </div>}
           </div>
         </BoardingPassStub>
@@ -217,10 +219,8 @@ export default function LiveSky({ onModeChange, place, onPlaceChange, weatherUni
             <div><span>OBSERVATION ZONE</span><strong>5 nautical miles</strong></div>
           </div>
           <div className="boarding-pass-stub-details">
-            <div className="live-actions"><button type="button" className="primary-button" onClick={useLocation} disabled={locating}><LocateFixed size={17} />{locating ? "Finding your location…" : "Use my location"}</button><button type="button" className="refresh-button" onClick={() => setRefreshKey((key) => key + 1)}><RefreshCw size={15} />Refresh</button></div>
+            <div className="live-actions"><button type="button" className="primary-button" onClick={useLocation} disabled={locating}><LocateFixed size={17} />{locating ? "Finding your location…" : "Use my location"}</button><button type="button" className="refresh-button" onClick={() => setRefreshKey((key) => key + 1)}><RefreshCw size={15} />Refresh</button><BoardingBarcode /></div>
             {locationError && <p className="live-location-error" role="status">{locationError}</p>}
-            {place.sample && <p className="live-place-note">Showing real flights over Houston until you choose your location.</p>}
-            <p className="live-place-note">Live data updates when you press Refresh.</p>
           </div>
         </div>}
       </BoardingPassDisplay>
@@ -231,7 +231,7 @@ export default function LiveSky({ onModeChange, place, onPlaceChange, weatherUni
     <div className="sky-dashboard">
       <FlightMap lat={place.lat} lon={place.lon} aircraft={aircraft} closestHex={flight?.hex ?? null} loading={loading && !data} unavailable={Boolean(error || coverageWarning)} locationLabel={place.sample ? "Downtown Houston" : "Your location"} />
       <aside className="flight-sidebar" aria-label="Live flight details"><article className="detail-panel flight-panel">
-        <div className="detail-title"><Navigation2 size={18} strokeWidth={1.8} /><h3 title={flight?.callsign || undefined}>{flightName}</h3></div>
+        <div className="detail-title"><Navigation2 size={18} strokeWidth={1.8} /><h3><FlightLink callsign={flight?.callsign} registration={flight?.registration}>{flightName}</FlightLink></h3></div>
         {flight ? <><div className="airport-row"><div><strong className="airport-code">{flight.origin?.code ?? "···"}</strong><span className="airport-city">{flight.origin?.city ?? "Origin unknown"}</span></div><ArrowRight className="airport-connector" size={25} strokeWidth={1.3} aria-hidden="true" /><div><strong className="airport-code">{flight.destination?.code ?? "···"}</strong><span className="airport-city">{flight.destination?.city ?? "Destination unknown"}</span></div></div>
           <div className="stat-row"><div><span>Altitude</span><strong>{flight.altitudeFt == null ? "—" : `${Math.round(flight.altitudeFt).toLocaleString()} ft`}</strong></div><div><span>Ground speed</span><strong>{flight.speedKts == null ? "—" : `${Math.round(flight.speedKts)} kt`}</strong></div><div><span>Distance</span><strong>{formatDistanceNm(shownDistanceKm)}</strong></div></div>
           <p className="data-note">{routeKnown ? "Route reported by AirLabs" : routeImplausible ? "Inconsistent reported route withheld" : "Route unavailable"} · Last report {Math.round(shownAgeSeconds)} sec ago{positionEstimated ? " · Position estimated" : ""}{coverageWarning ? " · Coverage may be incomplete" : ""}</p>

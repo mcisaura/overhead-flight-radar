@@ -1,3 +1,5 @@
+import AircraftTypeLink from "./aircraft-type-link";
+import FlightLink from "./flight-link";
 import type { ReactNode } from "react";
 import { airlineIdentity, formatDistanceNm, type AirlineIdentity } from "../../lib/flight-display";
 
@@ -9,12 +11,15 @@ export function BoardingPassStats({ altitudeFt, speedKts, distanceKm }: { altitu
   </div>;
 }
 
-export function BoardingPassStub({ callsign, flightNumber, flightIata, airline, aircraftType, children }: {
+export function BoardingPassStub({ callsign, flightNumber, flightIata, airline, aircraftType, aircraftModel, registration, demo = false, children }: {
   callsign: string | null;
+  registration?: string | null;
+  demo?: boolean;
   flightNumber?: string | null;
   flightIata?: string | null;
   airline?: AirlineIdentity | null;
   aircraftType: string | null;
+  aircraftModel?: string | null;
   children: ReactNode;
 }) {
   const rawFlight = callsign?.trim().toUpperCase() || null;
@@ -26,9 +31,9 @@ export function BoardingPassStub({ callsign, flightNumber, flightIata, airline, 
 
   return <div className="boarding-pass-stub" aria-label="Flight identifiers and details">
     <div className="boarding-pass-stub-codes">
-      <div><span>FLIGHT CODE · IATA</span><strong>{publicCode || "—"}</strong></div>
-      <div><span>{match ? "CALLSIGN · ICAO" : "RADIO ID / REG"}</span><strong>{rawFlight && rawFlight !== publicCode ? rawFlight : "—"}</strong></div>
-      <div><span>AIRCRAFT TYPE</span><strong>{aircraftCode || "—"}</strong></div>
+      <div><span>FLIGHT CODE · IATA</span><strong>{publicCode ? <FlightLink callsign={callsign} registration={registration} demo={demo}>{publicCode}</FlightLink> : "—"}</strong></div>
+      <div><span>{match ? "CALLSIGN · ICAO" : "RADIO ID / REG"}</span><strong>{rawFlight && rawFlight !== publicCode ? <FlightLink callsign={callsign} registration={registration} demo={demo}>{rawFlight}</FlightLink> : "—"}</strong></div>
+      <div><span>AIRCRAFT TYPE</span><strong>{aircraftCode ? <AircraftTypeLink code={aircraftCode} model={aircraftModel}>{aircraftCode}</AircraftTypeLink> : "—"}</strong></div>
     </div>
     <div className="boarding-pass-stub-details">{children}</div>
   </div>;

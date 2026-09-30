@@ -1,8 +1,10 @@
 @import "tailwindcss";
-@font-face { font-family: "DM Sans Variable"; src: url("/fonts/dm-sans-latin-wght-normal.woff2") format("woff2"); font-style: normal; font-weight: 100 1000; font-display: swap; }
-@font-face { font-family: "Fraunces Variable"; src: url("/fonts/fraunces-latin-wght-normal.woff2") format("woff2"); font-style: normal; font-weight: 100 900; font-display: swap; }
-@font-face { font-family: "Fraunces Variable"; src: url("/fonts/fraunces-latin-wght-italic.woff2") format("woff2"); font-style: italic; font-weight: 100 900; font-display: swap; }
 @font-face { font-family: "Barlow Condensed"; src: url("/fonts/barlow-condensed-latin-700-normal.woff2") format("woff2"); font-style: normal; font-weight: 700; font-display: swap; }
+/* Supplied webfonts; DIN uses a local face with OCR-B as its fallback. */
+@font-face { font-family: "Overhead Frutiger"; src: url("/fonts/frutiger-regular.woff") format("woff"); font-style: normal; font-weight: 400; font-display: swap; }
+@font-face { font-family: "Overhead Frutiger"; src: url("/fonts/frutiger-bold.woff") format("woff"); font-style: normal; font-weight: 700; font-display: swap; }
+@font-face { font-family: "Overhead DIN"; src: local("DIN Alternate Bold"), local("DINAlternate-Bold"), local("DIN Bold"), local("DIN-Bold"); font-style: normal; font-weight: 700; font-display: swap; }
+@font-face { font-family: "Overhead OCR-B"; src: url("/fonts/ocr-b.otf") format("opentype"); font-style: normal; font-weight: 400; font-display: swap; }
 
 :root {
   --ink: #173746;
@@ -12,8 +14,11 @@
   --flight-accent: #205b70;
   --paper: #faf9f5;
   --rule: #cfdbdc;
-  --display: "Fraunces Variable", Georgia, serif;
-  --body: "DM Sans Variable", "Avenir Next", sans-serif;
+  --body: Helvetica, "Helvetica Neue", Arial, sans-serif;
+  --display: var(--body);
+  --flight-text: "Overhead Frutiger", Frutiger, "Frutiger LT Std", var(--body);
+  --flight-numbers: "Overhead DIN", DIN, "DIN Alternate", "DIN 2014", "Overhead OCR-B", var(--body);
+  --flight-codes: "Overhead OCR-B", "OCR-B", "OCR B", var(--flight-numbers);
   color-scheme: light;
 }
 
@@ -589,7 +594,7 @@ button:disabled { opacity: .6; cursor: wait; }
   display: flex;
   flex-direction: column;
   width: min(500px, calc(100vw - 52px));
-  min-height: 640px;
+  min-height: 560px;
   margin: clamp(24px, 4vh, 48px) 0 0 clamp(26px, 6vw, 100px);
   padding: 0;
   overflow: hidden;
@@ -709,7 +714,7 @@ button:disabled { opacity: .6; cursor: wait; }
   .boarding-pass .boarding-pass-heading, .live-stage .boarding-pass .boarding-pass-heading { font-size: clamp(34px, 6vw, 43px); }
 }
 @media (max-width: 520px) {
-  .boarding-pass, .live-stage .boarding-pass { min-height: 610px; }
+  .boarding-pass, .live-stage .boarding-pass { min-height: 460px; }
   .boarding-pass, .live-stage .boarding-pass { width: calc(100% - 46px); margin: 24px 23px 0; }
   .boarding-pass-main { padding: 18px 20px 20px; }
   .boarding-pass-footer { padding: 16px 19px 18px; }
@@ -736,8 +741,8 @@ button:disabled { opacity: .6; cursor: wait; }
   column-gap: clamp(28px, 4vw, 76px);
   row-gap: 14px;
   height: auto;
-  min-height: min(790px, calc(100svh - 84px));
-  padding: clamp(70px, 10vh, 120px) clamp(26px, 6vw, 100px) 82px;
+  min-height: min(740px, calc(100svh - 84px));
+  padding: clamp(52px, 7vh, 80px) clamp(26px, 6vw, 100px) 76px;
 }
 .sky-stage.has-flight > .boarding-pass {
   grid-column: 1;
@@ -749,7 +754,7 @@ button:disabled { opacity: .6; cursor: wait; }
   margin: 0;
   padding: 0;
 }
-.boarding-pass.hero-flight .boarding-pass-main { min-height: 416px; padding: 22px 27px 24px; }
+.boarding-pass.hero-flight .boarding-pass-main { min-height: 330px; padding: 18px 27px 18px; }
 .sky-stage.has-flight .boarding-pass-divider { margin: 18px 0 16px; }
 .sky-stage.has-flight .boarding-route-stop strong { font-size: clamp(42px, 4vw, 58px); }
 .sky-stage.has-flight .hero-visual-column,
@@ -975,11 +980,11 @@ button:disabled { opacity: .6; cursor: wait; }
   background: #f8fcf8e8;
   box-shadow: 0 8px 20px #214e600d;
 }
-.hero-flight-details .boarding-pass-stats > div { gap: 6px; padding: 0 12px; }
+.hero-flight-details .boarding-pass-stats > div { gap: 3px; padding: 0 12px; }
 .hero-flight-details .boarding-pass-stats > div:first-child { padding-left: 0; }
 .hero-flight-details .boarding-pass-stats > div:last-child { padding-right: 0; }
-.hero-flight-details .boarding-pass-stats span { font-size: 8px; letter-spacing: .07em; }
-.hero-flight-details .boarding-pass-stats strong { font-size: 21px; letter-spacing: -.02em; }
+.hero-flight-details .boarding-pass-stats span { font-size: 8px; font-weight: 400; letter-spacing: .04em; }
+.hero-flight-details .boarding-pass-stats strong { color: var(--ink-soft); font-size: 14px; letter-spacing: 0; line-height: 1.2; }
 .hero-flight-details .boarding-pass-freshness { margin: 9px 0 0; font-size: 10px; }
 .hero-flight-details .live-actions { margin-top: 11px; gap: 8px; }
 .hero-flight-details .primary-button, .hero-flight-details .refresh-button { min-height: 36px; padding: 0 11px; border-radius: 7px; font-size: 11px; box-shadow: none; }
@@ -1133,7 +1138,7 @@ button:disabled { opacity: .6; cursor: wait; }
   .sky-stage:not(.has-flight) { padding-bottom: 185px; }
   .sky-stage.has-flight .sky-aircraft-layer { height: 205px; }
   .sky-stage.has-flight, .sky-stage.has-flight.live-stage { row-gap: 15px; padding: 24px 23px 62px; }
-  .sky-stage.has-flight > .boarding-pass { min-height: 0; }
+  .sky-stage.has-flight > .boarding-pass { min-height: 460px; }
   .boarding-pass.hero-flight .boarding-pass-main { min-height: 0; padding: 15px 16px 16px; }
   .sky-stage.has-flight .boarding-pass .boarding-pass-heading,
   .sky-stage.has-flight.live-stage .boarding-pass .boarding-pass-heading {
@@ -1164,7 +1169,7 @@ button:disabled { opacity: .6; cursor: wait; }
   .hero-progress-baseline .hero-baseline-percent { display: block; }
   .hero-flight-details { padding: 10px; }
   .hero-flight-details .boarding-pass-stats > div { padding: 0 7px; }
-  .hero-flight-details .boarding-pass-stats strong { font-size: clamp(16px, 4.3vw, 18px); }
+  .hero-flight-details .boarding-pass-stats strong { font-size: 12px; }
   .hero-flight-details .boarding-pass-stats span { font-size: 8px; }
   .hero-flight-details .boarding-pass-freshness { margin-top: 6px; }
   .hero-flight-details .live-actions { flex-wrap: wrap; margin-top: 8px; }
@@ -1212,9 +1217,9 @@ button:disabled { opacity: .6; cursor: wait; }
 }
 
 /* The quiet pass sizes to its content instead of holding an empty gap. */
-.empty-boarding-pass, .live-stage .empty-boarding-pass { min-height: 0; }
+.empty-boarding-pass, .live-stage .empty-boarding-pass { min-height: 560px; }
 @media (max-width: 520px) {
-  .boarding-pass.empty-boarding-pass, .live-stage .boarding-pass.empty-boarding-pass { min-height: 0; }
+  .boarding-pass.empty-boarding-pass, .live-stage .boarding-pass.empty-boarding-pass { min-height: 460px; }
 }
 
 /* Phones: the hint would cover the model, which already invites dragging. */
@@ -1237,3 +1242,134 @@ button:disabled { opacity: .6; cursor: wait; }
 
 /* Dark mode: a visible 5 nm zone ring. */
 [data-theme="dark"] .flight-map path.zone-circle { stroke: #8fd0e3; stroke-opacity: .85; fill: #74adc0; fill-opacity: .12; }
+
+/* Flight information uses Frutiger; general navigation and controls use Helvetica.
+   DIN carries measurements, while OCR-B carries ticket identifiers when available. */
+.boarding-pass,
+.flight-panel,
+.map-flight-card,
+.map-key,
+.preset-copy,
+.hero-crossing,
+.hero-progress-baseline {
+  font-family: var(--flight-text);
+}
+
+.empty-copy,
+.map-flight-card > strong {
+  font-family: var(--flight-text);
+}
+
+.boarding-pass-stats strong,
+.stat-row strong,
+.scenario-path-facts dd,
+.map-card-stats,
+.zone-percent,
+.hero-crossing-heading strong,
+.hero-crossing-percent,
+.hero-baseline-percent {
+  font-family: var(--flight-numbers);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.hero-flight .boarding-pass-stub-codes strong,
+.boarding-route-stop strong,
+.airport-code,
+.next-aircraft-main strong,
+.next-aircraft-main > span {
+  font-family: var(--flight-codes);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: 0;
+}
+
+button, input, select,
+.aircraft-model-caption,
+.flight-map .leaflet-control {
+  font-family: var(--body);
+}
+
+/* Keep units and explanatory copy in the flight text face. */
+.map-card-stats small { font-family: var(--flight-text); }
+
+/* The available Frutiger faces are regular and bold; avoid uneven intermediate weights. */
+.flight-identity-copy > span,
+.boarding-route-city,
+.compact-presets .preset-copy strong,
+.flight-panel h3,
+.map-flight-card > strong { font-weight: 700; }
+
+.map-flight-card > strong { letter-spacing: -.015em; }
+.boarding-pass-stats strong,
+.stat-row strong,
+.scenario-path-facts dd { font-synthesis: none; }
+
+@media (min-width: 641px) and (max-width: 900px) {
+  .compact-presets .preset-copy strong { font-size: 15px; }
+}
+
+/* Keep the monospace identifiers and footer controls comfortable on small phones. */
+@media (max-width: 520px) {
+  .project-credits { flex: none; width: 100%; align-content: start; }
+}
+@media (max-width: 360px) {
+  .empty-boarding-pass .boarding-pass-heading,
+  .live-stage .empty-boarding-pass .boarding-pass-heading { font-size: 28px; }
+  .boarding-pass-stub-codes strong { font-size: 12px; }
+  .hero-background-control { flex-direction: column; align-items: flex-start; gap: 6px; }
+}
+
+/* Flight tracking links retain the typography of their name or identifier. */
+.flight-tracking-link,
+.aircraft-type-link {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 40%, transparent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: .18em;
+}
+.flight-tracking-link:hover,
+.aircraft-type-link:hover { text-decoration-color: currentColor; }
+
+/* Compact scannable barcode aligned with the ticket controls. */
+.boarding-barcode { flex: 0 1 190px; width: 190px; min-width: 0; margin-left: auto; }
+.boarding-barcode svg { display: block; width: 100%; height: 36px; }
+.boarding-pass-action-row { display: flex; align-items: center; gap: 12px; }
+.boarding-pass-stub .hero-playback,
+.boarding-pass-stub .live-actions { flex-wrap: nowrap; }
+.boarding-pass-action-row > button,
+.boarding-pass-stub .hero-playback > button,
+.boarding-pass-stub .live-actions > button { flex-shrink: 0; }
+@media (min-width: 521px) {
+  .boarding-pass .boarding-pass-heading,
+  .live-stage .boarding-pass .boarding-pass-heading { min-height: 104px; margin-bottom: 14px; }
+  .boarding-pass-stub { padding-top: 16px; padding-bottom: 17px; }
+  .boarding-pass-stub-details { margin-top: 13px; padding-top: 13px; }
+}
+@media (min-width: 851px) {
+  .sky-stage:not(.has-flight) { min-height: 640px; height: min(740px, calc(100svh - 84px)); }
+  .empty-boarding-pass, .live-stage .empty-boarding-pass { width: min(500px, 42vw); margin-top: clamp(52px, 7vh, 80px); }
+}
+@media (max-width: 850px) and (min-width: 761px) {
+  .sky-stage.has-flight, .sky-stage.has-flight.live-stage { padding-top: 48px; }
+}
+@media (max-width: 520px) {
+  .boarding-barcode { flex-basis: 150px; width: 150px; }
+  .boarding-pass-action-row { gap: 8px; }
+  .boarding-pass-action-row > .primary-button { padding: 0 8px; font-size: 10px; }
+  .boarding-pass-action-row > .primary-button svg { display: none; }
+  .boarding-pass-stub .hero-playback > button { gap: 4px; padding: 0 7px; font-size: 10px; }
+  .boarding-pass-stub .hero-playback > button svg { width: 12px; }
+  .boarding-pass-stub .live-actions > button { padding: 0 7px; font-size: 10px; }
+  .boarding-barcode svg { height: 32px; }
+  .sky-stage.has-flight, .sky-stage.has-flight.live-stage { padding-top: 32px; padding-bottom: 62px; }
+  .boarding-pass.hero-flight .boarding-pass-main { padding-top: 12px; padding-bottom: 12px; }
+  .sky-stage.has-flight .boarding-pass-stub { padding-top: 12px; padding-bottom: 12px; }
+  .sky-stage.has-flight .sky-aircraft-layer,
+  .sky-stage.has-flight .aircraft-scene,
+  .sky-stage.has-flight .live-aircraft-scene { height: 180px; }
+  .sky-stage.has-flight .boarding-pass .boarding-pass-heading,
+  .sky-stage.has-flight.live-stage .boarding-pass .boarding-pass-heading { min-height: 80px; margin-bottom: 10px; }
+  .sky-stage.has-flight .boarding-route { min-height: 72px; }
+}

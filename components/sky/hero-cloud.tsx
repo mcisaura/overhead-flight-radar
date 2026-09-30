@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { createPointerTilt, targetPointerTilt, stepPointerTilt, pointerTiltMoving } from "../../lib/pointer-tilt";
 import { MousePointer2 } from "lucide-react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
@@ -67,6 +68,11 @@ export default function HeroCloud() {
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
     const originalCursor = document.body.style.cursor;
+    const stage = root.closest<HTMLElement>(".sky-stage");
+    const follow = createPointerTilt();
+    const resetPointerTilt = () => {
+      follow.targetPitch = follow.targetYaw = 0;
+    };
     let gesture: {
       cloud: InteractiveCloud;
       pointerId: number;
@@ -81,6 +87,7 @@ export default function HeroCloud() {
       Math.abs(cloud.dragX) >= .0005 || Math.abs(cloud.dragY) >= .0005
       || Math.abs(cloud.turnX) >= .0005 || Math.abs(cloud.turnY) >= .0005 || Math.abs(cloud.turnZ) >= .0005);
     const positionClouds = (time: number, elapsedMs = 0) => {
+      stepPointerTilt(follow, reducedMotion.matches ? Infinity : elapsedMs, !reducedMotion.matches && !gesture);
       movingClouds.forEach((cloud) => {
         if (gesture?.cloud !== cloud && elapsedMs > 0) {
           const settle = 1 - Math.exp(-elapsedMs / 240);
@@ -97,7 +104,7 @@ export default function HeroCloud() {
         }
         cloud.group.position.x = cloud.x + Math.sin(time * .33 + cloud.phase) * .12 + cloud.dragX;
         cloud.group.position.y = cloud.y + Math.sin(time * .52 + cloud.phase * 1.4) * .09 + cloud.dragY;
-        cloud.group.rotation.set(-.08 + cloud.turnX, -.08 + cloud.turnY, cloud.tilt + Math.sin(time * .28 + cloud.phase) * .012 + cloud.turnZ);
+        cloud.group.rotation.set(-.08 + cloud.turnX + follow.pitch, -.08 + cloud.turnY + follow.yaw, cloud.tilt + Math.sin(time * .28 + cloud.phase) * .012 + cloud.turnZ);
       });
     };
     const animate = (time: number) => {
@@ -109,7 +116,7 @@ export default function HeroCloud() {
       // Idle clouds can render at a lower power-friendly cadence. Pointer
       // interaction and the spring-back need every animation frame so the
       // return does not visibly step between positions.
-      const interactiveMotion = Boolean(gesture) || hasReturnMotion();
+      const interactiveMotion = Boolean(gesture) || hasReturnMotion() || pointerTiltMoving(follow, !gesture);
       if (lastFrame === 0 || interactiveMotion || time - lastFrame >= 40) {
         const elapsedMs = lastFrame === 0 ? 0 : Math.min(time - lastFrame, 100);
         elapsedSeconds += elapsedMs / 1000;
@@ -125,6 +132,9 @@ export default function HeroCloud() {
       frame = window.requestAnimationFrame(animate);
     };
     const syncAnimation = () => {
+      if (!visible || document.hidden || reducedMotion.matches) {
+        follow.pitch = follow.yaw = follow.targetPitch = follow.targetYaw = 0;
+      }
       if (!visible || document.hidden || reducedMotion.matches || movingClouds.length === 0) {
         window.cancelAnimationFrame(frame);
         frame = 0;
@@ -221,6 +231,9 @@ export default function HeroCloud() {
       document.body.style.cursor = "grabbing";
     };
     const pointerMove = (event: PointerEvent) => {
+      if (event.pointerType === "mouse" && stage && !reducedMotion.matches) {
+        targetPointerTilt(follow, event.clientX, event.clientY, stage.getBoundingClientRect());
+      }
       const current = gesture;
       if (!current || current.pointerId !== event.pointerId) {
         if (event.pointerType === "mouse" && !current) {
@@ -270,11 +283,14 @@ export default function HeroCloud() {
     const contextMenu = (event: MouseEvent) => {
       if (gesture || cloudAt(event.clientX, event.clientY)) event.preventDefault();
     };
+    stage?.addEventListener("pointerleave", resetPointerTilt);
+    window.addEventListener("scroll", resetPointerTilt, { passive: true, capture: true });
     window.addEventListener("pointerdown", pointerDown);
     window.addEventListener("pointermove", pointerMove, { passive: false });
     window.addEventListener("pointerup", pointerUp);
     window.addEventListener("pointercancel", pointerUp);
-    window.addEventListener("blur", releaseCloud);
+    const windowBlur = () => { resetPointerTilt(); releaseCloud(); };
+    window.addEventListener("blur", windowBlur);
     window.addEventListener("contextmenu", contextMenu);
 
     void loadCloud().then((template) => {
@@ -319,11 +335,13 @@ export default function HeroCloud() {
       document.removeEventListener("visibilitychange", syncAnimation);
       reducedMotion.removeEventListener("change", syncAnimation);
       document.body.style.cursor = originalCursor;
+      stage?.removeEventListener("pointerleave", resetPointerTilt);
+      window.removeEventListener("scroll", resetPointerTilt, true);
       window.removeEventListener("pointerdown", pointerDown);
       window.removeEventListener("pointermove", pointerMove);
       window.removeEventListener("pointerup", pointerUp);
       window.removeEventListener("pointercancel", pointerUp);
-      window.removeEventListener("blur", releaseCloud);
+      window.removeEventListener("blur", windowBlur);
       window.removeEventListener("contextmenu", contextMenu);
       materials.forEach((material) => material.dispose());
       renderer.dispose();

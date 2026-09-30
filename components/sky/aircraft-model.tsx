@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPointerTilt, targetPointerTilt, stepPointerTilt, pointerTiltMoving } from "../../lib/pointer-tilt";
 import { MousePointer2 } from "lucide-react";
 import * as THREE from "three";
 import type { AircraftVisual } from "../../lib/aircraft-visual";
@@ -115,6 +116,12 @@ export default function AircraftModel({ progress = 50, live = false, visual = "a
     let endCenter = 1.3;
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     const originalCursor = document.body.style.cursor;
+    const stage = root.closest<HTMLElement>(".sky-stage");
+    const follow = createPointerTilt();
+    const resetPointerTilt = () => {
+      follow.targetPitch = follow.targetYaw = 0;
+      if (model && canRender() && !frame) frame = requestAnimationFrame(animate);
+    };
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
 
@@ -123,7 +130,7 @@ export default function AircraftModel({ progress = 50, live = false, visual = "a
     const drawAircraft = () => {
       if (!model) return;
       model.position.set(baseX + offsetX + dragX, baseY + dragY, model.position.z);
-      model.rotation.set(turnX, turnY, turnZ);
+      model.rotation.set(turnX - follow.pitch, turnY - follow.yaw, turnZ);
       positionSlipstream();
       render();
     };
@@ -210,8 +217,9 @@ export default function AircraftModel({ progress = 50, live = false, visual = "a
         turnY += (turnTargetY - turnY) * settle;
         turnZ += (turnTargetZ - turnZ) * settle;
       }
+      stepPointerTilt(follow, reducedMotion.matches ? Infinity : elapsed, !reducedMotion.matches && !gesture);
       drawAircraft();
-      if (Math.abs(targetX - offsetX) > .005 || Math.abs(dragX - dragTargetX) > .005
+      if (pointerTiltMoving(follow, !reducedMotion.matches && !gesture) || Math.abs(targetX - offsetX) > .005 || Math.abs(dragX - dragTargetX) > .005
         || Math.abs(dragY - dragTargetY) > .005 || Math.abs(turnX - turnTargetX) > .002
         || Math.abs(turnY - turnTargetY) > .002 || Math.abs(turnZ - turnTargetZ) > .002
         || (visual === "helicopter" && !reducedMotion.matches)) {
@@ -223,6 +231,9 @@ export default function AircraftModel({ progress = 50, live = false, visual = "a
     resetProgressRef.current = () => place(true);
 
     const syncVisibility = () => {
+      if (!canRender() || reducedMotion.matches) {
+        follow.pitch = follow.yaw = follow.targetPitch = follow.targetYaw = 0;
+      }
       if (!canRender()) {
         cancelAnimationFrame(frame);
         frame = 0;
@@ -239,6 +250,7 @@ export default function AircraftModel({ progress = 50, live = false, visual = "a
     }, { rootMargin: "100px" });
     visibilityObserver.observe(root);
     document.addEventListener("visibilitychange", syncVisibility);
+    reducedMotion.addEventListener("change", syncVisibility);
 
     const aircraftAt = (clientX: number, clientY: number) => {
       if (!model) return false;
@@ -269,6 +281,10 @@ export default function AircraftModel({ progress = 50, live = false, visual = "a
       document.body.style.cursor = "grabbing";
     };
     const pointerMove = (event: PointerEvent) => {
+      if (event.pointerType === "mouse" && stage && !reducedMotion.matches) {
+        targetPointerTilt(follow, event.clientX, event.clientY, stage.getBoundingClientRect());
+        if (model && canRender() && !frame && pointerTiltMoving(follow, !gesture)) frame = requestAnimationFrame(animate);
+      }
       if (!gesture || gesture.pointerId !== event.pointerId) {
         if (event.pointerType === "mouse" && !gesture) {
           const overControl = event.target instanceof Element && !!event.target.closest("button, a, input, select, textarea");
@@ -302,10 +318,12 @@ export default function AircraftModel({ progress = 50, live = false, visual = "a
     const pointerUp = (event: PointerEvent) => {
       if (gesture?.pointerId === event.pointerId) releaseAircraft();
     };
-    const windowBlur = () => { if (gesture) releaseAircraft(); };
+    const windowBlur = () => { resetPointerTilt(); if (gesture) releaseAircraft(); };
     const contextMenu = (event: MouseEvent) => {
       if (aircraftAt(event.clientX, event.clientY)) event.preventDefault();
     };
+    stage?.addEventListener("pointerleave", resetPointerTilt);
+    window.addEventListener("scroll", resetPointerTilt, { passive: true, capture: true });
     window.addEventListener("pointerdown", pointerDown);
     window.addEventListener("pointermove", pointerMove, { passive: false });
     window.addEventListener("pointerup", pointerUp);
@@ -380,7 +398,10 @@ export default function AircraftModel({ progress = 50, live = false, visual = "a
       observer.disconnect();
       visibilityObserver.disconnect();
       document.removeEventListener("visibilitychange", syncVisibility);
+      reducedMotion.removeEventListener("change", syncVisibility);
       document.body.style.cursor = originalCursor;
+      stage?.removeEventListener("pointerleave", resetPointerTilt);
+      window.removeEventListener("scroll", resetPointerTilt, true);
       window.removeEventListener("pointerdown", pointerDown);
       window.removeEventListener("pointermove", pointerMove);
       window.removeEventListener("pointerup", pointerUp);

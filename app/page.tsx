@@ -8,6 +8,7 @@ import ModeToggle from "../components/controls/mode-toggle";
 import { demoElapsedFractionAtProgress, demoFlights, demoPlace, demoProgressAtElapsedFraction, demoWeather, distanceFromDemoPlace, sampleDemoProfile } from "../lib/demo-data";
 import { positionAtZoneProgress, zoneProgress } from "../lib/zone-progress";
 import FlightIdentity, { flightIdentityText } from "../components/boarding-pass/flight-identity";
+import BoardingBarcode from "../components/boarding-pass/boarding-barcode";
 import BoardingRoute from "../components/boarding-pass/boarding-route";
 import { BoardingPassStats, BoardingPassStub } from "../components/boarding-pass/boarding-pass-extras";
 import HeroProgressLine from "../components/sky/hero-progress-line";
@@ -176,20 +177,19 @@ function DemoHome({ onModeChange, weatherUnit, onWeatherUnitChange, heroBackgrou
         <div className="boarding-pass-main">
           <FlipHeading text={flight && selected ? crossingStatus : "A quiet sky.\nFor now."} />
           {flight && selected ? <>
-              <FlightIdentity {...flight} />
+              <FlightIdentity {...flight} demo />
               <div className="boarding-pass-divider" aria-hidden="true" />
               <BoardingRoute origin={routeEntry} destination={routeExit} zoneSegment={!routeKnown} />
-              {!routeKnown && <p className="boarding-pass-route-note">{selected.scenario.routeNote}</p>}
-          </> : <p className="hero-description">No aircraft are inside the sample zone. Choose a simulated flight below to watch it enter, cross, and leave your sky.</p>}
+          </> : null}
         </div>
         {flight && selected ?
-            <BoardingPassStub callsign={flight.callsign} aircraftType={flight.aircraftType}>
+            <BoardingPassStub demo callsign={flight.callsign} aircraftType={flight.aircraftType}>
               <div className="hero-flight-details">
                 <BoardingPassStats altitudeFt={flight.altitudeFt} speedKts={flight.speedKts} distanceKm={flight.distanceKm} />
                 <div className="hero-playback">
                   <button type="button" className="zone-play" disabled={phase === "exiting" || preparing} onClick={() => setPlaying((value) => !value)}>{playing ? <Pause size={15} /> : <Play size={15} />}{preparing ? "Preparing…" : playing ? "Pause" : "Resume"}</button>
                   <button type="button" className="zone-reset" onClick={() => selectFlight(selected.id)}><RotateCcw size={15} />Replay</button>
-                  <span>30 sec demo crossing</span>
+                  <BoardingBarcode />
                 </div>
               </div>
             </BoardingPassStub>
@@ -198,8 +198,9 @@ function DemoHome({ onModeChange, weatherUnit, onWeatherUnitChange, heroBackgrou
               <div><span>SKY STATUS</span><strong>No aircraft in the zone</strong></div>
               <div><span>OBSERVATION ZONE</span><strong>5 nautical miles</strong></div>
             </div>
-            <div className="boarding-pass-stub-details">
+            <div className="boarding-pass-stub-details boarding-pass-action-row">
               <button type="button" className="primary-button" onClick={() => document.getElementById("presets-title")?.scrollIntoView({ behavior: "smooth", block: "start" })}>Simulate an arrival <ArrowRight size={18} /></button>
+              <BoardingBarcode />
             </div>
           </div>}
         </BoardingPassDisplay>
@@ -211,7 +212,7 @@ function DemoHome({ onModeChange, weatherUnit, onWeatherUnitChange, heroBackgrou
       </section>
 
       <section className="presets-section compact-presets" aria-labelledby="presets-title">
-        <div className="presets-heading"><h2 id="presets-title">Try a flight</h2><p>Three fictional flights · Select one to watch it cross your sky.</p></div>
+        <div className="presets-heading"><h2 id="presets-title">Try a flight</h2><p>Three fictional flights · 30 sec demo crossing · Select one to watch it cross your sky.</p></div>
         <div className="preset-list" role="group" aria-label="Sample flights">
           {demoFlights.map((item) => {
             const kind = aircraftVisualForFlight(item.aircraft);

@@ -5,6 +5,7 @@ import type * as Leaflet from "leaflet";
 import { MapPin, Navigation2 } from "lucide-react";
 import { ZONE_RADIUS_KM } from "../../lib/zone-progress";
 import { airlineIdentity, displayAircraftType, displayFlightName, formatDistanceNm, type AirlineIdentity } from "../../lib/flight-display";
+import FlightLink from "../boarding-pass/flight-link";
 import AircraftModelLabel from "../boarding-pass/aircraft-model-label";
 import "leaflet/dist/leaflet.css";
 
@@ -314,8 +315,8 @@ export default function FlightMap({ lat, lon, aircraft, closestHex, loading, una
         {showDetails && <div className="map-flight-card" aria-live="polite">
           {selected ? <>
             <span className="map-card-label">{demo ? "SAMPLE FLIGHT" : selected.hex === closestHex ? "TRACKED AIRCRAFT" : "SELECTED AIRCRAFT"}</span>
-            <strong title={selected.callsign || undefined} tabIndex={selected.callsign ? 0 : undefined}>{formatName(selected)}</strong>
-            <span className="map-card-type"><span title={selected.aircraftType || undefined} tabIndex={selected.aircraftType ? 0 : undefined}><AircraftModelLabel label={selected.displayType || displayAircraftType(selected.aircraftType, selected.aircraftModel)} /></span>{selected.registration && selected.registration !== selected.callsign ? ` · ${selected.registration}` : ""}</span>
+            <strong><FlightLink callsign={selected.callsign} registration={selected.registration} demo={demo}>{formatName(selected)}</FlightLink></strong>
+            <span className="map-card-type"><span><AircraftModelLabel code={selected.aircraftType} label={selected.displayType || displayAircraftType(selected.aircraftType, selected.aircraftModel)} /></span>{selected.registration && selected.registration !== selected.callsign ? ` · ${selected.registration}` : ""}</span>
             {selected.hex !== closestHex && <div className="map-card-stats">
               <span><small>Altitude</small>{selected.altitudeFt == null ? "—" : `${Math.round(selected.altitudeFt).toLocaleString()} ft`}</span>
               <span><small>Speed</small>{selected.speedKts == null ? "—" : `${Math.round(selected.speedKts)} kt`}</span>
