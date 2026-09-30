@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { MousePointer2 } from "lucide-react";
 import * as THREE from "three";
-import type { AircraftVisual } from "../lib/aircraft-visual";
+import type { AircraftVisual } from "../../lib/aircraft-visual";
 import { loadAircraftScene } from "./aircraft-assets";
 
 export default function AircraftModel({ progress = 50, live = false, visual = "airliner", entranceRun, onReady }: { progress?: number | null; live?: boolean; visual?: AircraftVisual; entranceRun?: number; onReady?: () => void }) {

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { airlineIdentity, formatDistanceNm, type AirlineIdentity } from "../lib/flight-display";
+import { airlineIdentity, formatDistanceNm, type AirlineIdentity } from "../../lib/flight-display";
 
 export function BoardingPassStats({ altitudeFt, speedKts, distanceKm }: { altitudeFt: number | null; speedKts: number | null; distanceKm: number }) {
   return <div className="boarding-pass-stats" aria-label="Flight position details">

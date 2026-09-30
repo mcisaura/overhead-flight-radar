@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import ThemeProvider from "./theme-provider";
+import ThemeProvider from "../components/controls/theme-provider";
 
 export const metadata: Metadata = {
   title: "Overhead — the sky above you, right now",

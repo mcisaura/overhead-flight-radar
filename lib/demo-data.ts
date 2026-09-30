@@ -1,5 +1,5 @@
-import type { MapAircraft } from "./flight-map";
-import { positionAtZoneProgress, zoneProgress } from "../lib/zone-progress";
+import type { MapAircraft } from "../components/map/flight-map";
+import { positionAtZoneProgress, zoneProgress } from "./zone-progress";
 
 export const demoPlace = { lat: 29.7604, lon: -95.3698, label: "Downtown Houston · sample sky" };
 

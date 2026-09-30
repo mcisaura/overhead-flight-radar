@@ -1,4 +1,4 @@
-import { splitAircraftDescription } from "../lib/flight-display";
+import { splitAircraftDescription } from "../../lib/flight-display";
 
 export default function AircraftModelLabel({ label }: { label: string }) {
   const { model, details } = splitAircraftDescription(label);

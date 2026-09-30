@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { airlineIdentity, airlineLogoUrl, displayAircraftType, displayFlightName, type AirlineIdentity } from "../lib/flight-display";
+import { airlineIdentity, airlineLogoUrl, displayAircraftType, displayFlightName, type AirlineIdentity } from "../../lib/flight-display";
 import AircraftModelLabel from "./aircraft-model-label";
 
 type Props = {

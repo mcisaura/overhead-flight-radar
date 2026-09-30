@@ -3,9 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import type * as Leaflet from "leaflet";
 import { MapPin, Navigation2 } from "lucide-react";
-import { ZONE_RADIUS_KM } from "../lib/zone-progress";
-import { airlineIdentity, displayAircraftType, displayFlightName, formatDistanceNm, type AirlineIdentity } from "../lib/flight-display";
-import AircraftModelLabel from "./aircraft-model-label";
+import { ZONE_RADIUS_KM } from "../../lib/zone-progress";
+import { airlineIdentity, displayAircraftType, displayFlightName, formatDistanceNm, type AirlineIdentity } from "../../lib/flight-display";
+import AircraftModelLabel from "../boarding-pass/aircraft-model-label";
 import "leaflet/dist/leaflet.css";
 
 type AirportPoint = { code: string; city: string; lat?: number | null; lon?: number | null };

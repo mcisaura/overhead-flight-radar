@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDemoSky } from "../../demo-data";
+import { getDemoSky } from "../../../lib/demo-data";
 import { ZONE_RADIUS_KM, zoneProgress } from "../../../lib/zone-progress";
 import { distanceKm, estimatePosition } from "../../../lib/flight-estimate";
 import { airlineIdentity, displayAircraftType, displayFlightName } from "../../../lib/flight-display";

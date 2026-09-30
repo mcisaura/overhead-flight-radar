@@ -2,29 +2,29 @@
 
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { ArrowRight, Check, CloudSun, Helicopter, MapPin, Navigation2, Pause, Plane, PlaneLanding, Play, RotateCcw } from "lucide-react";
-import FlightMap from "./flight-map";
-import LiveSky, { type Place } from "./live-sky";
-import ModeToggle from "./mode-toggle";
-import { demoElapsedFractionAtProgress, demoFlights, demoPlace, demoProgressAtElapsedFraction, demoWeather, distanceFromDemoPlace, sampleDemoProfile } from "./demo-data";
+import FlightMap from "../components/map/flight-map";
+import LiveSky, { type Place } from "../components/sky/live-sky";
+import ModeToggle from "../components/controls/mode-toggle";
+import { demoElapsedFractionAtProgress, demoFlights, demoPlace, demoProgressAtElapsedFraction, demoWeather, distanceFromDemoPlace, sampleDemoProfile } from "../lib/demo-data";
 import { positionAtZoneProgress, zoneProgress } from "../lib/zone-progress";
-import FlightIdentity, { flightIdentityText } from "./flight-identity";
-import BoardingRoute from "./boarding-route";
-import { BoardingPassStats, BoardingPassStub } from "./boarding-pass-extras";
-import HeroProgressLine from "./hero-progress-line";
-import BoardingPassDisplay from "./boarding-pass-display";
-import FlipHeading from "./flip-heading";
+import FlightIdentity, { flightIdentityText } from "../components/boarding-pass/flight-identity";
+import BoardingRoute from "../components/boarding-pass/boarding-route";
+import { BoardingPassStats, BoardingPassStub } from "../components/boarding-pass/boarding-pass-extras";
+import HeroProgressLine from "../components/sky/hero-progress-line";
+import BoardingPassDisplay from "../components/boarding-pass/boarding-pass-display";
+import FlipHeading from "../components/boarding-pass/flip-heading";
 import { aircraftVisualForFlight } from "../lib/aircraft-visual";
 import { formatDistanceNm } from "../lib/flight-display";
-import ProjectCredits from "./project-credits";
-import WeatherUnitToggle from "./weather-unit-toggle";
+import ProjectCredits from "../components/project-credits";
+import WeatherUnitToggle from "../components/controls/weather-unit-toggle";
 import { formatTemperature, formatWind, type WeatherUnit } from "../lib/weather-units";
-import HeroBackgroundToggle, { type HeroBackground } from "./hero-background-toggle";
-import ThemeToggle from "./theme-toggle";
+import HeroBackgroundToggle, { type HeroBackground } from "../components/controls/hero-background-toggle";
+import ThemeToggle from "../components/controls/theme-toggle";
 import { advanceDemoElapsed } from "../lib/demo-clock";
 
 const DEMO_CROSSING_DURATION_MS = 30_000;
-const AircraftModel = lazy(() => import("./aircraft-model"));
-const HeroCloud = lazy(() => import("./hero-cloud"));
+const AircraftModel = lazy(() => import("../components/sky/aircraft-model"));
+const HeroCloud = lazy(() => import("../components/sky/hero-cloud"));
 
 export default function Home() {
   const [mode, setMode] = useState<"live" | "demo">("live");

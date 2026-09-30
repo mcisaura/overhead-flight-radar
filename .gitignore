@@ -40,9 +40,7 @@ next-env.d.ts
 /dist/
 *.tsbuildinfo
 /.wrangler/
-/Flight_Code_Review.docx
 # Local tool and agent state; never publish it.
-/.sites-runtime/
 /.agents/
 /.codex/
 /outputs/

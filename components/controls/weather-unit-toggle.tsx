@@ -1,4 +1,4 @@
-import type { WeatherUnit } from "../lib/weather-units";
+import type { WeatherUnit } from "../../lib/weather-units";
 
 export default function WeatherUnitToggle({ value, onChange }: { value: WeatherUnit; onChange: (unit: WeatherUnit) => void }) {
   return <div className="weather-unit-control">

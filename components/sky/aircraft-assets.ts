@@ -1,6 +1,6 @@
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import type { Group } from "three";
-import type { AircraftVisual } from "../lib/aircraft-visual";
+import type { AircraftVisual } from "../../lib/aircraft-visual";
 
 const modelFiles: Record<AircraftVisual, string> = {
   airliner: "/models/boeing_737-200_white.glb",
