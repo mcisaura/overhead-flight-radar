@@ -161,11 +161,6 @@ export default function LiveSky({ onModeChange, place, onPlaceChange, weatherUni
   const shownAgeSeconds = selectedAircraft?.seenSeconds ?? flight?.seenSeconds ?? 0;
   const positionEstimated = Boolean(selectedAircraft?.estimated);
   const flightHeading = error ? "Live feed interrupted" : crossing?.motion === "approaching" ? "Drawing closer" : crossing?.motion === "leaving" ? "Heading away" : "Live aircraft nearby";
-  const liveRouteSummary = routeImplausible
-    ? "AirLabs reported route endpoints that do not match this aircraft’s current position, so they are hidden."
-    : flight?.origin && flight.destination
-    ? `AirLabs lists this flight from ${flight.origin.city} to ${flight.destination.city}.`
-    : "Route endpoints are unavailable for this aircraft.";
   const minutesToZoneExit = crossing && selectedAircraft?.speedKts && selectedAircraft.speedKts > 0
     ? crossing.remainingKm / (selectedAircraft.speedKts * 1.852 / 60) : null;
   const nextAircraft = flight ? closestLiveAircraft(aircraft, flight.hex) : null;
@@ -194,7 +189,7 @@ export default function LiveSky({ onModeChange, place, onPlaceChange, weatherUni
         <FlipHeading text={flight ? flightHeading : "A quiet sky.\nFor now."} />
         {flight ? <>
           <FlightIdentity {...flight} />
-          <div className="boarding-pass-divider" aria-hidden="true" />
+          <div className="boarding-pass-route-spacing" aria-hidden="true" />
           <BoardingRoute origin={flight.origin} destination={flight.destination} />
           {!routeKnown && <p className="boarding-pass-route-note">{routeImplausible ? "Reported route does not match the aircraft’s position" : "Flight path could not be confirmed"}</p>}
         </> : (error || coverageWarning) ? <p className="hero-description" role="status">{error || coverageWarning}</p> : null}
@@ -203,7 +198,7 @@ export default function LiveSky({ onModeChange, place, onPlaceChange, weatherUni
         <BoardingPassStub aircraftModel={flight.aircraftModel} registration={flight.registration} callsign={flight.callsign} flightNumber={flight.flightNumber} flightIata={flight.flightIata} airline={flight.airline} aircraftType={flight.aircraftType}>
           <div className="hero-flight-details">
             <BoardingPassStats altitudeFt={flight.altitudeFt} speedKts={flight.speedKts} distanceKm={shownDistanceKm} />
-            <p className="boarding-pass-freshness">Last reported {Math.round(shownAgeSeconds)} sec ago · {positionEstimated ? "Estimated position" : "Reported position"}{coverageWarning ? " · Coverage may be incomplete" : ""}</p>
+            <p className="boarding-pass-freshness">Last reported {Math.round(shownAgeSeconds)} sec ago{coverageWarning ? " · Coverage may be incomplete" : ""}</p>
             <BoardingPassActions className="live-actions"><button type="button" className="primary-button" onClick={useLocation} disabled={locating}><LocateFixed size={17} />{locating ? "Finding your location…" : "Use my location"}</button><button type="button" className="refresh-button" onClick={() => setRefreshKey((key) => key + 1)}><RefreshCw size={15} />Refresh</button></BoardingPassActions>
             {locationError && <p className="live-location-error" role="status">{locationError}</p>}
             {nextAircraft && <div className="next-aircraft-queue" aria-label="Next closest aircraft">
@@ -235,17 +230,12 @@ export default function LiveSky({ onModeChange, place, onPlaceChange, weatherUni
         {flight ? <><div className="airport-row"><div><strong className="airport-code">{flight.origin?.code ?? "···"}</strong><span className="airport-city">{flight.origin?.city ?? "Origin unknown"}</span></div><ArrowRight className="airport-connector" size={25} strokeWidth={1.3} aria-hidden="true" /><div><strong className="airport-code">{flight.destination?.code ?? "···"}</strong><span className="airport-city">{flight.destination?.city ?? "Destination unknown"}</span></div></div>
           <div className="stat-row"><div><span>Altitude</span><strong>{flight.altitudeFt == null ? "—" : `${Math.round(flight.altitudeFt).toLocaleString()} ft`}</strong></div><div><span>Ground speed</span><strong>{flight.speedKts == null ? "—" : `${Math.round(flight.speedKts)} kt`}</strong></div><div><span>Distance</span><strong>{formatDistanceNm(shownDistanceKm)}</strong></div></div>
           <p className="data-note">{routeKnown ? "Route reported by AirLabs" : routeImplausible ? "Inconsistent reported route withheld" : "Route unavailable"} · Last report {Math.round(shownAgeSeconds)} sec ago{positionEstimated ? " · Position estimated" : ""}{coverageWarning ? " · Coverage may be incomplete" : ""}</p>
-          <div className="scenario-brief">
-            <span className="scenario-brief-label">FLIGHT BRIEF</span>
-            <h4>{crossing?.motion === "approaching" ? "Before closest pass" : crossing?.motion === "leaving" ? "After closest pass" : "Aircraft nearby"}</h4>
-            <p>{liveRouteSummary}</p>
-            <p className="scenario-brief-moment">{error ? "The live feed is interrupted; these details may be stale." : crossing ? "Closest pass and exit time are projections from the latest reported heading and speed." : "A reported heading is needed to project this aircraft’s path through the zone."}</p>
             <dl className="scenario-path-facts">
               <div><dt>Heading</dt><dd>{selectedAircraft?.heading == null ? "—" : `${Math.round(selectedAircraft.heading)}°`}</dd></div>
               <div><dt>Closest pass</dt><dd>{crossing ? `~${formatDistanceNm(crossing.closestKm)}` : "—"}</dd></div>
               <div><dt>To zone exit</dt><dd>{minutesToZoneExit == null ? "—" : `~${Math.max(0.1, minutesToZoneExit).toFixed(1)} min`}</dd></div>
             </dl>
-          </div></> : <p className="empty-copy">{loading ? "Checking for nearby flights…" : error || "No aircraft reported in this zone right now."}</p>}
+          </> : <p className="empty-copy">{loading ? "Checking for nearby flights…" : error || "No aircraft reported in this zone right now."}</p>}
       </article></aside>
     </div>
 

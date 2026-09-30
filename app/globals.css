@@ -322,7 +322,7 @@ button:disabled { opacity: .6; cursor: wait; }
 .manual-form input::placeholder { color: #607988; opacity: 1; }
 .manual-form button { height: 44px; padding: 0 18px; border: 0; border-radius: 8px; background: var(--ocean-deep); color: white; font-size: 13px; font-weight: 700; }
 .manual-form button:hover { background: #103b4f; }
-.site-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px 24px; border-top: 1px solid var(--rule); padding: 25px clamp(24px, 5vw, 80px); color: var(--ink-soft); font-size: 12px; }
+.site-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px 24px; margin-top: clamp(32px, 4vw, 64px); border-top: 1px solid var(--rule); padding: 25px clamp(24px, 5vw, 80px); color: var(--ink-soft); font-size: 12px; }
 .hero-background-control { display: inline-flex; align-items: center; gap: 10px; white-space: nowrap; font-weight: 650; }
 .hero-background-select-wrap { min-height: 36px; display: inline-flex; align-items: center; gap: 7px; padding: 0 9px 0 11px; border: 1px solid var(--rule); border-radius: 8px; background: #f1f5f4; color: var(--ocean-deep); }
 .hero-background-select-wrap:hover, .hero-background-select-wrap:focus-within { border-color: #9bb9bf; background: #e5eeed; }
@@ -462,27 +462,30 @@ button:disabled { opacity: .6; cursor: wait; }
   --preset-accent: #286f8d;
   --preset-tint: #e4f0f4;
   position: relative;
-  align-items: flex-start;
+  align-items: center;
   gap: 14px;
-  min-height: 116px;
-  padding: 20px 17px;
-  border-color: #c7d9dd;
-  border-radius: 15px;
-  background: linear-gradient(145deg, #fffefa, #f6faf9);
-  box-shadow: inset 0 3px 0 var(--preset-accent), 0 8px 22px #1737460d;
+  min-height: 104px;
+  padding: 18px;
+  border-color: #d5dfe0;
+  border-radius: 12px;
+  background: #fffefa;
+  box-shadow: 0 2px 5px #17374604;
+  transition: border-color .22s ease, background .22s ease, box-shadow .22s ease, transform .22s ease;
 }
-.compact-presets .preset-private { --preset-accent: #99714e; --preset-tint: #f4ece1; }
+.compact-presets .preset-small { --preset-accent: #99714e; --preset-tint: #f4ece1; }
 .compact-presets .preset-helicopter { --preset-accent: #338071; --preset-tint: #e4f2eb; }
-.compact-presets .preset-button:hover { transform: translateY(-3px); border-color: var(--preset-accent); box-shadow: inset 0 3px 0 var(--preset-accent), 0 14px 25px #1737461c; }
-.compact-presets .preset-button.active { border-color: var(--preset-accent); background: var(--preset-tint); box-shadow: inset 0 3px 0 var(--preset-accent), 0 10px 25px #17374619; }
-.compact-presets .preset-icon { width: 45px; height: 45px; border-radius: 12px; background: var(--preset-tint); color: var(--preset-accent); }
+.compact-presets .preset-button:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--preset-accent) 55%, #d5dfe0); box-shadow: 0 5px 14px #1737460a; }
+.compact-presets .preset-button.active { border-color: var(--preset-accent); background: color-mix(in srgb, var(--preset-tint) 65%, #fffefa); box-shadow: inset 0 0 0 1px var(--preset-accent); }
+.compact-presets .preset-icon { width: 42px; height: 42px; border-radius: 10px; background: var(--preset-tint); color: var(--preset-accent); }
 .compact-presets .preset-icon svg { transform: none; }
 .compact-presets .preset-button.active .preset-icon { background: var(--preset-accent); color: white; }
-.compact-presets .preset-copy { align-self: center; gap: 5px; padding-right: 17px; }
-.compact-presets .preset-category { color: var(--preset-accent); font-size: 9px; font-weight: 850; letter-spacing: .14em; text-transform: uppercase; }
+.compact-presets .preset-copy { flex: 1; align-self: center; gap: 5px; padding-right: 0; }
+.compact-presets .preset-category { color: var(--preset-accent); font-size: 9px; font-weight: 700; letter-spacing: .11em; text-transform: uppercase; }
 .compact-presets .preset-button strong { font-size: 17px; font-weight: 800; letter-spacing: -.025em; line-height: 1.15; white-space: normal; overflow: visible; }
 .compact-presets .preset-button small { color: var(--ink-soft); font-size: 11px; line-height: 1.3; white-space: normal; }
-.compact-presets .preset-action { position: absolute; top: 17px; right: 17px; display: grid; place-items: center; width: 27px; height: 27px; border: 1px solid #c7d9dd; border-radius: 50%; color: var(--preset-accent); }
+.compact-presets .preset-action { flex: none; display: grid; place-items: center; width: 26px; height: 26px; margin-left: auto; border: 1px solid transparent; border-radius: 50%; color: var(--preset-accent); transition: background .22s ease, color .22s ease, transform .22s ease; }
+.compact-presets .preset-button:not(.active):hover .preset-action { transform: translateX(2px); background: var(--preset-tint); }
+.compact-presets .preset-button:focus-visible { outline-color: var(--preset-accent); outline-offset: 3px; }
 .compact-presets .preset-button.active .preset-action { border-color: var(--preset-accent); background: var(--preset-accent); color: white; }
 .sky-dashboard { display: grid; grid-template-columns: minmax(0, 1fr) 340px; align-items: start; gap: 28px; max-width: 1320px; margin: 0 auto; padding: 32px 36px 0; }
 .sky-dashboard .map-section { padding: 0; margin: 0; min-width: 0; width: 100%; }
@@ -495,11 +498,6 @@ button:disabled { opacity: .6; cursor: wait; }
 .flight-sidebar .stat-row > div { flex-direction: row; justify-content: space-between; }
 .flight-sidebar .stat-row strong { font-size: 14px; }
 .flight-sidebar .empty-copy { font-size: 23px; min-height: 130px; }
-.scenario-brief { margin-top: 20px; padding-top: 19px; border-top: 1px solid var(--rule); }
-.scenario-brief-label { color: #8a6039; font-size: 9px; font-weight: 850; letter-spacing: .14em; }
-.scenario-brief h4 { margin: 7px 0 8px; color: var(--ink); font-size: 18px; line-height: 1.2; }
-.scenario-brief p { margin: 0; color: var(--ink-soft); font-size: 12px; line-height: 1.5; }
-.scenario-brief .scenario-brief-moment { margin-top: 12px; padding: 10px 12px; border-left: 3px solid #4b8ba0; border-radius: 0 6px 6px 0; background: #edf5f5; color: var(--ocean-deep); font-weight: 700; }
 .scenario-path-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; margin: 17px 0 0; }
 .scenario-path-facts div { min-width: 0; }
 .scenario-path-facts dt { color: var(--ink-soft); font-size: 9px; line-height: 1.25; }
@@ -879,8 +877,8 @@ button:disabled { opacity: .6; cursor: wait; }
 @media (min-width: 851px) {
   .sky-stage.has-flight > .boarding-pass { position: relative; z-index: 3; }
   .sky-stage.has-flight .aircraft-model-canvas {
-    -webkit-mask-image: linear-gradient(to right, transparent calc(var(--pass-edge, 30%) - 1%), #000 calc(var(--pass-edge, 30%) + 9%));
-    mask-image: linear-gradient(to right, transparent calc(var(--pass-edge, 30%) - 1%), #000 calc(var(--pass-edge, 30%) + 9%));
+    -webkit-mask-image: linear-gradient(to right, transparent calc(var(--pass-edge, 30%) - 1px), #000 var(--pass-edge, 30%));
+    mask-image: linear-gradient(to right, transparent calc(var(--pass-edge, 30%) - 1px), #000 var(--pass-edge, 30%));
   }
   .sky-stage.has-flight .aircraft-model.is-ready .aircraft-model-canvas { animation-name: aircraft-enter-behind-pass; }
   @keyframes aircraft-enter-behind-pass {
@@ -1056,18 +1054,17 @@ button:disabled { opacity: .6; cursor: wait; }
 [data-theme="dark"] .live-actions .refresh-button { background: #16282fdd; }
 [data-theme="dark"] .compact-presets { border-color: var(--rule); }
 [data-theme="dark"] .compact-presets .preset-button { --preset-accent: #83c8dc; }
-[data-theme="dark"] .compact-presets .preset-private { --preset-accent: #dfb184; }
+[data-theme="dark"] .compact-presets .preset-small { --preset-accent: #dfb184; }
 [data-theme="dark"] .compact-presets .preset-helicopter { --preset-accent: #82cdb5; }
 [data-theme="dark"] .preset-button,
-[data-theme="dark"] .compact-presets .preset-button { border-color: #314a54; background: linear-gradient(145deg, #17272e, #122127); box-shadow: inset 0 3px 0 var(--preset-accent), 0 8px 22px #0004; }
-[data-theme="dark"] .compact-presets .preset-button.active { background: color-mix(in srgb, var(--preset-accent) 22%, #13232a); }
+[data-theme="dark"] .compact-presets .preset-button { border-color: #314a54; background: #16272e; box-shadow: 0 2px 5px #0002; }
+[data-theme="dark"] .compact-presets .preset-button:hover { border-color: var(--preset-accent); box-shadow: 0 5px 14px #0003; }
+[data-theme="dark"] .compact-presets .preset-button.active { border-color: var(--preset-accent); box-shadow: inset 0 0 0 1px var(--preset-accent); background: color-mix(in srgb, var(--preset-accent) 22%, #13232a); }
 [data-theme="dark"] .compact-presets .preset-icon { background: color-mix(in srgb, var(--preset-accent) 20%, #15262d); }
-[data-theme="dark"] .compact-presets .preset-action { border-color: #45616b; }
+[data-theme="dark"] .compact-presets .preset-button:not(.active):hover .preset-action { background: color-mix(in srgb, var(--preset-accent) 20%, #15262d); }
 [data-theme="dark"] .compact-presets .preset-button.active .preset-icon,
 [data-theme="dark"] .compact-presets .preset-button.active .preset-action { color: #0b1d23; }
 [data-theme="dark"] .flight-sidebar { border-color: var(--rule); background: #132228; }
-[data-theme="dark"] .scenario-brief-label { color: #dfb184; }
-[data-theme="dark"] .scenario-brief .scenario-brief-moment { background: #1b3037; }
 [data-theme="dark"] .map-frame { border-color: #405b64; background: #18272d; box-shadow: 0 18px 38px #0006; }
 [data-theme="dark"] .flight-map .leaflet-tile-pane { filter: grayscale(1) invert(.88) hue-rotate(165deg) brightness(.58) contrast(1.3); opacity: .62; }
 [data-theme="dark"] .map-chart-grid { background-image: linear-gradient(#8bc4d217 1px, transparent 1px), linear-gradient(90deg, #8bc4d217 1px, transparent 1px); }
@@ -1386,3 +1383,116 @@ button, input, select,
 
 .boarding-pass-action-buttons > button:focus-visible { outline-offset: -3px; }
 .boarding-pass-action-buttons > .primary-button:hover { transform: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .compact-presets .preset-button, .compact-presets .preset-action { transition: none; }
+  .compact-presets .preset-button:hover, .compact-presets .preset-button:not(.active):hover .preset-action { transform: none; }
+}
+
+/* Give the ticket contents more breathing room within the existing card size. */
+.boarding-pass-main,
+.boarding-pass.hero-flight .boarding-pass-main { padding: 24px 30px; }
+.boarding-pass .boarding-pass-heading,
+.live-stage .boarding-pass .boarding-pass-heading {
+  min-height: 96px;
+  margin-bottom: 24px;
+  font-size: clamp(34px, 3.5vw, 40px);
+}
+.boarding-pass .hero-flight-identity { min-height: 44px; gap: 12px; }
+.boarding-pass .hero-flight-identity strong { font-size: 16px; line-height: 1.25; }
+.boarding-pass .flight-identity-copy { gap: 5px; }
+.boarding-pass .flight-identity-copy > span { font-size: 12px; }
+.boarding-pass .airline-badge { width: 36px; height: 36px; min-width: 36px; padding: 4px 5px 6px; border-radius: 7px; }
+.boarding-pass .airline-badge-fallback { font-size: 12px !important; }
+.boarding-pass-divider,
+.sky-stage.has-flight .boarding-pass-divider { margin: 22px 0; }
+.boarding-route { min-height: 92px; }
+.boarding-route-stop strong,
+.sky-stage.has-flight .boarding-route-stop strong { font-size: clamp(38px, 3.6vw, 48px); }
+.boarding-route-label { font-size: 9px; }
+.boarding-route-city { margin-top: 8px; font-size: 11px; }
+.boarding-pass-stub { padding: 22px 30px; }
+.boarding-pass-stub-codes { gap: 18px; }
+.boarding-pass-stub-codes > div { gap: 8px; min-height: 40px; }
+.boarding-pass-stub strong { font-size: 14px; }
+.boarding-pass-stub-details { margin-top: 18px; padding-top: 18px; }
+.hero-flight-details .boarding-pass-stats > div { gap: 5px; }
+.hero-flight-details .boarding-pass-stats strong { font-size: 13px; }
+.hero-flight-details .boarding-pass-freshness { margin-top: 12px; }
+.hero-flight-details .hero-playback,
+.hero-flight-details .live-actions { margin-top: 18px; }
+.boarding-pass .boarding-pass-action-buttons > button { min-height: 32px; height: 32px; font-size: 10px; }
+.boarding-pass .boarding-pass-action-buttons > button svg { width: 13px; height: 13px; }
+.boarding-pass .boarding-barcode svg { height: 30px; }
+@media (max-width: 520px) {
+  .boarding-pass-main,
+  .boarding-pass.hero-flight .boarding-pass-main { padding: 16px 20px; }
+  .boarding-pass .boarding-pass-heading,
+  .live-stage .boarding-pass .boarding-pass-heading,
+  .sky-stage.has-flight .boarding-pass .boarding-pass-heading,
+  .sky-stage.has-flight.live-stage .boarding-pass .boarding-pass-heading {
+    min-height: 72px;
+    margin-bottom: 18px;
+    font-size: clamp(26px, 7vw, 30px);
+  }
+  .boarding-pass .hero-flight-identity,
+  .sky-stage.has-flight .boarding-pass .hero-flight-identity { min-height: 38px; gap: 10px; }
+  .boarding-pass .hero-flight-identity strong,
+  .sky-stage.has-flight .boarding-pass .hero-flight-identity strong { font-size: 14px; }
+  .boarding-pass .flight-identity-copy > span { font-size: 11px; }
+  .boarding-pass .airline-badge { width: 30px; height: 30px; min-width: 30px; }
+  .boarding-pass-divider,
+  .sky-stage.has-flight .boarding-pass-divider { margin: 18px 0; }
+  .boarding-route,
+  .sky-stage.has-flight .boarding-route { min-height: 64px; }
+  .boarding-route-stop strong,
+  .sky-stage.has-flight .boarding-route-stop strong { font-size: clamp(30px, 9vw, 36px); }
+  .boarding-route-city { margin-top: 7px; font-size: 10px; }
+  .boarding-pass-stub,
+  .sky-stage.has-flight .boarding-pass-stub { padding: 18px 20px; }
+  .boarding-pass-stub-codes { gap: 10px; }
+  .boarding-pass-stub-codes > div,
+  .sky-stage.has-flight .boarding-pass-stub-codes > div { gap: 6px; min-height: 36px; }
+  .boarding-pass-stub strong,
+  .boarding-pass-stub-codes strong { font-size: 12px; }
+  .boarding-pass-stub-details,
+  .sky-stage.has-flight .boarding-pass-stub-details { margin-top: 16px; padding-top: 16px; }
+  .hero-flight-details .boarding-pass-stats strong { font-size: 11px; }
+  .hero-flight-details .hero-playback,
+  .hero-flight-details .live-actions { margin-top: 14px; }
+  .boarding-pass .boarding-barcode svg { height: 28px; }
+}
+
+/* Retain the identity-to-route spacing without a dividing rule. */
+.boarding-pass-route-spacing { height: 30px; }
+@media (max-width: 520px) { .boarding-pass-route-spacing { height: 26px; } }
+
+/* Persistent, quiet aircraft controls directly on the sky. */
+.aircraft-model-caption.aircraft-interaction-hint,
+[data-theme="dark"] .aircraft-model-caption.aircraft-interaction-hint {
+  display: block;
+  max-width: calc(100% - 40px);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  color: #476573;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.5;
+  text-shadow: 0 1px 3px #fffefbcc, 0 0 8px #fffefb80;
+}
+.aircraft-model-caption.aircraft-interaction-hint > span { display: block; }
+.aircraft-model-caption.aircraft-interaction-hint .hint-touch { display: none; }
+[data-theme="dark"] .aircraft-model-caption.aircraft-interaction-hint {
+  color: #b3c9d1;
+  text-shadow: 0 1px 3px #071820, 0 0 8px #07182080;
+}
+@media (pointer: coarse) {
+  .aircraft-model-caption.aircraft-interaction-hint .hint-mouse { display: none; }
+  .aircraft-model-caption.aircraft-interaction-hint .hint-touch { display: block; }
+}
+@media (max-width: 520px) {
+  .sky-stage.has-flight .aircraft-model-caption.aircraft-interaction-hint { display: block; right: 14px; bottom: 12px; font-size: 10px; }
+}

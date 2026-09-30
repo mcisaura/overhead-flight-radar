@@ -331,8 +331,8 @@ export default function FlightMap({ lat, lon, aircraft, closestHex, loading, una
         </div>}
       </div>
       <p className="map-note">{demo
-        ? "These fictional paths illustrate the planned crossing; they are not recorded tracks. The airliner’s solid and dashed lines show its sample airport route. Local flights use a short heading projection because airport endpoints are unspecified. The circle marks the sample 5 nautical mile zone."
-        : "Solid lines connect reported departure airports to aircraft; dashed lines project onward to reported arrivals. These are illustrative paths, not recorded tracks. When an airport is unavailable, a short dashed line projects the aircraft’s heading. Live positions are estimated between reports for up to 90 seconds. The circle marks the 5 nautical mile zone."}</p>
+        ? "Fictional routes · Estimated positions · 5 nm zone"
+        : "Illustrative routes · Estimated positions · 5 nm zone"}</p>
     </section>
   );
 }

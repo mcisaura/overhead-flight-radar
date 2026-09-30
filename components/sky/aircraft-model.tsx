@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPointerTilt, targetPointerTilt, stepPointerTilt, pointerTiltMoving } from "../../lib/pointer-tilt";
-import { MousePointer2 } from "lucide-react";
 import * as THREE from "three";
 import type { AircraftVisual } from "../../lib/aircraft-visual";
 import { loadAircraftScene } from "./aircraft-assets";
@@ -417,9 +416,9 @@ export default function AircraftModel({ progress = 50, live = false, visual = "a
     <div className="aircraft-slipstream" aria-hidden="true" />
     <div className="aircraft-model-canvas" ref={containerRef} />
     {status === "unavailable" && <span className="aircraft-model-status">3D aircraft unavailable</span>}
-    {status === "ready" && <span className="aircraft-model-caption">
-      <MousePointer2 size={17} strokeWidth={2.2} aria-hidden="true" />
-      <span><strong>3D aircraft illustration</strong><small className="hint-mouse">Left-click drag to move · Right-click drag to rotate</small><small className="hint-touch">Drag to move</small></span>
+    {status === "ready" && <span className="aircraft-model-caption aircraft-interaction-hint">
+      <span className="hint-mouse">↔ Drag to move · Right-drag to rotate</span>
+      <span className="hint-touch">↔ Drag to move</span>
     </span>}
   </div>;
 }

@@ -178,7 +178,7 @@ function DemoHome({ onModeChange, weatherUnit, onWeatherUnitChange, heroBackgrou
           <FlipHeading text={flight && selected ? crossingStatus : "A quiet sky.\nFor now."} />
           {flight && selected ? <>
               <FlightIdentity {...flight} demo />
-              <div className="boarding-pass-divider" aria-hidden="true" />
+              <div className="boarding-pass-route-spacing" aria-hidden="true" />
               <BoardingRoute origin={routeEntry} destination={routeExit} zoneSegment={!routeKnown} />
           </> : null}
         </div>
@@ -212,7 +212,7 @@ function DemoHome({ onModeChange, weatherUnit, onWeatherUnitChange, heroBackgrou
       </section>
 
       <section className="presets-section compact-presets" aria-labelledby="presets-title">
-        <div className="presets-heading"><h2 id="presets-title">Try a flight</h2><p>Three fictional flights · 30 sec demo crossing · Select one to watch it cross your sky.</p></div>
+        <div className="presets-heading"><h2 id="presets-title">Try a flight</h2><p>30 sec demo crossing</p></div>
         <div className="preset-list" role="group" aria-label="Sample flights">
           {demoFlights.map((item) => {
             const kind = aircraftVisualForFlight(item.aircraft);
