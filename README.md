@@ -89,7 +89,9 @@ The live flight feed no longer calls ADSB.fi or ADSBdb.
 
 ## Demo
 
-The Demo contains three preplanned fictional flights over downtown Houston: an arrival bound for George Bush Intercontinental Airport, a private plane crossing north of the observation point, and a low-level helicopter patrol passing close to it. The airliner has an illustrative airport route; the local flights have zone entry and exit directions but no invented airport endpoints. Positions follow a straight track with altitude and speed interpolated through entry, closest approach, and exit; playback movement follows the changing speed. Each on-screen crossing lasts 30 seconds of real elapsed playback time, including time spent in a hidden tab. Pause and scrub stop that clock until playback resumes. The three preset cards use compact icons, subtle borders, distinct blue/brown/green accents, and a tinted selected state with a checkmark. Their category labels are Large aircraft, Smaller aircraft, and Rotorcraft. Under **Try a flight**, the supporting copy is simply “30 sec demo crossing”. Select a preset to watch, pause, resume, replay, or scrub its position. The boarding pass heading changes from “Drawing closer” to “Heading away” as the sample aircraft crosses the zone. Demo flights and weather are local fixtures; switching to Demo does not request live flight or weather data. Map tiles still come from OpenStreetMap.
+Demo uses the boarding-pass flight picker. Press **Simulate a flight** to reveal three badges—**Big plane**, **Small plane**, and **Helicopter**—with staggered upward fades. Hover or focus a badge for its subtitle and route. The status fields and barcode move into one compact row. Choosing a flight starts its crossing; **Choose another flight** returns to the ticket choices. Open `/?mode=demo` to enter Demo directly. The former `/concept` route has been removed.
+
+The Demo contains three preplanned fictional flights over downtown Houston: an arrival bound for George Bush Intercontinental Airport, a private plane crossing north of the observation point, and a low-level helicopter patrol passing close to it. The airliner has an illustrative airport route; the local flights have zone entry and exit directions but no invented airport endpoints. Positions follow a straight track with altitude and speed interpolated through entry, closest approach, and exit; playback movement follows the changing speed. Each on-screen crossing lasts 30 seconds of real elapsed playback time, including time spent in a hidden tab. Pause and scrub stop that clock until playback resumes. The three flight badges sit inside the ticket under **Try a flight**, with “30 sec simulation” beside the heading. Select a badge to watch, pause, resume, replay, or scrub its position. The boarding pass heading changes from “Drawing closer” to “Heading away” as the sample aircraft crosses the zone. Demo flights and weather are local fixtures; switching to Demo does not request live flight or weather data. Map tiles still come from OpenStreetMap.
 
 ## Boarding pass
 
@@ -115,7 +117,7 @@ Aircraft are removed from the active hero and map when their last report becomes
 ## Project layout
 
 ```
-app/                 page.tsx (mode switch and Demo), layout.tsx, globals.css, api/sky/route.ts
+app/                 page.tsx (mode switch), layout.tsx, globals.css, api/sky/route.ts
 components/
   boarding-pass/     the pass, route, stub, split-flap headline, flight and aircraft labels
   sky/               Live view, 3D aircraft and clouds, progress line and walker
@@ -132,7 +134,8 @@ worker.ts            Cloudflare Worker entry and the AirLabs budget Durable Obje
 ## Main files
 
 - `components/sky/live-sky.tsx`: live header and weather, hero, manual refresh, location choice, and details.
-- `app/page.tsx`: mode toggle, Demo header and weather, and Demo experience.
+- `app/page.tsx`: mode toggle and direct Demo entry.
+- `components/sky/demo-sky.tsx`: Demo header, weather, boarding-pass picker, playback, and dashboard.
 - `components/controls/theme-provider.tsx`, `components/controls/theme-toggle.tsx`, `app/globals.css`: page-session theme state, header toggle, and light/dark styles.
 - `components/boarding-pass/boarding-pass-display.tsx`, `components/boarding-pass/boarding-route.tsx`, `components/boarding-pass/boarding-pass-extras.tsx`: boarding pass transitions, route, stats, and stub.
 - `components/boarding-pass/flight-identity.tsx`, `components/boarding-pass/aircraft-model-label.tsx`, `lib/flight-display.ts`: readable flight and aircraft labels, codes, and airline presentation.

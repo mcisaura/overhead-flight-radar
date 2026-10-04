@@ -2,7 +2,7 @@
 
 Use this note when continuing the project in a new chat, with Codex or Claude. The app lives in `flight-overhead/` inside the “Flight Proj” ChatGPT project mirror. The parent `AGENTS.md` makes `sources/` read-only; work in `flight-overhead/`. `../unused-assets/` holds a spare low-poly airplane model; leave it.
 
-## Start here (30 September 2026)
+## Start here (4 October 2026)
 
 **What it is.** A Vite/vinext (Next-style) React app deployed as a Cloudflare Worker. Live mode shows aircraft within 5 nm using AirLabs plus Open-Meteo weather. Demo mode plays three fictional Houston flights. The hero is a boarding pass with a split-flap headline, 3D aircraft and clouds (Three.js), a Leaflet map, and dark mode. Distances are in nautical miles.
 
@@ -12,9 +12,9 @@ Use this note when continuing the project in a new chat, with Codex or Claude. T
 
 **State.**
 - Git: branch `main`, no remote, nothing pushed.
-- Latest committed pair: `93fdf37 refine card transitions and aircraft categories` and `5565995 docs: transitions and aircraft categories`. Both use the owner’s author/committer identity; only the docs commit has Codex co-authorship.
-- Current uncommitted work: lighter Demo preset cards, simplified map/sidebar/freshness copy, extra footer spacing, smaller boarding-pass contents at unchanged card dimensions, route divider removal and upward spacing adjustment, crisp aircraft mask, and persistent subtle aircraft hint. README and these notes describe this state. Ask the owner for messages before committing code and documentation separately.
-- The latest full `npm run check` passed on 30 September for the current UI work: all 46 tests, types, lint, and production build; existing image and large-chunk warnings remain. No Live refresh was used for this verification.
+- Latest code checkpoint: `a8ab67c move demo flights into boarding pass`. It includes the main Demo picker, staggered reveal, compact animated status/barcode row, direct Demo URL, and shared cloud/aircraft interaction hints. Documentation is committed separately with Codex co-authorship. The previous code checkpoint is `82af93c refine boarding pass spacing and sky details`.
+- Current work is saved in Git. The experimental `/concept` page is removed; Demo is available from the main mode switch or directly at `/?mode=demo`.
+- The latest full `npm run check` passed on 4 October after removing the concept route: all 46 tests, types, lint, and production build; existing image and large-chunk warnings remain. No Live refresh was used for this verification.
 - The AirLabs key lives only in `.env.local` (gitignored). Never print it, commit it, or put it in docs.
 - Live is capped at 900 AirLabs calls per rolling 31 days, and every uncached call spends one. Avoid reloading Live repeatedly while testing; prefer Demo.
 
@@ -28,7 +28,7 @@ Use this note when continuing the project in a new chat, with Codex or Claude. T
 - Don't push, add a remote, or rewrite history without asking.
 
 **Open items.**
-1. Finish the current uncommitted UI/documentation work with owner-approved commit messages. Then the owner creates the GitHub repo and pushes `main`. Their email must be verified on GitHub for the commits to count.
+1. The owner creates the GitHub repo and pushes `main` when ready. Their email must be verified on GitHub for the commits to count.
 2. Before deploying Live publicly, follow README → “Repository and publishing”: check AirLabs usage, store `AIRLABS_API_KEY` as a Worker secret, and verify the rate limits and budget in the deployed Worker.
 3. Optional: browser workflow tests (theme, geolocation denial, mode switching, Demo pause/scrub/replay); a README screenshot or GIF; the dark-mode boarding-pass stats panel is slightly lighter than the rest of the card.
 
@@ -57,6 +57,16 @@ The user said this will be a public, low-traffic portfolio piece with a 1,000-ca
 - Boarding-pass barcode on 30 September: restored a real barcode, now denser Code 128-B encoding `OVERHEAD` (start B 104, weighted checksum 69, stop 106, ten-module quiet zones). Removed the visible wordmark and positioned the barcode beside Demo Pause/Replay, Simulate, and Live location/refresh controls. Size is 190px × 36px desktop, shrinking beside phone controls at 32px tall. Demo duration moved into Try a flight. The actual component SVG decoded as `OVERHEAD` using macOS Vision after rasterizing at 4×; compact full-page screenshots did not decode, so small-screen scanning may require zoom. Demo desktop, 375px, and 320px layouts checked without horizontal overflow. Existing compact pass spacing remains; no Live calls or dependencies added.
 
 ## Latest verification
+
+- Main Demo promotion on 4 October (saved in `a8ab67c`): the boarding-pass picker is now the only Demo layout, with the normal Live/Demo header controls. Removed the external preset cards and concept-specific component branches. Styles now use Demo class names. `/?mode=demo` opens the main page directly in Demo. The experimental `/concept` route has been removed. Live remains the default at `/`. Full check passes: 46 tests, types, lint, and production build, with the existing image and 3D chunk warnings. No Live calls; browser visual verification remains unavailable.
+
+- Concept picker reveal on 4 October (saved in `a8ab67c`): Simulate a flight now crossfades out while the heading, three badges (left to right, 90ms stagger), and caption fade upward. The quieter sentence-case title uses larger Frutiger type. Hover captions use centered flight-name and route lines with a stable height and 5px gap. The concept stub keeps the same barcode mounted and settles into one row: Sky status, Observation zone, then barcode. Before opening, the stub and fields are measured; their positions animate over 520ms into the compact grid, with barcode width interpolated by scaling. The mobile row uses a narrower barcode and smaller field typography. Reduced motion skips these animations. Types and lint pass (existing image warning); browser visual verification remains unavailable.
+
+- Ticket picker experiment on 4 October (subsequently promoted to main Demo and removed as a separate route): `/concept` initially started directly in Demo with a Simulate a flight button in the quiet boarding pass. Pressing it reveals Big plane / Small plane / Helicopter choices inside the pass and moves keyboard focus to the picker heading. Three circular stamp-style icon badges appear left to right with category labels and short aircraft names. Hover or keyboard focus shows the selected flight’s subtitle and compact route in a shared caption below; full details remain in accessible names and native tooltips. The stub keeps observation details and barcode. Selecting a badge starts the existing 30-second crossing. Active tickets offer Choose another flight, which returns directly to the picker; finishing a crossing restores the initial Simulate a flight button. Original `/` behavior is preserved by extracting Demo playback/UI into `components/sky/demo-sky.tsx` with concept-specific presentation; shared styles are scoped to the concept. Full check passed for the initial concept: 46 tests, types, lint, build (existing warnings); latest badge refinements pass types and lint. Browser visual/workflow verification is outstanding: browser access was denied because the admin policy security check was unavailable; no workaround attempted. No Live calls.
+
+- Map comparison removed on 4 October at the owner’s request. The original map is retained; Try a flight labels remain Big plane / Small plane / Helicopter, and the shared idle/active interaction hint remains.
+
+- Shared interaction hint on 3 October (saved in `a8ab67c`): idle clouds and active aircraft now use `components/sky/sky-interaction-hint.tsx`, displaying the same persistent muted text: “↔ Drag to move · Right-drag to rotate”, or “↔ Drag to move” on coarse pointers. Removed the idle cloud caption box/title/icon and matched phone hint sizing. Idle Demo visually verified; types and lint pass with the existing image warning. No Live refreshes. The September 30 UI and docs were committed as `82af93c` and `c1260dc`.
 
 - Documentation refresh on 30 September: README and Start here now describe the current UI and outstanding commits. Full `npm run check` passed: 46 tests, types, lint, production build, with only the existing image and large-chunk warnings. Documentation and current UI changes remain uncommitted.
 
