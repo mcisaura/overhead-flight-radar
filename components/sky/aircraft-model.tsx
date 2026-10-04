@@ -5,6 +5,7 @@ import { createPointerTilt, targetPointerTilt, stepPointerTilt, pointerTiltMovin
 import * as THREE from "three";
 import type { AircraftVisual } from "../../lib/aircraft-visual";
 import { loadAircraftScene } from "./aircraft-assets";
+import SkyInteractionHint from "./sky-interaction-hint";
 
 export default function AircraftModel({ progress = 50, live = false, visual = "airliner", entranceRun, onReady }: { progress?: number | null; live?: boolean; visual?: AircraftVisual; entranceRun?: number; onReady?: () => void }) {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -416,9 +417,6 @@ export default function AircraftModel({ progress = 50, live = false, visual = "a
     <div className="aircraft-slipstream" aria-hidden="true" />
     <div className="aircraft-model-canvas" ref={containerRef} />
     {status === "unavailable" && <span className="aircraft-model-status">3D aircraft unavailable</span>}
-    {status === "ready" && <span className="aircraft-model-caption aircraft-interaction-hint">
-      <span className="hint-mouse">↔ Drag to move · Right-drag to rotate</span>
-      <span className="hint-touch">↔ Drag to move</span>
-    </span>}
+    {status === "ready" && <SkyInteractionHint />}
   </div>;
 }

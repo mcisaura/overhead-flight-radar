@@ -1467,7 +1467,7 @@ button, input, select,
 .boarding-pass-route-spacing { height: 30px; }
 @media (max-width: 520px) { .boarding-pass-route-spacing { height: 26px; } }
 
-/* Persistent, quiet aircraft controls directly on the sky. */
+/* Shared persistent controls for idle clouds and active aircraft. */
 .aircraft-model-caption.aircraft-interaction-hint,
 [data-theme="dark"] .aircraft-model-caption.aircraft-interaction-hint {
   display: block;
@@ -1483,6 +1483,7 @@ button, input, select,
   line-height: 1.5;
   text-shadow: 0 1px 3px #fffefbcc, 0 0 8px #fffefb80;
 }
+
 .aircraft-model-caption.aircraft-interaction-hint > span { display: block; }
 .aircraft-model-caption.aircraft-interaction-hint .hint-touch { display: none; }
 [data-theme="dark"] .aircraft-model-caption.aircraft-interaction-hint {
@@ -1494,5 +1495,86 @@ button, input, select,
   .aircraft-model-caption.aircraft-interaction-hint .hint-touch { display: block; }
 }
 @media (max-width: 520px) {
+  .aircraft-model-caption.aircraft-interaction-hint,
   .sky-stage.has-flight .aircraft-model-caption.aircraft-interaction-hint { display: block; right: 14px; bottom: 12px; font-size: 10px; }
+}
+
+/* Demo flight choices live in the quiet boarding pass. */
+.demo-ticket-picker .sky-stage:not(.has-flight) { height: auto; min-height: 740px; padding-bottom: 76px; }
+.demo-ticket-picker .empty-boarding-pass .boarding-pass-main { display: flex; flex-direction: column; }
+.ticket-flight-picker { margin: auto 0; padding: 8px 0; }
+.ticket-picker-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding-bottom: 8px; animation: ticket-picker-rise 480ms 60ms cubic-bezier(.22, 1, .36, 1) both; }
+.ticket-picker-heading h2 { margin: 0; font-family: var(--flight-text); font-size: 24px; font-weight: 500; letter-spacing: -.035em; line-height: 1.15; color: var(--ink); }
+.ticket-picker-title-dot { color: var(--ocean-deep); }
+.ticket-picker-heading h2:focus { outline: none; }
+.ticket-picker-heading > span { color: var(--ink-soft); font-family: var(--flight-numbers); font-size: 10px; letter-spacing: .02em; white-space: nowrap; }
+.ticket-flight-picker ol { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding: 0; margin: 12px 0 0; list-style: none; }
+.ticket-flight-picker li { min-width: 0; animation: ticket-picker-rise 560ms 140ms cubic-bezier(.22, 1, .36, 1) both; }
+.ticket-flight-picker li:nth-child(2) { animation-delay: 230ms; }
+.ticket-flight-picker li:nth-child(3) { animation-delay: 320ms; }
+.ticket-flight-picker button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 11px; width: 100%; padding: 9px 2px; border: 0; border-radius: 8px; background: transparent; color: var(--ink); cursor: pointer; }
+.ticket-flight-picker button:focus-visible { outline: 2px solid var(--ocean); outline-offset: 2px; }
+.ticket-badge-icon { display: grid; place-items: center; width: 78px; height: 78px; border: 1px solid color-mix(in srgb, var(--ink) 35%, transparent); border-radius: 50%; outline: 1px dashed color-mix(in srgb, var(--ink) 20%, transparent); outline-offset: -7px; background: color-mix(in srgb, var(--ocean) 3%, transparent); color: var(--ocean-deep); transition: background .18s ease, color .18s ease, border-color .18s ease, transform .18s ease; }
+.ticket-flight-badge-small .ticket-badge-icon svg { width: 27px; height: 27px; }
+.ticket-flight-badge-airliner .ticket-badge-icon svg { width: 38px; height: 38px; }
+.ticket-badge-copy { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 100%; min-width: 0; text-align: center; }
+.ticket-badge-label { font-family: var(--flight-text); font-size: 11px; font-weight: 700; line-height: 1.2; white-space: nowrap; }
+.ticket-badge-info { color: var(--ink-soft); font-family: var(--flight-text); font-size: 10px; line-height: 1.4; white-space: nowrap; }
+.ticket-picker-detail { display: grid; place-items: center; min-height: 52px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--rule); color: var(--ink-soft); font-family: var(--flight-text); text-align: center; animation: ticket-picker-rise 480ms 390ms cubic-bezier(.22, 1, .36, 1) both; }
+.ticket-picker-caption { display: grid; justify-items: center; align-content: center; gap: 5px; min-height: 36px; animation: ticket-caption-in 200ms ease-out both; }
+.ticket-picker-flight-name { font-size: 12px; font-weight: 500; line-height: 1.25; letter-spacing: -.01em; }
+.ticket-picker-caption-idle { font-size: 10px; line-height: 1.25; }
+.ticket-picker-route { font-family: var(--flight-codes); font-size: 9px; line-height: 1.2; letter-spacing: .08em; color: var(--ink-soft); white-space: nowrap; }
+.ticket-flight-picker button:hover .ticket-badge-icon,
+.ticket-flight-picker button:focus-visible .ticket-badge-icon { border-color: var(--ocean-deep); outline-color: color-mix(in srgb, var(--paper) 35%, transparent); background: var(--ocean-deep); color: var(--paper); transform: translateY(-3px); }
+.demo-stub-footer { display: flex; align-items: center; justify-content: space-between; gap: 18px; min-height: 44px; }
+.demo-stub-footer .boarding-barcode { flex: 0 1 170px; }
+.demo-flight-launch { flex: 0 0 auto; width: 160px; overflow: hidden; opacity: 1; transition: width 520ms cubic-bezier(.22, 1, .36, 1), opacity 180ms ease, transform 260ms ease; }
+.demo-flight-launch .primary-button { width: 160px; justify-content: center; white-space: nowrap; }
+.demo-quiet-stub.is-open { display: grid; grid-template-columns: minmax(0, 1fr) 108px; align-items: center; column-gap: 16px; padding-top: 14px; padding-bottom: 14px; }
+.demo-quiet-stub.is-open .boarding-pass-stub-codes { gap: 12px; }
+.demo-quiet-stub.is-open .boarding-pass-stub-codes > div { min-height: 32px; gap: 4px; }
+.demo-quiet-stub.is-open .boarding-pass-stub-codes strong { font-size: 12px; line-height: 1.25; }
+.demo-quiet-stub.is-open .boarding-pass-stub-details { min-width: 0; margin-top: 0; padding-top: 0; border-top: 0; }
+.demo-quiet-stub.is-open .demo-stub-footer { min-height: 30px; gap: 0; }
+.demo-quiet-stub.is-open .demo-flight-launch { position: absolute; left: 30px; bottom: 14px; width: 0; opacity: 0; transform: translateY(-8px); pointer-events: none; }
+.demo-quiet-stub.is-open .boarding-barcode { flex: 1; width: 100%; }
+@keyframes ticket-picker-rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes ticket-caption-in { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: translateY(0); } }
+.ticket-choose-another { margin-top: 18px; padding: 6px 0; border: 0; background: none; color: var(--ink-soft); font-size: 10px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.ticket-choose-another:hover { color: var(--ink); }
+.ticket-choose-another:focus-visible { outline: 2px solid var(--ocean); outline-offset: 4px; }
+@media (max-width: 520px) {
+  .demo-ticket-picker .sky-stage:not(.has-flight) { min-height: 640px; padding-bottom: 52px; }
+  .ticket-flight-picker ol { gap: 6px; margin-top: 10px; }
+  .ticket-flight-picker button { gap: 9px; }
+  .ticket-badge-icon { width: 58px; height: 58px; }
+  .ticket-badge-icon svg { width: 27px; height: 27px; }
+  .ticket-flight-badge-small .ticket-badge-icon svg { width: 22px; height: 22px; }
+  .ticket-flight-badge-airliner .ticket-badge-icon svg { width: 31px; height: 31px; }
+  .ticket-badge-label { font-size: 10px; }
+  .ticket-badge-copy { gap: 5px; }
+  .ticket-badge-info { font-size: 9px; }
+  .ticket-picker-heading h2 { font-size: 21px; }
+  .ticket-picker-heading > span { font-size: 9px; }
+  .ticket-picker-flight-name { font-size: 11px; }
+  .ticket-picker-detail { margin-top: 8px; min-height: 48px; }
+  .demo-flight-launch, .demo-flight-launch .primary-button { width: 126px; }
+  .demo-flight-launch .primary-button { padding: 0 8px; font-size: 10px; }
+  .demo-flight-launch .primary-button svg { display: none; }
+  .demo-quiet-stub.is-open { grid-template-columns: minmax(0, 1fr) 64px; column-gap: 10px; padding-top: 12px; padding-bottom: 12px; }
+  .demo-quiet-stub.is-open .boarding-pass-stub-codes { gap: 8px; }
+  .demo-quiet-stub.is-open .boarding-pass-stub-codes > div { min-height: 30px; gap: 4px; }
+  .demo-quiet-stub.is-open .boarding-pass-stub-codes span { font-size: 7px; letter-spacing: .035em; }
+  .demo-quiet-stub.is-open .boarding-pass-stub-codes strong { font-size: 10px; }
+  .demo-quiet-stub.is-open .demo-flight-launch { left: 20px; bottom: 12px; }
+  .demo-stub-footer { gap: 12px; }
+  .demo-stub-footer .boarding-barcode { flex-basis: 130px; }
+  .ticket-choose-another { margin-top: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ticket-picker-heading, .ticket-flight-picker li, .ticket-picker-detail, .ticket-picker-caption { animation: none; }
+  .demo-quiet-stub, .demo-quiet-stub .boarding-pass-stub-codes > div, .demo-quiet-stub .boarding-pass-stub-details,
+  .demo-stub-footer, .demo-flight-launch, .ticket-badge-icon { transition: none; }
+  .ticket-flight-picker button:hover .ticket-badge-icon, .ticket-flight-picker button:focus-visible .ticket-badge-icon { transform: none; }
 }
