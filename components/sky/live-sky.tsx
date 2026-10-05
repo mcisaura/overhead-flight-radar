@@ -11,7 +11,6 @@ import { closestLiveAircraft, projectLiveAircraft } from "../../lib/live-snapsho
 import FlightLink from "../boarding-pass/flight-link";
 import FlightIdentity, { flightIdentityText } from "../boarding-pass/flight-identity";
 import LiveTicketActions from "../boarding-pass/live-ticket-actions";
-import BoardingBarcode from "../boarding-pass/boarding-barcode";
 import BoardingRoute from "../boarding-pass/boarding-route";
 import { BoardingPassStats, BoardingPassStub } from "../boarding-pass/boarding-pass-extras";
 import type { SkyResponse } from "../../lib/sky-contract";
@@ -172,7 +171,7 @@ export default function LiveSky({ onModeChange, onSimulateFlight, place, onPlace
         </> : (error || coverageWarning) ? <p className="hero-description" role="status">{error || coverageWarning}</p> : null}
       </div>
       {flight ?
-        <BoardingPassStub barcode aircraftModel={flight.aircraftModel} registration={flight.registration} callsign={flight.callsign} flightNumber={flight.flightNumber} flightIata={flight.flightIata} airline={flight.airline} aircraftType={flight.aircraftType}>
+        <BoardingPassStub aircraftModel={flight.aircraftModel} registration={flight.registration} callsign={flight.callsign} flightNumber={flight.flightNumber} flightIata={flight.flightIata} airline={flight.airline} aircraftType={flight.aircraftType}>
           <div className="hero-flight-details">
             <BoardingPassStats altitudeFt={flight.altitudeFt} speedKts={flight.speedKts} distanceKm={shownDistanceKm} />
             <p className="boarding-pass-freshness">Last reported {Math.round(shownAgeSeconds)} sec ago{coverageWarning ? " · Coverage may be incomplete" : ""}</p>
@@ -191,7 +190,6 @@ export default function LiveSky({ onModeChange, onSimulateFlight, place, onPlace
             <div><span>OBSERVATION ZONE</span><strong>5 nautical miles</strong></div>
           </div>
           <div className="boarding-pass-stub-details">
-            <BoardingBarcode />
             <LiveTicketActions locating={locating} onUseLocation={useLocation} onRefresh={() => setRefreshKey((key) => key + 1)} onSimulate={onSimulateFlight} />
             {locationIssue && <LocationFeedback key={locationIssue} issue={locationIssue} onRetry={useLocation} />}
           </div>

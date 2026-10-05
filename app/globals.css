@@ -1726,10 +1726,7 @@ button, input, select,
   .instrument-mode-toggle button svg, .instrument-mode-toggle .choice-selection-pill, .instrument-mode-toggle .choice-selection-pill::after { transition: none; }
 }
 
-/* Live actions occupy the old controls area; the barcode sits on its existing divider. */
-.live-shell .boarding-pass-stub-details { position: relative; }
-.live-shell .boarding-pass-stub-details > .boarding-barcode { position: absolute; top: -11px; right: 0; width: 170px; margin: 0; }
-.live-shell .boarding-pass-stub-details > .boarding-barcode svg { height: 22px; }
+/* Live actions occupy the existing controls area. */
 .live-ticket-actions { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .8fr) minmax(0, 1.25fr); gap: 8px; }
 .hero-flight-details .live-ticket-actions { margin-top: 18px; }
 .live-shell .boarding-pass .live-ticket-actions > button {
@@ -1746,8 +1743,6 @@ button, input, select,
   .live-ticket-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .live-ticket-actions > .primary-button { grid-column: 1 / -1; }
   .hero-flight-details .live-ticket-actions { margin-top: 14px; }
-  .live-shell .boarding-pass-stub-details > .boarding-barcode { top: -10px; width: 144px; }
-  .live-shell .boarding-pass-stub-details > .boarding-barcode svg { height: 20px; }
 }
 
 /* Enable appearance transitions only during an explicit theme change. */
