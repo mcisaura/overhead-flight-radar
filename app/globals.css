@@ -1447,7 +1447,7 @@ button, input, select,
 .boarding-pass.hero-flight .boarding-pass-main { padding: 24px 30px; }
 .boarding-pass .boarding-pass-heading,
 .live-stage .boarding-pass .boarding-pass-heading {
-  min-height: 96px;
+  min-height: 104px;
   margin-bottom: 24px;
   font-size: clamp(34px, 3.5vw, 40px);
 }
@@ -1484,7 +1484,7 @@ button, input, select,
   .live-stage .boarding-pass .boarding-pass-heading,
   .sky-stage.has-flight .boarding-pass .boarding-pass-heading,
   .sky-stage.has-flight.live-stage .boarding-pass .boarding-pass-heading {
-    min-height: 72px;
+    min-height: 78px;
     margin-bottom: 18px;
     font-size: clamp(26px, 7vw, 30px);
   }
