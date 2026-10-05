@@ -1,6 +1,6 @@
 # Overhead
 
-Overhead shows aircraft currently reported within 5 nautical miles of a chosen location. Live mode opens on downtown Houston, labeled as a reference location. Select **Use my location** to see the sky near you. The header contains the Live/Demo toggle, selected place, and a compact weather strip. Display settings live in the footer. Demo has three fictional Houston flights and sample weather.
+Overhead shows aircraft currently reported within 5 nautical miles of a chosen location. Live mode opens on downtown Houston, labeled as a reference location. Select **Use my location** to see the sky near you. Live boarding passes also offer **Refresh** and **Simulate a flight**; the latter switches to Demo with the three flight choices already open. The header contains the Live/Demo toggle, selected place, and a compact weather strip. Display settings live in the footer. Demo has three fictional Houston flights and sample weather.
 
 The project was inspired by British Airways' 2013 **#LookUp** campaign, which connected planes in the sky to information shown on a billboard.
 
@@ -99,7 +99,7 @@ The Demo contains three preplanned fictional flights over downtown Houston: an a
 
 ## Boarding pass
 
-The hero uses the same boarding pass card in quiet and active states, with a 560px minimum height on desktop/tablet and 460px on phones. The card remains up to 500px wide on desktop; at the checked 375px phone viewport it measures 314 × 460px. Its stub stays at the bottom, and unusually long Live details may expand the card rather than clip. The dark headline panel is 104px tall on desktop and 78px on phones, with self-hosted Barlow Condensed lettering inspired by split-flap displays. Its upper and lower halves flip when the headline changes; content fields crossfade independently while the card stays opaque.
+The hero uses the same boarding pass card in quiet and active states, with a 560px minimum height on desktop/tablet and 460px on phones. The card remains up to 500px wide on desktop; at the checked 375px phone viewport it measures 314 × 460px. Its stub stays at the bottom, and unusually long Live details may expand the card rather than clip. The dark headline panel is 104px tall on desktop and 78px on phones, with self-hosted Barlow Condensed lettering inspired by split-flap displays. Its upper and lower halves flip when the headline changes; content fields crossfade independently while the card stays opaque. In Live, the barcode sits on the existing lower divider, outside the action row, without adding a row or taking space from the headline. The three actions share one row on desktop; on phones, Use my location spans the first row, with Refresh and Simulate a flight below. While location is pending, only its button is disabled; the other two remain available.
 
 With no flight, the card reads “A quiet sky. For now.” and shows the observation zone and controls behind a dense ticket-style perforation line with outlined side cutouts. A small Three.js scene places three copies of the supplied low-poly cloud model behind the pass; the scene gives way to the aircraft when a flight appears.
 
