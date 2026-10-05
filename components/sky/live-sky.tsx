@@ -202,7 +202,7 @@ export default function LiveSky({ onModeChange, onSimulateFlight, place, onPlace
     </section>
 
     <div className="sky-dashboard">
-      <FlightMap lat={place.lat} lon={place.lon} aircraft={aircraft} closestHex={flight?.hex ?? null} loading={loading && !data} unavailable={Boolean(error || coverageWarning)} locationLabel={place.sample ? "Downtown Houston" : "Your location"} />
+      <FlightMap lat={place.lat} lon={place.lon} aircraft={aircraft} closestHex={flight?.hex ?? null} locationLabel={place.sample ? "Downtown Houston" : "Your location"} />
       <aside className="flight-sidebar" aria-label="Live flight details"><article className="detail-panel flight-panel">
         <div className="detail-title"><Navigation2 size={18} strokeWidth={1.8} /><h3><FlightLink callsign={flight?.callsign} registration={flight?.registration}>{flightName}</FlightLink></h3></div>
         {flight ? <><div className="airport-row"><div><strong className="airport-code">{flight.origin?.code ?? "···"}</strong><span className="airport-city">{flight.origin?.city ?? "Origin unknown"}</span></div><ArrowRight className="airport-connector" size={25} strokeWidth={1.3} aria-hidden="true" /><div><strong className="airport-code">{flight.destination?.code ?? "···"}</strong><span className="airport-city">{flight.destination?.city ?? "Destination unknown"}</span></div></div>

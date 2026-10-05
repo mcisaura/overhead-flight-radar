@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import type * as Leaflet from "leaflet";
-import { MapPin, Navigation2 } from "lucide-react";
 import { ZONE_RADIUS_KM } from "../../lib/zone-progress";
 import { airlineIdentity, displayAircraftType, displayFlightName, formatDistanceNm, type AirlineIdentity } from "../../lib/flight-display";
 import FlightLink from "../boarding-pass/flight-link";
@@ -42,8 +41,6 @@ type Props = {
   lon: number;
   aircraft: MapAircraft[];
   closestHex: string | null;
-  loading: boolean;
-  unavailable: boolean;
   demo?: boolean;
   locationLabel?: string;
   showDetails?: boolean;
@@ -75,7 +72,7 @@ function headingPoint(plane: MapAircraft, distanceKm: number) {
     plane.lon + Math.sin(radians) * distanceKm / kmPerLon] as [number, number];
 }
 
-export default function FlightMap({ lat, lon, aircraft, closestHex, loading, unavailable, demo = false, locationLabel, showDetails = true, exiting = false, onSelect }: Props) {
+export default function FlightMap({ lat, lon, aircraft, closestHex, demo = false, locationLabel, showDetails = true, exiting = false, onSelect }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<Leaflet.Map | null>(null);
   const markerLayerRef = useRef<Leaflet.LayerGroup | null>(null);
@@ -311,23 +308,16 @@ export default function FlightMap({ lat, lon, aircraft, closestHex, loading, una
         <div ref={containerRef} className="flight-map" role="application" aria-label={demo ? "Interactive map of fictional aircraft" : "Interactive map of nearby aircraft"} />
         <div className="map-chart-grid" aria-hidden="true" />
         <div className="map-view-switch" role="group" aria-label="Map view"><button type="button" aria-pressed={activeView === "local"} onClick={() => setView("local")}>Local sky</button><button type="button" aria-pressed={activeView === "route"} disabled={!routeAvailable} onClick={() => setView("route")}>Full route</button></div>
-        <div className="map-key"><span className="map-key-plane"><Navigation2 size={15} fill="currentColor" /></span> Aircraft <span className="map-key-location" /> {locationLabel ?? (demo ? "Sample location" : "Your location")}</div>
-        {showDetails && <div className="map-flight-card" aria-live="polite">
-          {selected ? <>
-            <span className="map-card-label">{demo ? "SAMPLE FLIGHT" : selected.hex === closestHex ? "TRACKED AIRCRAFT" : "SELECTED AIRCRAFT"}</span>
-            <strong><FlightLink callsign={selected.callsign} registration={selected.registration} demo={demo}>{formatName(selected)}</FlightLink></strong>
-            <span className="map-card-type"><span><AircraftModelLabel code={selected.aircraftType} label={selected.displayType || displayAircraftType(selected.aircraftType, selected.aircraftModel)} /></span>{selected.registration && selected.registration !== selected.callsign ? ` · ${selected.registration}` : ""}</span>
-            {selected.hex !== closestHex && <div className="map-card-stats">
-              <span><small>Altitude</small>{selected.altitudeFt == null ? "—" : `${Math.round(selected.altitudeFt).toLocaleString()} ft`}</span>
-              <span><small>Speed</small>{selected.speedKts == null ? "—" : `${Math.round(selected.speedKts)} kt`}</span>
-              <span><small>Distance</small>{formatDistanceNm(selected.distanceKm)}</span>
-            </div>}
-            <span className="map-card-age">{demo ? "Simulated aircraft position" : `${selected.estimated ? "Estimated position" : "Reported position"} · last report ${Math.round(selected.seenSeconds)} sec ago`}</span>
-          </> : <>
-            <MapPin size={20} aria-hidden="true" />
-            <strong>{unavailable ? "Live positions unavailable" : loading ? "Finding nearby aircraft…" : demo ? "No plane in the zone" : "No aircraft nearby"}</strong>
-            <span className="map-card-type">{unavailable ? "Try refreshing in a moment." : loading ? "Updating the live map." : demo ? "Choose a sample flight to begin the crossing." : "Try again in a moment as the sky changes."}</span>
-          </>}
+        {showDetails && selected && <div className="map-flight-card" aria-live="polite">
+          <span className="map-card-label">{demo ? "SAMPLE FLIGHT" : selected.hex === closestHex ? "TRACKED AIRCRAFT" : "SELECTED AIRCRAFT"}</span>
+          <strong><FlightLink callsign={selected.callsign} registration={selected.registration} demo={demo}>{formatName(selected)}</FlightLink></strong>
+          <span className="map-card-type"><span><AircraftModelLabel code={selected.aircraftType} label={selected.displayType || displayAircraftType(selected.aircraftType, selected.aircraftModel)} /></span>{selected.registration && selected.registration !== selected.callsign ? ` · ${selected.registration}` : ""}</span>
+          {selected.hex !== closestHex && <div className="map-card-stats">
+            <span><small>Altitude</small>{selected.altitudeFt == null ? "—" : `${Math.round(selected.altitudeFt).toLocaleString()} ft`}</span>
+            <span><small>Speed</small>{selected.speedKts == null ? "—" : `${Math.round(selected.speedKts)} kt`}</span>
+            <span><small>Distance</small>{formatDistanceNm(selected.distanceKm)}</span>
+          </div>}
+          <span className="map-card-age">{demo ? "Simulated aircraft position" : `${selected.estimated ? "Estimated position" : "Reported position"} · last report ${Math.round(selected.seenSeconds)} sec ago`}</span>
         </div>}
       </div>
       <p className="map-note">{demo

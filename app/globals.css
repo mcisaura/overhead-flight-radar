@@ -268,12 +268,9 @@ button:disabled { opacity: .6; cursor: wait; }
 .plane-marker-selected { background: var(--flight-accent); color: #fff; box-shadow: 0 0 0 5px #205b7040, 0 5px 15px #17374655; }
 .plane-marker { animation: marker-enter .6s ease both; }
 .map-exiting .plane-marker { animation: marker-exit .8s ease both; }
-.map-empty .map-flight-card, .map-active .map-flight-card { animation: flight-content-in .7s ease both; }
+.map-active .map-flight-card { animation: flight-content-in .7s ease both; }
 .plane-marker-icon { display: grid; place-items: center; width: 100%; height: 100%; }
 .plane-marker-icon svg { display: block; }
-.map-key { position: absolute; top: 17px; right: 17px; z-index: 500; display: flex; align-items: center; gap: 9px; padding: 9px 12px; border: 1px solid #d9e5e4; border-radius: 8px; background: #fffef5ed; color: var(--ink-soft); box-shadow: 0 5px 15px #17374617; font-size: 11px; font-weight: 700; }
-.map-key-plane { display: inline-flex; color: #246f88; transform: rotate(45deg); }
-.map-key-location { width: 11px; height: 11px; margin-left: 10px; border: 2px solid #fff; border-radius: 50%; background: #1e6e8b; box-shadow: 0 0 0 1px #1e6e8b; }
 .map-flight-card { position: absolute; left: 18px; bottom: 18px; z-index: 500; display: flex; flex-direction: column; width: min(330px, calc(100% - 36px)); min-height: 144px; padding: 18px 20px; border: 1px solid #b5cbd0; border-top: 4px solid var(--ocean-deep); border-radius: 5px; background: #fffefaf2; box-shadow: 0 12px 32px #17374629; backdrop-filter: blur(10px); }
 .map-card-label { margin-bottom: 5px; color: var(--ocean); font-size: 10px; font-weight: 800; letter-spacing: .13em; }
 .map-flight-card > strong { color: var(--ink); font-family: var(--body); font-size: 32px; font-weight: 850; letter-spacing: -.045em; line-height: 1.1; }
@@ -283,7 +280,6 @@ button:disabled { opacity: .6; cursor: wait; }
 .map-card-stats span { display: flex; flex-direction: column; gap: 3px; }
 .map-card-stats small { color: var(--ink-soft); font-size: 10px; font-weight: 500; }
 .map-card-age { margin-top: 12px; color: var(--ink-soft); font-size: 10px; }
-.map-flight-card > svg { margin-bottom: 10px; color: var(--ocean); }
 .map-note { margin: 11px 0 0; color: var(--ink-soft); font-size: 12px; line-height: 1.5; }
 
 .info-section { max-width: 1230px; margin: 0 auto; padding: 78px 36px 70px; }
@@ -457,7 +453,6 @@ button:disabled { opacity: .6; cursor: wait; }
   .zone-scrub input { width: 100%; }
   .map-section { padding: 40px 18px 0; }
   .map-frame { height: 510px; border-radius: 12px; }
-  .map-key { top: 11px; right: 11px; padding: 7px 9px; font-size: 10px; }
   .map-flight-card { left: 11px; bottom: 28px; width: min(315px, calc(100% - 22px)); padding: 14px 16px; }
   .map-card-stats { font-size: 12px; }
   .info-section { padding: 54px 22px; }
@@ -571,7 +566,6 @@ button:disabled { opacity: .6; cursor: wait; }
   .compact-presets .preset-button strong { font-size: 16px; }
   .sky-dashboard { padding: 24px 18px 0; }
   .sky-dashboard .map-frame { height: 350px; }
-  .map-key { top: 61px; right: 10px; padding: 7px 9px; font-size: 9px; }
   .map-view-switch { top: 10px; left: 10px; }
 }
 
@@ -630,7 +624,6 @@ button:disabled { opacity: .6; cursor: wait; }
   .live-aircraft-column { width: calc(100% - 46px); }
   .live-aircraft-scene { width: 90%; }
   .sky-plane-progress { width: calc(100% - 46px); margin: 12px 23px 0; }
-  .live-shell .map-key { font-size: 10px; }
 }
 
 /* Both the quiet and active sky views use the boarding pass. */
@@ -1116,11 +1109,8 @@ button:disabled { opacity: .6; cursor: wait; }
 [data-theme="dark"] .flight-map .leaflet-tile-pane { filter: grayscale(1) invert(1) brightness(.64) contrast(1.15); opacity: .72; }
 [data-theme="dark"] .map-chart-grid { background-image: linear-gradient(#ffffff0c 1px, transparent 1px), linear-gradient(90deg, #ffffff0c 1px, transparent 1px); }
 [data-theme="dark"] .map-view-switch,
-[data-theme="dark"] .map-key,
 [data-theme="dark"] .map-flight-card { border-color: #ffffff14; background: #1e1e1ef2; box-shadow: 0 8px 22px #0007; }
 [data-theme="dark"] .map-view-switch button[aria-pressed="true"] { background: #dedede; color: #111111; }
-[data-theme="dark"] .map-key-plane { color: #c7c7c7; }
-[data-theme="dark"] .map-key-location { border-color: #eeeeee; background: #686868; box-shadow: 0 0 0 1px #686868; }
 [data-theme="dark"] .plane-marker { border-color: #606060; background: #252525; color: #eeeeee; box-shadow: 0 3px 10px #0008; }
 [data-theme="dark"] .plane-marker-selected { border-color: #eeeeee; background: #e0e0e0; color: #111111; box-shadow: 0 0 0 5px #ffffff22, 0 5px 15px #0008; }
 [data-theme="dark"] .flight-map .flight-path { stroke: #c7c7c7; }
@@ -1298,7 +1288,6 @@ button:disabled { opacity: .6; cursor: wait; }
 .boarding-pass,
 .flight-panel,
 .map-flight-card,
-.map-key,
 .preset-copy,
 .hero-crossing,
 .hero-progress-baseline {
@@ -1777,7 +1766,7 @@ button, input, select,
   .boarding-pass-stub-codes span, .boarding-pass-stub-codes strong, .boarding-pass-stats span,
   .boarding-pass-stats strong, .boarding-pass-stats > div, .boarding-route-label, .boarding-route-city,
   .boarding-route-stop strong, .boarding-route-connector, .hero-flight-details, .hero-description,
-  .flight-sidebar, .detail-panel, .map-frame, .map-view-switch, .map-key, .map-flight-card,
+  .flight-sidebar, .detail-panel, .map-frame, .map-view-switch, .map-flight-card,
   .map-card-stats, .plane-marker, .leaflet-tooltip, .leaflet-control-zoom a, .leaflet-control-attribution,
   .primary-button, .refresh-button, .zone-play, .zone-reset, .mode-toggle, .theme-toggle,
   .weather-unit-toggle, .hero-background-select-wrap, .sliding-choice-group button,

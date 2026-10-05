@@ -229,7 +229,7 @@ export default function DemoSky({ onModeChange, weatherUnit, onWeatherUnitChange
       </section>
 
       <div className="sky-dashboard">
-      <FlightMap lat={demoPlace.lat} lon={demoPlace.lon} aircraft={mapAircraft} closestHex={flight?.hex ?? null} loading={false} unavailable={false} demo showDetails={false} exiting={phase === "exiting"} onSelect={(hex) => {
+      <FlightMap lat={demoPlace.lat} lon={demoPlace.lon} aircraft={mapAircraft} closestHex={flight?.hex ?? null} demo showDetails={false} exiting={phase === "exiting"} onSelect={(hex) => {
         const match = demoFlights.find((item) => item.aircraft.hex === hex);
         if (match) selectFlight(match.id);
       }} />
