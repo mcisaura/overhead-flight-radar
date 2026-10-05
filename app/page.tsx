@@ -16,11 +16,14 @@ function SkyHome() {
   const [place, setPlace] = useState<Place>({ lat: demoPlace.lat, lon: demoPlace.lon, label: "Houston · live sky", sample: true });
   const [weatherUnit, setWeatherUnit] = useState<WeatherUnit>("imperial");
   const [heroBackground, setHeroBackground] = useState<HeroBackground>("original");
+  const [demoPickerOnEntry, setDemoPickerOnEntry] = useState(false);
   const viewRef = useRef<HTMLDivElement>(null);
   const changeMode = useSkyModeTransition(viewRef, mode, setMode);
+  const selectMode = (next: "live" | "demo") => changeMode(next, () => setDemoPickerOnEntry(false));
+  const simulateFlight = () => changeMode("demo", () => setDemoPickerOnEntry(true));
   return <ChoiceMotionProvider><div ref={viewRef} className="sky-mode-view">{mode === "live"
-    ? <LiveSky onModeChange={changeMode} place={place} onPlaceChange={setPlace} weatherUnit={weatherUnit} onWeatherUnitChange={setWeatherUnit} heroBackground={heroBackground} onHeroBackgroundChange={setHeroBackground} />
-    : <DemoSky onModeChange={changeMode} weatherUnit={weatherUnit} onWeatherUnitChange={setWeatherUnit} heroBackground={heroBackground} onHeroBackgroundChange={setHeroBackground} />}</div></ChoiceMotionProvider>;
+    ? <LiveSky onModeChange={selectMode} onSimulateFlight={simulateFlight} place={place} onPlaceChange={setPlace} weatherUnit={weatherUnit} onWeatherUnitChange={setWeatherUnit} heroBackground={heroBackground} onHeroBackgroundChange={setHeroBackground} />
+    : <DemoSky onModeChange={selectMode} initialPickerOpen={demoPickerOnEntry} weatherUnit={weatherUnit} onWeatherUnitChange={setWeatherUnit} heroBackground={heroBackground} onHeroBackgroundChange={setHeroBackground} />}</div></ChoiceMotionProvider>;
 }
 
 export default function Home() {

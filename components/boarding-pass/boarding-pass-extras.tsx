@@ -1,5 +1,6 @@
 import AircraftTypeLink from "./aircraft-type-link";
 import FlightLink from "./flight-link";
+import BoardingBarcode from "./boarding-barcode";
 import type { ReactNode } from "react";
 import { airlineIdentity, formatDistanceNm, type AirlineIdentity } from "../../lib/flight-display";
 
@@ -11,10 +12,11 @@ export function BoardingPassStats({ altitudeFt, speedKts, distanceKm }: { altitu
   </div>;
 }
 
-export function BoardingPassStub({ callsign, flightNumber, flightIata, airline, aircraftType, aircraftModel, registration, demo = false, children }: {
+export function BoardingPassStub({ callsign, flightNumber, flightIata, airline, aircraftType, aircraftModel, registration, demo = false, barcode = false, children }: {
   callsign: string | null;
   registration?: string | null;
   demo?: boolean;
+  barcode?: boolean;
   flightNumber?: string | null;
   flightIata?: string | null;
   airline?: AirlineIdentity | null;
@@ -35,6 +37,6 @@ export function BoardingPassStub({ callsign, flightNumber, flightIata, airline, 
       <div><span>{match ? "CALLSIGN · ICAO" : "RADIO ID / REG"}</span><strong>{rawFlight && rawFlight !== publicCode ? <FlightLink callsign={callsign} registration={registration} demo={demo}>{rawFlight}</FlightLink> : "—"}</strong></div>
       <div><span>AIRCRAFT TYPE</span><strong>{aircraftCode ? <AircraftTypeLink code={aircraftCode} model={aircraftModel}>{aircraftCode}</AircraftTypeLink> : "—"}</strong></div>
     </div>
-    <div className="boarding-pass-stub-details">{children}</div>
+    <div className="boarding-pass-stub-details">{barcode && <BoardingBarcode />}{children}</div>
   </div>;
 }

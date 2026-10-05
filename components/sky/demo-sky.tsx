@@ -26,9 +26,10 @@ const DEMO_CROSSING_DURATION_MS = 30_000;
 const AircraftModel = lazy(() => import("../sky/aircraft-model"));
 const HeroCloud = lazy(() => import("../sky/hero-cloud"));
 
-export default function DemoSky({ onModeChange, weatherUnit, onWeatherUnitChange, heroBackground, onHeroBackgroundChange, headerModeControl }: { onModeChange: (mode: "live" | "demo") => void; weatherUnit: WeatherUnit; onWeatherUnitChange: (unit: WeatherUnit) => void; heroBackground: HeroBackground; onHeroBackgroundChange: (background: HeroBackground) => void; headerModeControl?: ReactNode }) {
+export default function DemoSky({ onModeChange, weatherUnit, onWeatherUnitChange, heroBackground, onHeroBackgroundChange, headerModeControl, initialPickerOpen = false }: { onModeChange: (mode: "live" | "demo") => void; weatherUnit: WeatherUnit; onWeatherUnitChange: (unit: WeatherUnit) => void; heroBackground: HeroBackground; onHeroBackgroundChange: (background: HeroBackground) => void; headerModeControl?: ReactNode; initialPickerOpen?: boolean }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(initialPickerOpen);
+  const passMainRef = useRef<HTMLDivElement>(null);
   const quietStubRef = useRef<HTMLDivElement>(null);
   const stubPositionsRef = useRef<{ root: DOMRect; fields: { element: HTMLElement; rect: DOMRect }[] } | null>(null);
   const [phase, setPhase] = useState<"empty" | "active" | "exiting">("empty");
@@ -56,6 +57,10 @@ export default function DemoSky({ onModeChange, weatherUnit, onWeatherUnitChange
   const mapAircraft = flight && selected ? [{ ...flight, origin: selected.origin, destination: selected.destination }] : [];
   const crossingStatus = phase === "exiting" ? "Leaving your sky" : crossing?.motion === "approaching" ? "Drawing closer" : crossing?.motion === "leaving" ? "Heading away" : "Crossing your sky";
   const displayKey = flight && selected ? `${selected.id}:${flightRun}:${crossingStatus}` : "quiet";
+
+  useEffect(() => {
+    if (initialPickerOpen) passMainRef.current?.querySelector<HTMLButtonElement>(".ticket-flight-picker button")?.focus({ preventScroll: true });
+  }, [initialPickerOpen]);
 
   useLayoutEffect(() => {
     const previous = stubPositionsRef.current;
@@ -182,7 +187,7 @@ export default function DemoSky({ onModeChange, weatherUnit, onWeatherUnitChange
           passReadyRef.current = true;
           startWhenReady();
         }}>
-        <div className="boarding-pass-main">
+        <div className="boarding-pass-main" ref={passMainRef}>
           <FlipHeading text={flight && selected ? crossingStatus : pickerOpen ? "Choose\na flight" : "A quiet sky.\nFor now."} />
           {flight && selected ? <>
               <FlightIdentity {...flight} demo />

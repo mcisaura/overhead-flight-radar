@@ -10,13 +10,13 @@ export default function useSkyModeTransition(rootRef: RefObject<HTMLDivElement |
   const cancelRef = useRef<(() => void) | null>(null);
   useEffect(() => () => cancelRef.current?.(), []);
 
-  return useCallback((mode: Mode) => {
+  return useCallback((mode: Mode, onCommit?: () => void) => {
     if (mode === currentMode) return;
     cancelRef.current?.();
     const root = rootRef.current;
     const restoreFocus = Boolean(document.activeElement?.closest(".mode-toggle"));
     cancelRef.current = animateSkyModeChange(root, () => {
-      flushSync(() => setMode(mode));
+      flushSync(() => { onCommit?.(); setMode(mode); });
       if (restoreFocus) root?.querySelector<HTMLButtonElement>('.mode-toggle button[aria-pressed="true"]')?.focus({ preventScroll: true });
     }, window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   }, [currentMode, rootRef, setMode]);

@@ -1,7 +1,7 @@
 "use client";
 
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
-import { ArrowRight, LocateFixed, Navigation2, RefreshCw } from "lucide-react";
+import { ArrowRight, Navigation2 } from "lucide-react";
 import FlightMap from "../map/flight-map";
 import SiteHeader from "../site-header";
 import LocationFeedback from "../controls/location-feedback";
@@ -10,7 +10,8 @@ import { ZONE_RADIUS_KM, zoneProgress } from "../../lib/zone-progress";
 import { closestLiveAircraft, projectLiveAircraft } from "../../lib/live-snapshot";
 import FlightLink from "../boarding-pass/flight-link";
 import FlightIdentity, { flightIdentityText } from "../boarding-pass/flight-identity";
-import BoardingPassActions from "../boarding-pass/boarding-pass-actions";
+import LiveTicketActions from "../boarding-pass/live-ticket-actions";
+import BoardingBarcode from "../boarding-pass/boarding-barcode";
 import BoardingRoute from "../boarding-pass/boarding-route";
 import { BoardingPassStats, BoardingPassStub } from "../boarding-pass/boarding-pass-extras";
 import type { SkyResponse } from "../../lib/sky-contract";
@@ -26,7 +27,7 @@ import type { HeroBackground } from "../controls/hero-background-toggle";
 export type Place = { lat: number; lon: number; label: string; sample: boolean };
 const AircraftModel = lazy(() => import("./aircraft-model"));
 const HeroCloud = lazy(() => import("./hero-cloud"));
-export default function LiveSky({ onModeChange, place, onPlaceChange, weatherUnit, onWeatherUnitChange, heroBackground, onHeroBackgroundChange }: { onModeChange: (mode: "live" | "demo") => void; place: Place; onPlaceChange: (place: Place) => void; weatherUnit: WeatherUnit; onWeatherUnitChange: (unit: WeatherUnit) => void; heroBackground: HeroBackground; onHeroBackgroundChange: (background: HeroBackground) => void }) {
+export default function LiveSky({ onModeChange, onSimulateFlight, place, onPlaceChange, weatherUnit, onWeatherUnitChange, heroBackground, onHeroBackgroundChange }: { onModeChange: (mode: "live" | "demo") => void; onSimulateFlight: () => void; place: Place; onPlaceChange: (place: Place) => void; weatherUnit: WeatherUnit; onWeatherUnitChange: (unit: WeatherUnit) => void; heroBackground: HeroBackground; onHeroBackgroundChange: (background: HeroBackground) => void }) {
   const [data, setData] = useState<SkyResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -171,11 +172,11 @@ export default function LiveSky({ onModeChange, place, onPlaceChange, weatherUni
         </> : (error || coverageWarning) ? <p className="hero-description" role="status">{error || coverageWarning}</p> : null}
       </div>
       {flight ?
-        <BoardingPassStub aircraftModel={flight.aircraftModel} registration={flight.registration} callsign={flight.callsign} flightNumber={flight.flightNumber} flightIata={flight.flightIata} airline={flight.airline} aircraftType={flight.aircraftType}>
+        <BoardingPassStub barcode aircraftModel={flight.aircraftModel} registration={flight.registration} callsign={flight.callsign} flightNumber={flight.flightNumber} flightIata={flight.flightIata} airline={flight.airline} aircraftType={flight.aircraftType}>
           <div className="hero-flight-details">
             <BoardingPassStats altitudeFt={flight.altitudeFt} speedKts={flight.speedKts} distanceKm={shownDistanceKm} />
             <p className="boarding-pass-freshness">Last reported {Math.round(shownAgeSeconds)} sec ago{coverageWarning ? " · Coverage may be incomplete" : ""}</p>
-            <BoardingPassActions className="live-actions"><button type="button" className="primary-button" onClick={useLocation} disabled={locating}><LocateFixed size={17} />{locating ? "Finding your location…" : "Use my location"}</button><button type="button" className="refresh-button" onClick={() => setRefreshKey((key) => key + 1)}><RefreshCw size={15} />Refresh</button></BoardingPassActions>
+            <LiveTicketActions locating={locating} onUseLocation={useLocation} onRefresh={() => setRefreshKey((key) => key + 1)} onSimulate={onSimulateFlight} />
             {locationIssue && <LocationFeedback key={locationIssue} issue={locationIssue} onRetry={useLocation} />}
             {nextAircraft && <div className="next-aircraft-queue" aria-label="Next closest aircraft">
               <span className="next-aircraft-label">NEXT CLOSEST</span>
@@ -190,7 +191,8 @@ export default function LiveSky({ onModeChange, place, onPlaceChange, weatherUni
             <div><span>OBSERVATION ZONE</span><strong>5 nautical miles</strong></div>
           </div>
           <div className="boarding-pass-stub-details">
-            <BoardingPassActions className="live-actions"><button type="button" className="primary-button" onClick={useLocation} disabled={locating}><LocateFixed size={17} />{locating ? "Finding your location…" : "Use my location"}</button><button type="button" className="refresh-button" onClick={() => setRefreshKey((key) => key + 1)}><RefreshCw size={15} />Refresh</button></BoardingPassActions>
+            <BoardingBarcode />
+            <LiveTicketActions locating={locating} onUseLocation={useLocation} onRefresh={() => setRefreshKey((key) => key + 1)} onSimulate={onSimulateFlight} />
             {locationIssue && <LocationFeedback key={locationIssue} issue={locationIssue} onRetry={useLocation} />}
           </div>
         </div>}
