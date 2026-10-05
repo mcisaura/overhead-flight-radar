@@ -99,7 +99,7 @@ The Demo contains three preplanned fictional flights over downtown Houston: an a
 
 ## Boarding pass
 
-The hero uses the same boarding pass card in quiet and active states, with a 560px minimum height on desktop/tablet and 460px on phones. The card remains up to 500px wide on desktop; at the checked 375px phone viewport it measures 314 × 460px. Its stub stays at the bottom, and unusually long Live details may expand the card rather than clip. The dark headline panel uses self-hosted Barlow Condensed lettering inspired by split-flap displays. Its upper and lower halves flip when the headline changes; content fields crossfade independently while the card stays opaque.
+The hero uses the same boarding pass card in quiet and active states, with a 560px minimum height on desktop/tablet and 460px on phones. The card remains up to 500px wide on desktop; at the checked 375px phone viewport it measures 314 × 460px. Its stub stays at the bottom, and unusually long Live details may expand the card rather than clip. The dark headline panel is 104px tall on desktop and 78px on phones, with self-hosted Barlow Condensed lettering inspired by split-flap displays. Its upper and lower halves flip when the headline changes; content fields crossfade independently while the card stays opaque.
 
 With no flight, the card reads “A quiet sky. For now.” and shows the observation zone and controls behind a dense ticket-style perforation line with outlined side cutouts. A small Three.js scene places three copies of the supplied low-poly cloud model behind the pass; the scene gives way to the aircraft when a flight appears.
 
