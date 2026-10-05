@@ -2,22 +2,12 @@
 
 import { Moon, Sun } from "lucide-react";
 import { useThemeMode } from "./theme-provider";
+import SlidingChoiceGroup from "./sliding-choice-group";
 
 export default function ThemeToggle() {
   const { theme, setTheme } = useThemeMode();
-  const dark = theme === "dark";
-  const nextTheme = dark ? "light" : "dark";
-
-  return (
-    <button
-      type="button"
-      className="theme-toggle"
-      aria-label={`Switch to ${nextTheme} mode`}
-      title={`Switch to ${nextTheme} mode`}
-      onClick={() => setTheme(nextTheme)}
-    >
-      {dark ? <Sun size={16} aria-hidden="true" /> : <Moon size={16} aria-hidden="true" />}
-      <span>{dark ? "Light" : "Dark"}</span>
-    </button>
-  );
+  return <SlidingChoiceGroup className="theme-toggle" label="Appearance" motionKey="theme" selectedIndex={theme === "light" ? 0 : 1}>
+    <button type="button" aria-label="Light mode" aria-pressed={theme === "light"} onClick={() => setTheme("light")}><Sun size={14} aria-hidden="true" /><span>Light</span></button>
+    <button type="button" aria-label="Dark mode" aria-pressed={theme === "dark"} onClick={() => setTheme("dark")}><Moon size={14} aria-hidden="true" /><span>Dark</span></button>
+  </SlidingChoiceGroup>;
 }

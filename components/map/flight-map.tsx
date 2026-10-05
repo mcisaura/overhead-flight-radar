@@ -132,7 +132,7 @@ export default function FlightMap({ lat, lon, aircraft, closestHex, loading, una
       }).addTo(map);
       L.control.zoom({ position: "bottomright" }).addTo(map);
       L.circle([lat, lon], { radius: ZONE_RADIUS_KM * 1000, color: "#317f98", weight: 1, dashArray: "5 7", fillColor: "#74adc0", fillOpacity: 0.075, interactive: false, className: "zone-circle" }).addTo(map);
-      L.circleMarker([lat, lon], { radius: 8, color: "#fff", weight: 3, fillColor: "#1e6e8b", fillOpacity: 1 })
+      L.circleMarker([lat, lon], { radius: 8, color: "#fff", weight: 3, fillColor: "#1e6e8b", fillOpacity: 1, className: "sky-location-marker" })
         .bindTooltip(locationLabel ?? (demo ? "Sample location" : "Your location"), { direction: "top" }).addTo(map);
       routeLayerRef.current = L.layerGroup().addTo(map);
       airportLayerRef.current = L.layerGroup().addTo(map);
@@ -198,9 +198,9 @@ export default function FlightMap({ lat, lon, aircraft, closestHex, loading, una
         } else {
           if (existing?.kind === "heading") layer.removeLayer(existing.path);
           const inbound = L.polyline([[plane.origin.lat, plane.origin.lon], [plane.lat, plane.lon]],
-            { color, weight, opacity, interactive: false }).addTo(layer);
+            { color, weight, opacity, interactive: false, className: "flight-path" }).addTo(layer);
           const outbound = L.polyline([[plane.lat, plane.lon], [plane.destination.lat, plane.destination.lon]],
-            { color, weight, opacity, dashArray: "6 7", interactive: false }).addTo(layer);
+            { color, weight, opacity, dashArray: "6 7", interactive: false, className: "flight-path" }).addTo(layer);
           routeDrawingsRef.current.set(plane.hex, { kind: "route", inbound, outbound });
         }
       } else if (plane.heading !== null) {
@@ -214,7 +214,7 @@ export default function FlightMap({ lat, lon, aircraft, closestHex, loading, una
             layer.removeLayer(existing.outbound);
           }
           const path = L.polyline(points,
-            { color, weight, opacity: highlighted ? .75 : .4, dashArray: "3 7", interactive: false }).addTo(layer);
+            { color, weight, opacity: highlighted ? .75 : .4, dashArray: "3 7", interactive: false, className: "flight-path" }).addTo(layer);
           routeDrawingsRef.current.set(plane.hex, { kind: "heading", path });
         }
       } else if (existing) {
@@ -240,7 +240,7 @@ export default function FlightMap({ lat, lon, aircraft, closestHex, loading, una
       { lat: destinationLat, lon: destinationLon, code: destinationCode },
     ]) {
       if (airport.lat === null || airport.lon === null) continue;
-      L.circleMarker([airport.lat, airport.lon], { radius: 5, color: "#173746", weight: 2, fillColor: "#fffefa", fillOpacity: 1 })
+      L.circleMarker([airport.lat, airport.lon], { radius: 5, color: "#173746", weight: 2, fillColor: "#fffefa", fillOpacity: 1, className: "airport-marker" })
         .bindTooltip(airport.code, { permanent: activeView === "route", direction: "top", offset: [0, -6] }).addTo(layer);
     }
   }, [ready, nearViewport, routeAvailable, activeView, originLat, originLon, originCode, destinationLat, destinationLon, destinationCode]);

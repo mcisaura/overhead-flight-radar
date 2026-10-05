@@ -10,7 +10,7 @@ const backgrounds: { value: HeroBackground; label: string }[] = [
 
 export default function HeroBackgroundToggle({ value, onChange }: { value: HeroBackground; onChange: (background: HeroBackground) => void }) {
   return <div className="hero-background-control">
-    <label htmlFor="hero-background-select">Hero background</label>
+    <label htmlFor="hero-background-select">Sky background</label>
     <span className="hero-background-select-wrap">
       <Images size={15} aria-hidden="true" />
       <select id="hero-background-select" value={value} onChange={(event) => onChange(event.target.value as HeroBackground)}>

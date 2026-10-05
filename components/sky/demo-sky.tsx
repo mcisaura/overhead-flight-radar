@@ -1,9 +1,9 @@
 "use client";
 
-import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { ArrowRight, CloudSun, MapPin, Navigation2, Pause, Play, RotateCcw } from "lucide-react";
+import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { ArrowRight, Navigation2, Pause, Play, RotateCcw } from "lucide-react";
 import FlightMap from "../map/flight-map";
-import ModeToggle from "../controls/mode-toggle";
+import SiteHeader from "../site-header";
 import { demoElapsedFractionAtProgress, demoFlights, demoPlace, demoProgressAtElapsedFraction, demoWeather, distanceFromDemoPlace, sampleDemoProfile } from "../../lib/demo-data";
 import { positionAtZoneProgress, zoneProgress } from "../../lib/zone-progress";
 import FlightIdentity, { flightIdentityText } from "../boarding-pass/flight-identity";
@@ -15,11 +15,9 @@ import BoardingPassDisplay from "../boarding-pass/boarding-pass-display";
 import FlipHeading from "../boarding-pass/flip-heading";
 import { aircraftVisualForFlight } from "../../lib/aircraft-visual";
 import { formatDistanceNm } from "../../lib/flight-display";
-import ProjectCredits from "../project-credits";
-import WeatherUnitToggle from "../controls/weather-unit-toggle";
-import { formatTemperature, formatWind, type WeatherUnit } from "../../lib/weather-units";
-import HeroBackgroundToggle, { type HeroBackground } from "../controls/hero-background-toggle";
-import ThemeToggle from "../controls/theme-toggle";
+import SiteFooter from "../site-footer";
+import { type WeatherUnit } from "../../lib/weather-units";
+import type { HeroBackground } from "../controls/hero-background-toggle";
 import { advanceDemoElapsed } from "../../lib/demo-clock";
 import TicketFlightPicker from "../boarding-pass/ticket-flight-picker";
 import BoardingBarcode from "../boarding-pass/boarding-barcode";
@@ -28,7 +26,7 @@ const DEMO_CROSSING_DURATION_MS = 30_000;
 const AircraftModel = lazy(() => import("../sky/aircraft-model"));
 const HeroCloud = lazy(() => import("../sky/hero-cloud"));
 
-export default function DemoSky({ onModeChange, weatherUnit, onWeatherUnitChange, heroBackground, onHeroBackgroundChange }: { onModeChange: (mode: "live" | "demo") => void; weatherUnit: WeatherUnit; onWeatherUnitChange: (unit: WeatherUnit) => void; heroBackground: HeroBackground; onHeroBackgroundChange: (background: HeroBackground) => void }) {
+export default function DemoSky({ onModeChange, weatherUnit, onWeatherUnitChange, heroBackground, onHeroBackgroundChange, headerModeControl }: { onModeChange: (mode: "live" | "demo") => void; weatherUnit: WeatherUnit; onWeatherUnitChange: (unit: WeatherUnit) => void; heroBackground: HeroBackground; onHeroBackgroundChange: (background: HeroBackground) => void; headerModeControl?: ReactNode }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const quietStubRef = useRef<HTMLDivElement>(null);
@@ -173,24 +171,7 @@ export default function DemoSky({ onModeChange, weatherUnit, onWeatherUnitChange
 
   return (
     <main className={`app-shell hero-background-${heroBackground} demo-ticket-picker`}>
-      <header className="topbar">
-        <div className="topbar-main">
-          <div className="brand"><span className="brand-mark"><Navigation2 size={19} strokeWidth={1.9} /></span><span>overhead<span className="brand-period">.</span></span></div>
-          <div className="header-weather" aria-label="Sample weather">
-            <CloudSun size={19} strokeWidth={1.8} aria-hidden="true" />
-            <strong className="header-weather-temp">{formatTemperature(demoWeather.temperatureF, weatherUnit)}</strong>
-            <span className="header-weather-condition">Partly cloudy <small>· Sample weather</small></span>
-            <span className="header-weather-stat">Cloud {demoWeather.cloudCover}%</span>
-            <span className="header-weather-stat">Wind {formatWind(demoWeather.windMph, weatherUnit)}</span>
-          </div>
-          <div className="topbar-right">
-            <ModeToggle mode="demo" onChange={onModeChange} />
-            <ThemeToggle />
-            <span className="top-divider" />
-            <span className="topbar-place" title={demoPlace.label}><MapPin size={15} /><span className="topbar-place-text">{demoPlace.label}</span></span>
-          </div>
-        </div>
-      </header>
+      <SiteHeader mode="demo" onModeChange={onModeChange} placeLabel={demoPlace.label} weather={demoWeather} weatherUnit={weatherUnit} modeControl={headerModeControl} />
 
       <section className={`sky-stage sky-${phase} ${flight ? "has-flight" : ""}`} aria-labelledby="hero-title">
         <div className="sky-art" aria-hidden="true" />
@@ -202,7 +183,7 @@ export default function DemoSky({ onModeChange, weatherUnit, onWeatherUnitChange
           startWhenReady();
         }}>
         <div className="boarding-pass-main">
-          <FlipHeading text={flight && selected ? crossingStatus : "A quiet sky.\nFor now."} />
+          <FlipHeading text={flight && selected ? crossingStatus : pickerOpen ? "Choose\na flight" : "A quiet sky.\nFor now."} />
           {flight && selected ? <>
               <FlightIdentity {...flight} demo />
               <div className="boarding-pass-route-spacing" aria-hidden="true" />
@@ -272,7 +253,7 @@ export default function DemoSky({ onModeChange, weatherUnit, onWeatherUnitChange
         </aside>
       </div>
 
-      <footer className="site-footer"><span className="footer-brand">overhead<span className="brand-period">.</span></span><HeroBackgroundToggle value={heroBackground} onChange={onHeroBackgroundChange} /><WeatherUnitToggle value={weatherUnit} onChange={onWeatherUnitChange} /><ProjectCredits /></footer>
+      <SiteFooter heroBackground={heroBackground} onHeroBackgroundChange={onHeroBackgroundChange} weatherUnit={weatherUnit} onWeatherUnitChange={onWeatherUnitChange} />
     </main>
   );
 }

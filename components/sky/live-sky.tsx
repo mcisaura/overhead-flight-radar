@@ -1,10 +1,11 @@
 "use client";
 
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
-import { ArrowRight, CloudSun, LocateFixed, MapPin, Navigation2, RefreshCw } from "lucide-react";
+import { ArrowRight, LocateFixed, Navigation2, RefreshCw } from "lucide-react";
 import FlightMap from "../map/flight-map";
-import ModeToggle from "../controls/mode-toggle";
-import ThemeToggle from "../controls/theme-toggle";
+import SiteHeader from "../site-header";
+import LocationFeedback from "../controls/location-feedback";
+import { createLocationRequester, type LocationIssue } from "../../lib/location-access";
 import { ZONE_RADIUS_KM, zoneProgress } from "../../lib/zone-progress";
 import { closestLiveAircraft, projectLiveAircraft } from "../../lib/live-snapshot";
 import FlightLink from "../boarding-pass/flight-link";
@@ -18,30 +19,19 @@ import BoardingPassDisplay from "../boarding-pass/boarding-pass-display";
 import FlipHeading from "../boarding-pass/flip-heading";
 import { aircraftVisualForFlight } from "../../lib/aircraft-visual";
 import { formatDistanceNm } from "../../lib/flight-display";
-import ProjectCredits from "../project-credits";
-import WeatherUnitToggle from "../controls/weather-unit-toggle";
-import { formatTemperature, formatWind, type WeatherUnit } from "../../lib/weather-units";
-import HeroBackgroundToggle, { type HeroBackground } from "../controls/hero-background-toggle";
+import SiteFooter from "../site-footer";
+import { type WeatherUnit } from "../../lib/weather-units";
+import type { HeroBackground } from "../controls/hero-background-toggle";
 
 export type Place = { lat: number; lon: number; label: string; sample: boolean };
 const AircraftModel = lazy(() => import("./aircraft-model"));
 const HeroCloud = lazy(() => import("./hero-cloud"));
-function weatherLabel(code: number) {
-  if (code === 0) return "Clear sky";
-  if (code <= 3) return "Partly cloudy";
-  if (code <= 48) return "Foggy";
-  if (code <= 67) return "Rainy";
-  if (code <= 77) return "Snowy";
-  if (code <= 82) return "Showers";
-  if (code <= 86) return "Snow showers";
-  return "Stormy";
-}
-
 export default function LiveSky({ onModeChange, place, onPlaceChange, weatherUnit, onWeatherUnitChange, heroBackground, onHeroBackgroundChange }: { onModeChange: (mode: "live" | "demo") => void; place: Place; onPlaceChange: (place: Place) => void; weatherUnit: WeatherUnit; onWeatherUnitChange: (unit: WeatherUnit) => void; heroBackground: HeroBackground; onHeroBackgroundChange: (background: HeroBackground) => void }) {
   const [data, setData] = useState<SkyResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [locationError, setLocationError] = useState<string | null>(null);
+  const [locationIssue, setLocationIssue] = useState<LocationIssue | null>(null);
+  const locationRequesterRef = useRef<ReturnType<typeof createLocationRequester> | null>(null);
   const [locating, setLocating] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [receivedAt, setReceivedAt] = useState(0);
@@ -107,24 +97,24 @@ export default function LiveSky({ onModeChange, place, onPlaceChange, weatherUni
     return () => { active = false; };
   }, [place, refreshKey]);
 
-  const useLocation = useCallback(() => {
-    setLocationError(null);
-    if (!navigator.geolocation) { setLocationError("Your browser does not support location access."); return; }
-    setLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      ({ coords }) => {
+  useEffect(() => {
+    const requester = createLocationRequester(navigator.geolocation, {
+      onStart: () => { setLocationIssue(null); setLocating(true); },
+      onSuccess: ({ coords }) => {
         exitRefreshHex.current = null;
         takeoverRefreshHex.current = null;
         onPlaceChange({ lat: coords.latitude, lon: coords.longitude, label: "Your location · live sky", sample: false });
         setData(null);
         setReceivedAt(0);
         setLoading(true);
-        setLocating(false);
       },
-      () => { setLocationError("Location unavailable. Keeping the current live sky."); setLocating(false); },
-      { enableHighAccuracy: false, timeout: 10_000, maximumAge: 60_000 },
-    );
+      onError: setLocationIssue,
+      onFinish: () => setLocating(false),
+    });
+    locationRequesterRef.current = requester;
+    return () => { requester.cancel(); locationRequesterRef.current = null; };
   }, [onPlaceChange]);
+  const useLocation = useCallback(() => locationRequesterRef.current?.request(), []);
 
   const aircraft = projectLiveAircraft(data?.aircraft ?? [], place, receivedAt, clockMs);
   const selectedAircraft = aircraft.find((plane) => plane.hex === data?.flight?.hex);
@@ -165,21 +155,7 @@ export default function LiveSky({ onModeChange, place, onPlaceChange, weatherUni
     ? crossing.remainingKm / (selectedAircraft.speedKts * 1.852 / 60) : null;
   const nextAircraft = flight ? closestLiveAircraft(aircraft, flight.hex) : null;
   return <main className={`app-shell live-shell hero-background-${heroBackground}`}>
-    <header className="topbar">
-      <div className="topbar-main">
-        <div className="brand"><span className="brand-mark"><Navigation2 size={19} strokeWidth={1.9} /></span><span>overhead<span className="brand-period">.</span></span></div>
-        <div className="header-weather" aria-label="Current weather">
-          <CloudSun size={19} strokeWidth={1.8} aria-hidden="true" />
-          {data?.weather ? <>
-            <strong className="header-weather-temp">{formatTemperature(data.weather.temperatureF, weatherUnit)}</strong>
-            <span className="header-weather-condition">{weatherLabel(data.weather.code)}</span>
-            <span className="header-weather-stat">Cloud {data.weather.cloudCover}%</span>
-            <span className="header-weather-stat">Wind {formatWind(data.weather.windMph, weatherUnit)}</span>
-          </> : <span className="header-weather-condition">{loading ? "Loading weather…" : "Weather unavailable"}</span>}
-        </div>
-        <div className="topbar-right"><ModeToggle mode="live" onChange={onModeChange} /><ThemeToggle /><span className="top-divider" /><span className="topbar-place" title={place.label}><MapPin size={15} /><span className="topbar-place-text">{place.label}</span></span></div>
-      </div>
-    </header>
+    <SiteHeader mode="live" onModeChange={onModeChange} placeLabel={place.sample ? "Downtown Houston · live sky" : place.label} weather={data?.weather ?? null} weatherUnit={weatherUnit} loading={loading} />
 
     <section className={`sky-stage live-stage ${flight ? "sky-active has-flight" : "sky-empty"}`} aria-labelledby="hero-title">
       <div className="sky-art" aria-hidden="true" /><div className="sky-overlay" aria-hidden="true" />
@@ -200,7 +176,7 @@ export default function LiveSky({ onModeChange, place, onPlaceChange, weatherUni
             <BoardingPassStats altitudeFt={flight.altitudeFt} speedKts={flight.speedKts} distanceKm={shownDistanceKm} />
             <p className="boarding-pass-freshness">Last reported {Math.round(shownAgeSeconds)} sec ago{coverageWarning ? " · Coverage may be incomplete" : ""}</p>
             <BoardingPassActions className="live-actions"><button type="button" className="primary-button" onClick={useLocation} disabled={locating}><LocateFixed size={17} />{locating ? "Finding your location…" : "Use my location"}</button><button type="button" className="refresh-button" onClick={() => setRefreshKey((key) => key + 1)}><RefreshCw size={15} />Refresh</button></BoardingPassActions>
-            {locationError && <p className="live-location-error" role="status">{locationError}</p>}
+            {locationIssue && <LocationFeedback key={locationIssue} issue={locationIssue} onRetry={useLocation} />}
             {nextAircraft && <div className="next-aircraft-queue" aria-label="Next closest aircraft">
               <span className="next-aircraft-label">NEXT CLOSEST</span>
               <div className="next-aircraft-main"><strong><FlightLink callsign={nextAircraft.callsign} registration={nextAircraft.registration}>{nextAircraft.callsign || nextAircraft.registration || nextAircraft.hex.toUpperCase()}</FlightLink></strong><span>{nextAircraft.originCode || "···"} → {nextAircraft.destinationCode || "···"}</span></div>
@@ -215,7 +191,7 @@ export default function LiveSky({ onModeChange, place, onPlaceChange, weatherUni
           </div>
           <div className="boarding-pass-stub-details">
             <BoardingPassActions className="live-actions"><button type="button" className="primary-button" onClick={useLocation} disabled={locating}><LocateFixed size={17} />{locating ? "Finding your location…" : "Use my location"}</button><button type="button" className="refresh-button" onClick={() => setRefreshKey((key) => key + 1)}><RefreshCw size={15} />Refresh</button></BoardingPassActions>
-            {locationError && <p className="live-location-error" role="status">{locationError}</p>}
+            {locationIssue && <LocationFeedback key={locationIssue} issue={locationIssue} onRetry={useLocation} />}
           </div>
         </div>}
       </BoardingPassDisplay>
@@ -239,6 +215,6 @@ export default function LiveSky({ onModeChange, place, onPlaceChange, weatherUni
       </article></aside>
     </div>
 
-    <footer className="site-footer"><span className="footer-brand">overhead<span className="brand-period">.</span></span><HeroBackgroundToggle value={heroBackground} onChange={onHeroBackgroundChange} /><WeatherUnitToggle value={weatherUnit} onChange={onWeatherUnitChange} /><ProjectCredits /></footer>
+    <SiteFooter heroBackground={heroBackground} onHeroBackgroundChange={onHeroBackgroundChange} weatherUnit={weatherUnit} onWeatherUnitChange={onWeatherUnitChange} />
   </main>;
 }

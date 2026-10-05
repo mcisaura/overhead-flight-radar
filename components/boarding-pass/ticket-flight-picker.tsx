@@ -1,23 +1,22 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Helicopter, Plane, PlaneLanding } from "lucide-react";
 import { demoFlights } from "../../lib/demo-data";
 import { aircraftVisualForFlight } from "../../lib/aircraft-visual";
 
 export default function TicketFlightPicker({ onSelect }: { onSelect: (id: string) => void }) {
-  const titleId = useId();
-  const headingRef = useRef<HTMLHeadingElement>(null);
+  const pickerRef = useRef<HTMLElement>(null);
   const [previewId, setPreviewId] = useState<string | null>(null);
-  useEffect(() => { headingRef.current?.focus({ preventScroll: true }); }, []);
+  useEffect(() => { pickerRef.current?.focus({ preventScroll: true }); }, []);
   const preview = demoFlights.find((item) => item.id === previewId);
   const previewRoute = preview?.origin && preview.destination
     ? `${preview.origin.code} → ${preview.destination.code}`
     : preview?.scenario.localSegment ? `${preview.scenario.localSegment.entry.code} → ${preview.scenario.localSegment.exit.code}` : "";
-  return <section className="ticket-flight-picker" aria-labelledby={titleId} onMouseLeave={(event) => {
+  return <section className="ticket-flight-picker" aria-label="Choose a flight" ref={pickerRef} tabIndex={-1} onMouseLeave={(event) => {
     if (!event.currentTarget.contains(document.activeElement)) setPreviewId(null);
   }} onBlur={(event) => {
     if (!event.currentTarget.contains(event.relatedTarget)) setPreviewId(null);
   }}>
-    <div className="ticket-picker-heading"><h2 id={titleId} ref={headingRef} tabIndex={-1}>Try a flight<span className="ticket-picker-title-dot" aria-hidden="true">.</span></h2><span>30 sec simulation</span></div>
+    <div className="ticket-picker-heading"><span>30 sec simulation</span></div>
     <ol>{demoFlights.map((item) => {
       const kind = aircraftVisualForFlight(item.aircraft);
       const label = kind === "airliner" ? "Big plane" : kind === "small" ? "Small plane" : "Helicopter";
