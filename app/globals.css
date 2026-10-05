@@ -1742,9 +1742,9 @@ button, input, select,
   transition: background-color 160ms ease, border-color 160ms ease, box-shadow 120ms ease, transform 100ms ease;
 }
 .live-shell .boarding-pass .live-ticket-actions .ticket-refresh-utility { width: 36px; padding: 0; border: 0; background: transparent; color: #426272; }
-.live-shell .boarding-pass .live-ticket-actions > .simulate-flight-button { border-color: #c9ac75; background: #f4e5c8; color: #6f5027; }
+.live-shell .boarding-pass .live-ticket-actions > .simulate-flight-button { border-color: #9ebacd; background: #e5f0f7; color: #17465a; }
 .live-shell .boarding-pass .live-ticket-actions .ticket-refresh-utility:hover { background: #edf2f1; color: #17465a; }
-.live-shell .boarding-pass .live-ticket-actions > .simulate-flight-button:hover { border-color: #b79358; background: #eed8af; }
+.live-shell .boarding-pass .live-ticket-actions > .simulate-flight-button:hover { border-color: #588fab; background: #d8e9f4; }
 .live-shell .boarding-pass .live-ticket-actions button:not(:disabled):active { transform: translateY(1px); box-shadow: inset 0 2px 3px #102f4429; }
 .live-ticket-actions .primary-button svg { margin-left: 0; transform: none; }
 .live-shell .live-ticket-actions .primary-button:hover svg { transform: none; }
@@ -1752,9 +1752,9 @@ button, input, select,
 .live-ticket-actions .simulate-flight-button svg { color: inherit; }
 .live-ticket-actions .primary-button:hover { transform: none; box-shadow: none; }
 [data-theme="dark"] .live-shell .boarding-pass .live-ticket-actions .ticket-refresh-utility { background: transparent; color: #b4b4b4; }
-[data-theme="dark"] .live-shell .boarding-pass .live-ticket-actions > .simulate-flight-button { border-color: #715831; background: #2e2518; color: #efd4a6; }
+[data-theme="dark"] .live-shell .boarding-pass .live-ticket-actions > .simulate-flight-button { border-color: #40566a; background: #18232c; color: #d3e8f8; }
 [data-theme="dark"] .live-shell .boarding-pass .live-ticket-actions .ticket-refresh-utility:hover { background: #252525; color: #eeeeee; }
-[data-theme="dark"] .live-shell .boarding-pass .live-ticket-actions > .simulate-flight-button:hover { border-color: #9b7844; background: #3c301d; }
+[data-theme="dark"] .live-shell .boarding-pass .live-ticket-actions > .simulate-flight-button:hover { border-color: #7196b3; background: #223444; }
 [data-theme="dark"] .live-shell .boarding-pass .live-ticket-actions button:not(:disabled):active { box-shadow: inset 0 2px 3px #0005; }
 @media (max-width: 520px) {
   .live-quiet-codes > div > span { font-size: 8px; letter-spacing: .04em; }
