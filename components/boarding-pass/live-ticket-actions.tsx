@@ -1,5 +1,4 @@
-import { LocateFixed, RefreshCw } from "lucide-react";
-import FlightPathIcon from "../controls/flight-path-icon";
+import { LocateFixed, PlaneTakeoff, RefreshCw } from "lucide-react";
 
 export default function LiveTicketActions({ locating, onUseLocation, onRefresh, onSimulate }: {
   locating: boolean;
@@ -12,6 +11,6 @@ export default function LiveTicketActions({ locating, onUseLocation, onRefresh, 
       <LocateFixed size={15} aria-hidden="true" />{locating ? "Locating…" : "Use my location"}
     </button>
     <button type="button" className="refresh-button" onClick={onRefresh}><RefreshCw size={15} aria-hidden="true" />Refresh</button>
-    <button type="button" className="refresh-button simulate-flight-button" onClick={onSimulate}><FlightPathIcon />Simulate a flight</button>
+    <button type="button" className="refresh-button simulate-flight-button" onClick={onSimulate}><PlaneTakeoff size={15} aria-hidden="true" />Simulate a flight</button>
   </div>;
 }
