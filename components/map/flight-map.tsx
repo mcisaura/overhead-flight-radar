@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type * as Leaflet from "leaflet";
 import { ZONE_RADIUS_KM } from "../../lib/zone-progress";
+import { mapAircraftForDisplay } from "../../lib/map-position";
 import { airlineIdentity, displayAircraftType, displayFlightName, formatDistanceNm, type AirlineIdentity } from "../../lib/flight-display";
 import FlightLink from "../boarding-pass/flight-link";
 import AircraftModelLabel from "../boarding-pass/aircraft-model-label";
@@ -72,7 +73,8 @@ function headingPoint(plane: MapAircraft, distanceKm: number) {
     plane.lon + Math.sin(radians) * distanceKm / kmPerLon] as [number, number];
 }
 
-export default function FlightMap({ lat, lon, aircraft, closestHex, demo = false, locationLabel, showDetails = true, exiting = false, onSelect }: Props) {
+export default function FlightMap({ lat, lon, aircraft: reportedAircraft, closestHex, demo = false, locationLabel, showDetails = true, exiting = false, onSelect }: Props) {
+  const aircraft = useMemo(() => mapAircraftForDisplay(reportedAircraft, lon), [reportedAircraft, lon]);
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<Leaflet.Map | null>(null);
   const markerLayerRef = useRef<Leaflet.LayerGroup | null>(null);

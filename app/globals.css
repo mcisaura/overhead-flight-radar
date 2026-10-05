@@ -519,10 +519,12 @@ button:disabled { opacity: .6; cursor: wait; }
 .compact-presets .preset-button:not(.active):hover .preset-action { transform: translateX(2px); background: var(--preset-tint); }
 .compact-presets .preset-button:focus-visible { outline-color: var(--preset-accent); outline-offset: 3px; }
 .compact-presets .preset-button.active .preset-action { border-color: var(--preset-accent); background: var(--preset-accent); color: white; }
-.sky-dashboard { display: grid; grid-template-columns: minmax(0, 1fr) 340px; align-items: start; gap: 28px; max-width: 1320px; margin: 0 auto; padding: 32px 36px 0; }
+.sky-dashboard { max-width: 1320px; margin: 0 auto; padding: 32px 36px 0; }
+.map-details-card { display: grid; grid-template-columns: minmax(0, 1fr) 340px; overflow: hidden; border: 1px solid var(--rule); border-radius: 14px; background: #fffefa; box-shadow: 0 18px 38px #17374616; }
 .sky-dashboard .map-section { padding: 0; margin: 0; min-width: 0; width: 100%; }
-.sky-dashboard .map-frame { min-height: 500px; height: 500px; }
-.flight-sidebar { min-width: 0; min-height: 500px; margin: 0; padding: 24px; border: 1px solid var(--rule); border-radius: 14px; background: #fffefa; }
+.sky-dashboard .map-frame { min-height: 500px; height: 500px; border: 0; border-radius: 0; box-shadow: none; }
+.map-details-card .map-note { margin: 0; padding: 12px 16px; border-top: 1px solid var(--rule); }
+.flight-sidebar { min-width: 0; margin: 0; padding: 24px; border-left: 1px solid var(--rule); }
 .flight-sidebar .flight-panel { padding: 0; }
 .flight-sidebar .airport-code { font-size: 43px; }
 .flight-sidebar .airport-city { font-size: 12px; }
@@ -540,7 +542,7 @@ button:disabled { opacity: .6; cursor: wait; }
 .map-preview-controls > div { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 15px; }
 @media (max-width: 1000px) {
   .header-weather-stat { display: none; }
-  .sky-dashboard { grid-template-columns: minmax(0, 1fr) 290px; gap: 20px; }
+  .map-details-card { grid-template-columns: minmax(0, 1fr) 290px; }
   .flight-sidebar { padding: 19px; }
 }
 @media (max-width: 760px) {
@@ -548,9 +550,10 @@ button:disabled { opacity: .6; cursor: wait; }
   .compact-presets .presets-heading { flex-direction: column; gap: 6px; }
   .compact-presets .preset-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .compact-presets .preset-button:last-child { grid-column: 1 / -1; }
-  .sky-dashboard { grid-template-columns: 1fr; padding: 26px 28px 0; }
+  .sky-dashboard { padding: 26px 28px 0; }
+  .map-details-card { grid-template-columns: minmax(0, 1fr); }
   .sky-dashboard .map-frame { min-height: 0; height: 500px; }
-  .flight-sidebar { min-height: 0; }
+  .flight-sidebar { border-left: 0; border-top: 1px solid var(--rule); }
   .flight-sidebar .stat-row { grid-template-columns: repeat(3, 1fr); }
   .flight-sidebar .stat-row > div { flex-direction: column; }
   .sky-stage { height: auto; min-height: 650px; padding-bottom: 75px; }
@@ -601,7 +604,6 @@ button:disabled { opacity: .6; cursor: wait; }
 .live-aircraft-scene { text-align: center; transition: transform .25s linear; }
 .live-aircraft-scene img { display: block; width: 100%; height: auto; filter: drop-shadow(0 31px 20px #28546a29); }
 .live-stage .sky-plane-progress { position: relative; inset: auto; width: min(430px, 100%); max-width: none; margin: 18px auto 0; pointer-events: auto; }
-.live-shell .flight-sidebar { min-height: 500px; }
 .live-shell .flight-sidebar .empty-copy { min-height: 190px; }
 .live-weather-empty { margin: 0; color: var(--ink-soft); font-size: 13px; }
 @media (max-width: 760px) {
@@ -977,6 +979,16 @@ button:disabled { opacity: .6; cursor: wait; }
 }
 .sky-stage.has-flight .pixel-walker { z-index: 2; bottom: 7px; width: 30px; height: 45px; }
 .sky-stage.has-flight .pixel-walker svg { width: 30px; height: 45px; }
+/* A generous hit area follows the pixel character; the lifted copy escapes hero clipping. */
+.progress-walker-control, .progress-walker-ghost { position: absolute; bottom: 0; z-index: 5; display: block; width: 44px; height: 56px; padding: 0; border: 0; border-radius: 6px; background: none; transform: translateX(-50%); cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+.progress-walker-control:active, .progress-walker-ghost { cursor: grabbing; }
+.progress-walker-ghost { position: fixed; bottom: auto; z-index: 2000; }
+.hero-progress-baseline .progress-walker-control .pixel-walker, .progress-walker-ghost .pixel-walker { display: block; bottom: 7px; width: 30px; height: 45px; pointer-events: none; }
+.progress-walker-ghost .pixel-walker svg { width: 30px; height: 45px; }
+@media (prefers-reduced-motion: reduce) {
+  .progress-walker-control .walker-stride-a, .progress-walker-control .walker-stride-b { animation: none; }
+  .progress-walker-control .walker-stride-b { display: none; }
+}
 .sky-stage.has-flight .hero-crossing.minimal-progress {
   display: flex;
   align-items: flex-end;
@@ -1104,8 +1116,10 @@ button:disabled { opacity: .6; cursor: wait; }
 [data-theme="dark"] .compact-presets .preset-button:not(.active):hover .preset-action { background: color-mix(in srgb, var(--preset-accent) 20%, #1b1b1b); }
 [data-theme="dark"] .compact-presets .preset-button.active .preset-icon,
 [data-theme="dark"] .compact-presets .preset-button.active .preset-action { color: #111111; }
-[data-theme="dark"] .flight-sidebar { border-color: #ffffff09; background: #101010; }
+[data-theme="dark"] .map-details-card { border-color: #ffffff14; background: #101010; box-shadow: 0 12px 32px #0006; }
+[data-theme="dark"] .flight-sidebar { border-color: #ffffff14; }
 [data-theme="dark"] .map-frame { border-color: #ffffff0d; background: #0c0c0c; box-shadow: 0 12px 32px #0006; }
+[data-theme="dark"] .map-details-card .map-frame { box-shadow: none; }
 [data-theme="dark"] .flight-map .leaflet-tile-pane { filter: grayscale(1) invert(1) brightness(.64) contrast(1.15); opacity: .72; }
 [data-theme="dark"] .map-chart-grid { background-image: linear-gradient(#ffffff0c 1px, transparent 1px), linear-gradient(90deg, #ffffff0c 1px, transparent 1px); }
 [data-theme="dark"] .map-view-switch,
@@ -1766,7 +1780,7 @@ button, input, select,
   .boarding-pass-stub-codes span, .boarding-pass-stub-codes strong, .boarding-pass-stats span,
   .boarding-pass-stats strong, .boarding-pass-stats > div, .boarding-route-label, .boarding-route-city,
   .boarding-route-stop strong, .boarding-route-connector, .hero-flight-details, .hero-description,
-  .flight-sidebar, .detail-panel, .map-frame, .map-view-switch, .map-flight-card,
+  .map-details-card, .flight-sidebar, .detail-panel, .map-frame, .map-view-switch, .map-flight-card,
   .map-card-stats, .plane-marker, .leaflet-tooltip, .leaflet-control-zoom a, .leaflet-control-attribution,
   .primary-button, .refresh-button, .zone-play, .zone-reset, .mode-toggle, .theme-toggle,
   .weather-unit-toggle, .hero-background-select-wrap, .sliding-choice-group button,

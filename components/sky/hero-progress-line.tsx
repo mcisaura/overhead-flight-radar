@@ -2,12 +2,17 @@
 
 import { useEffect, useRef, useState } from "react";
 import ProgressWalker from "./progress-walker";
+import DraggableProgressWalker from "./draggable-progress-walker";
 
 type HeroProgressLineProps = {
   progress: number | null;
   label: string;
   valueText: string;
   live?: boolean;
+  paused?: boolean;
+  onScrubStart?: () => void;
+  onProgressChange?: (progress: number) => void;
+  onScrubEnd?: () => void;
 };
 
 function walkerPositionForProgress(progress: number) {
@@ -17,7 +22,9 @@ function walkerPositionForProgress(progress: number) {
   return 50 * (100 - crossing) / 40;
 }
 
-export default function HeroProgressLine({ progress, label, valueText, live = false }: HeroProgressLineProps) {
+export default function HeroProgressLine({ progress, label, valueText, live = false, paused: playbackPaused = false, onScrubStart, onProgressChange, onScrubEnd }: HeroProgressLineProps) {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const interactive = Boolean(!live && onScrubStart && onProgressChange && onScrubEnd);
   const initialPosition = walkerPositionForProgress(progress ?? 0);
   const [walkerProgress, setWalkerProgress] = useState(initialPosition);
   const walkerPosition = useRef(initialPosition);
@@ -26,7 +33,7 @@ export default function HeroProgressLine({ progress, label, valueText, live = fa
   const lastTimeRef = useRef(0);
 
   useEffect(() => {
-    if (progress == null) return;
+    if (progress == null || interactive) return;
     walkerTarget.current = walkerPositionForProgress(progress);
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       window.cancelAnimationFrame(frameRef.current);
@@ -54,7 +61,7 @@ export default function HeroProgressLine({ progress, label, valueText, live = fa
       }
     };
     frameRef.current = window.requestAnimationFrame(move);
-  }, [progress]);
+  }, [progress, interactive]);
 
   useEffect(() => () => {
     window.cancelAnimationFrame(frameRef.current);
@@ -64,8 +71,10 @@ export default function HeroProgressLine({ progress, label, valueText, live = fa
   const paused = progress != null && ((progress >= 50 && progress < 60 && walkerProgress >= 49.5) || (progress >= 100 && walkerProgress <= 0.5));
   const returning = progress != null && progress >= 60;
   return <div className={`hero-baseline hero-progress-baseline ${live ? "is-live" : ""}`}>
-    <div className="hero-baseline-track" role={progress == null ? undefined : "progressbar"} aria-label={progress == null ? `${label}: progress unavailable until a heading is reported` : label} aria-valuemin={progress == null ? undefined : 0} aria-valuemax={progress == null ? undefined : 100} aria-valuenow={progress == null ? undefined : Number(progress.toFixed(1))} aria-valuetext={progress == null ? undefined : valueText}>
-      {progress != null && <><span className="hero-baseline-fill" style={{ width: `${progress}%` }} /><ProgressWalker progress={walkerProgress} pointing={pointing} paused={paused} returning={returning} /></>}
+    <div ref={trackRef} className="hero-baseline-track" role={progress == null || interactive ? undefined : "progressbar"} aria-label={progress == null ? `${label}: progress unavailable until a heading is reported` : interactive ? undefined : label} aria-valuemin={progress == null || interactive ? undefined : 0} aria-valuemax={progress == null || interactive ? undefined : 100} aria-valuenow={progress == null || interactive ? undefined : Number(progress.toFixed(1))} aria-valuetext={progress == null || interactive ? undefined : valueText}>
+      {progress != null && <><span className="hero-baseline-fill" style={{ width: `${progress}%` }} />{interactive
+        ? <DraggableProgressWalker progress={progress} paused={playbackPaused} trackRef={trackRef} onStart={onScrubStart!} onChange={onProgressChange!} onEnd={onScrubEnd!} />
+        : <ProgressWalker progress={walkerProgress} pointing={pointing} paused={paused} returning={returning} />}</>}
     </div>
     <span className="hero-baseline-percent" aria-hidden="true">{progress == null ? "—" : `${Math.round(progress)}%`}</span>
   </div>;

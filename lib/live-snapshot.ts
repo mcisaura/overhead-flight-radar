@@ -21,3 +21,14 @@ export function closestLiveAircraft<T extends { hex: string; distanceKm: number;
   }
   return closest;
 }
+
+export function liveRefreshTarget(
+  trackedHex: string | undefined,
+  trackedAircraft: { distanceKm: number } | undefined,
+  closestAircraft: { hex: string } | null,
+): { kind: "handoff" | "exit"; hex: string } | null {
+  // A fresh replacement can survive after the tracked report expires while hidden.
+  if (closestAircraft && closestAircraft.hex !== trackedHex) return { kind: "handoff", hex: closestAircraft.hex };
+  if (trackedHex && trackedAircraft && trackedAircraft.distanceKm > ZONE_RADIUS_KM) return { kind: "exit", hex: trackedHex };
+  return null;
+}

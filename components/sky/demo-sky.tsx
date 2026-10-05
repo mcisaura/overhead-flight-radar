@@ -36,6 +36,7 @@ export default function DemoSky({ onModeChange, weatherUnit, onWeatherUnitChange
   const [flightRun, setFlightRun] = useState(0);
   const [progress, setProgress] = useState(0);
   const [playing, setPlaying] = useState(false);
+  const [scrubbing, setScrubbing] = useState(false);
   const [preparing, setPreparing] = useState(false);
   const pendingStartRef = useRef(false);
   const modelReadyRef = useRef(false);
@@ -94,7 +95,7 @@ export default function DemoSky({ onModeChange, weatherUnit, onWeatherUnitChange
   }
 
   useEffect(() => {
-    if (!playing || !selected) return;
+    if (!playing || !selected || scrubbing) return;
     let lastTick = performance.now();
     const tick = () => {
       const now = performance.now();
@@ -113,10 +114,10 @@ export default function DemoSky({ onModeChange, weatherUnit, onWeatherUnitChange
     const timer = window.setInterval(tick, 50);
     document.addEventListener("visibilitychange", tick);
     return () => { window.clearInterval(timer); document.removeEventListener("visibilitychange", tick); };
-  }, [playing, selected, flightRun]);
+  }, [playing, selected, flightRun, scrubbing]);
 
   useEffect(() => {
-    if (phase !== "exiting") return;
+    if (phase !== "exiting" || scrubbing) return;
     const timer = window.setTimeout(() => {
       setSelectedId(null);
       setPhase("empty");
@@ -126,7 +127,7 @@ export default function DemoSky({ onModeChange, weatherUnit, onWeatherUnitChange
       setPreparing(false);
     }, 2000);
     return () => window.clearTimeout(timer);
-  }, [phase]);
+  }, [phase, scrubbing]);
 
   function startWhenReady() {
     if (!pendingStartRef.current || !modelReadyRef.current || !passReadyRef.current) return;
@@ -136,6 +137,7 @@ export default function DemoSky({ onModeChange, weatherUnit, onWeatherUnitChange
   }
 
   function selectFlight(id: string) {
+    setScrubbing(false);
     setPickerOpen(false);
     pendingStartRef.current = true;
     modelReadyRef.current = false;
@@ -163,6 +165,7 @@ export default function DemoSky({ onModeChange, weatherUnit, onWeatherUnitChange
   }
 
   function clearSky() {
+    setScrubbing(false);
     setPickerOpen(true);
     pendingStartRef.current = false;
     setPlaying(false);
@@ -225,10 +228,13 @@ export default function DemoSky({ onModeChange, weatherUnit, onWeatherUnitChange
           modelReadyRef.current = true;
           startWhenReady();
         }} /></Suspense></div>}
-        {flight && <HeroProgressLine key={`${selectedId}-${flightRun}`} progress={progress} label={`${flight.callsign || "Aircraft"} crossing the zone`} valueText={`${Math.round(progress)}%, ${crossingStatus.toLowerCase()}`} />}
+        {flight && <HeroProgressLine key={`${selectedId}-${flightRun}`} progress={progress} label={`${flight.callsign || "Aircraft"} crossing the zone`} valueText={`${Math.round(progress)}%, ${crossingStatus.toLowerCase()}`}
+          paused={!playing} onScrubStart={() => { setScrubbing(true); setPreviewProgress(progressRef.current); }}
+          onProgressChange={setPreviewProgress} onScrubEnd={() => setScrubbing(false)} />}
       </section>
 
       <div className="sky-dashboard">
+      <div className="map-details-card">
       <FlightMap lat={demoPlace.lat} lon={demoPlace.lon} aircraft={mapAircraft} closestHex={flight?.hex ?? null} demo showDetails={false} exiting={phase === "exiting"} onSelect={(hex) => {
         const match = demoFlights.find((item) => item.aircraft.hex === hex);
         if (match) selectFlight(match.id);
@@ -256,6 +262,7 @@ export default function DemoSky({ onModeChange, weatherUnit, onWeatherUnitChange
             <div><button type="button" className="zone-reset" onClick={() => setPreviewProgress(0)}><RotateCcw size={15} />Reset to entry</button><button type="button" className="zone-clear" onClick={clearSky}>Clear sky</button></div>
           </div>}
         </aside>
+      </div>
       </div>
 
       <SiteFooter heroBackground={heroBackground} onHeroBackgroundChange={onHeroBackgroundChange} weatherUnit={weatherUnit} onWeatherUnitChange={onWeatherUnitChange} />

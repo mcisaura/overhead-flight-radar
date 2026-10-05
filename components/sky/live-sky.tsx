@@ -7,7 +7,7 @@ import SiteHeader from "../site-header";
 import LocationFeedback from "../controls/location-feedback";
 import { createLocationRequester, type LocationIssue } from "../../lib/location-access";
 import { ZONE_RADIUS_KM, zoneProgress } from "../../lib/zone-progress";
-import { closestLiveAircraft, projectLiveAircraft } from "../../lib/live-snapshot";
+import { closestLiveAircraft, liveRefreshTarget, projectLiveAircraft } from "../../lib/live-snapshot";
 import FlightLink from "../boarding-pass/flight-link";
 import FlightIdentity, { flightIdentityText } from "../boarding-pass/flight-identity";
 import LiveTicketActions from "../boarding-pass/live-ticket-actions";
@@ -119,28 +119,21 @@ export default function LiveSky({ onModeChange, onSimulateFlight, place, onPlace
 
   const aircraft = projectLiveAircraft(data?.aircraft ?? [], place, receivedAt, clockMs);
   const selectedAircraft = aircraft.find((plane) => plane.hex === data?.flight?.hex);
-  const selectedAircraftPresent = Boolean(selectedAircraft);
   const inZone = Boolean(selectedAircraft && selectedAircraft.distanceKm <= ZONE_RADIUS_KM);
   const flight = inZone ? data?.flight ?? null : null;
   const closestAircraft = closestLiveAircraft(aircraft);
+  const refreshTarget = liveRefreshTarget(data?.flight?.hex, selectedAircraft, closestAircraft);
+  const refreshKind = refreshTarget?.kind;
+  const refreshHex = refreshTarget?.hex;
   useEffect(() => {
-    const hex = data?.flight?.hex;
-    if (hex && selectedAircraftPresent && !inZone && !error && exitRefreshHex.current !== hex) {
-      exitRefreshHex.current = hex;
+    if (refreshKind !== "handoff") takeoverRefreshHex.current = null;
+    if (error || !refreshHex) return;
+    const lastRefresh = refreshKind === "handoff" ? takeoverRefreshHex : exitRefreshHex;
+    if (lastRefresh.current !== refreshHex) {
+      lastRefresh.current = refreshHex;
       setRefreshKey((key) => key + 1);
     }
-  }, [data?.flight?.hex, selectedAircraftPresent, inZone, error]);
-  useEffect(() => {
-    const closestHex = closestAircraft?.hex;
-    if (!flight || !closestHex || closestHex === flight.hex) {
-      takeoverRefreshHex.current = null;
-      return;
-    }
-    if (!error && takeoverRefreshHex.current !== closestHex) {
-      takeoverRefreshHex.current = closestHex;
-      setRefreshKey((key) => key + 1);
-    }
-  }, [flight, closestAircraft?.hex, error]);
+  }, [refreshKind, refreshHex, error]);
   const routeKnown = flight?.routeStatus === "verified";
   const routeImplausible = flight?.routeStatus === "implausible";
   const coverageWarning = data?.warnings.find((warning) => warning.includes("coverage")) ?? null;
@@ -202,6 +195,7 @@ export default function LiveSky({ onModeChange, onSimulateFlight, place, onPlace
     </section>
 
     <div className="sky-dashboard">
+      <div className="map-details-card">
       <FlightMap lat={place.lat} lon={place.lon} aircraft={aircraft} closestHex={flight?.hex ?? null} locationLabel={place.sample ? "Downtown Houston" : "Your location"} />
       <aside className="flight-sidebar" aria-label="Live flight details"><article className="detail-panel flight-panel">
         <div className="detail-title"><Navigation2 size={18} strokeWidth={1.8} /><h3><FlightLink callsign={flight?.callsign} registration={flight?.registration}>{flightName}</FlightLink></h3></div>
@@ -215,6 +209,7 @@ export default function LiveSky({ onModeChange, onSimulateFlight, place, onPlace
             </dl>
           </> : <p className="empty-copy">{loading ? "Checking for nearby flights…" : error || "No aircraft reported in this zone right now."}</p>}
       </article></aside>
+      </div>
     </div>
 
     <SiteFooter heroBackground={heroBackground} onHeroBackgroundChange={onHeroBackgroundChange} weatherUnit={weatherUnit} onWeatherUnitChange={onWeatherUnitChange} />
