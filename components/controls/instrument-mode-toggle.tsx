@@ -6,8 +6,8 @@ export default function InstrumentModeToggle({ mode, onChange }: {
   mode: "live" | "demo";
   onChange: (mode: "live" | "demo") => void;
 }) {
-  return <div className="instrument-mode-panel" data-mode={mode}>
-    <SlidingChoiceGroup className="instrument-mode-toggle" label="Data mode" motionKey="instrument-mode" selectedIndex={mode === "live" ? 0 : 1}>
+  return <div className="instrument-mode-panel mode-toggle" data-mode={mode}>
+    <SlidingChoiceGroup className="instrument-mode-toggle" label="Data mode" motionKey="mode" selectedIndex={mode === "live" ? 0 : 1}>
       <button type="button" title="Live · actual aircraft nearby" aria-pressed={mode === "live"} onClick={() => onChange("live")}>
         <svg className="instrument-live-signal" width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true">
           <circle cx="10" cy="10" r="2" fill="currentColor" />
