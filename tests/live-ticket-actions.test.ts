@@ -14,6 +14,6 @@ test("a pending location request leaves refresh and simulation available", () =>
   assert.match(buttons[0], /aria-busy="true"/);
   assert.match(buttons[1], /aria-label="Refresh sky"/);
   assert.match(buttons[1], /title="Refresh sky"/);
-  assert.match(buttons[2], /Simulate a flight/);
+  assert.match(buttons[2], /Try simulated flights/);
   for (const button of buttons.slice(1)) assert.doesNotMatch(button, /disabled/);
 });

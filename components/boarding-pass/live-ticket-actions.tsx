@@ -13,6 +13,6 @@ export default function LiveTicketActions({ locating, onUseLocation, onRefresh, 
       </button>
       <button type="button" className="ticket-refresh-utility" onClick={onRefresh} aria-label="Refresh sky" title="Refresh sky"><RefreshCw size={15} aria-hidden="true" /></button>
     </div>
-    <button type="button" className="refresh-button simulate-flight-button" onClick={onSimulate}><PlaneTakeoff size={15} aria-hidden="true" />Simulate a flight</button>
+    <button type="button" className="refresh-button simulate-flight-button" onClick={onSimulate}><PlaneTakeoff size={15} aria-hidden="true" />Try simulated flights</button>
   </div>;
 }
