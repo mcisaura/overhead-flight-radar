@@ -1730,43 +1730,44 @@ button, input, select,
 .live-shell .live-quiet-codes { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, .85fr); }
 .live-quiet-codes > .boarding-barcode { display: block; align-self: center; width: 100%; min-height: 0; margin: 0; }
 .live-quiet-codes .boarding-barcode svg { height: 28px; }
-.live-ticket-actions { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 8px; }
+.live-ticket-actions { display: grid; grid-template-columns: minmax(0, 1fr) 36px minmax(0, 1fr); gap: 12px; }
+.live-location-controls { grid-column: 1 / 3; display: grid; grid-template-columns: minmax(0, 1fr) 36px; gap: 6px; }
 .live-shell .empty-boarding-pass .boarding-pass-stub-details { padding-top: 14px; }
 .hero-flight-details .live-ticket-actions { margin-top: 18px; }
-.live-shell .boarding-pass .live-ticket-actions > button {
+.live-shell .boarding-pass .live-ticket-actions button {
+  display: inline-flex; align-items: center;
   width: 100%; min-width: 0; min-height: 36px; height: auto; padding: 0 6px;
   justify-content: center; gap: 5px; border-radius: 5px; font-size: 10px; font-weight: 700;
   white-space: nowrap; box-shadow: none;
   transition: background-color 160ms ease, border-color 160ms ease, box-shadow 120ms ease, transform 100ms ease;
 }
-.live-shell .boarding-pass .live-ticket-actions > .refresh-button:not(.simulate-flight-button) { width: 78px; border-color: #becdd2; background: #fffefa80; color: #426272; }
+.live-shell .boarding-pass .live-ticket-actions .ticket-refresh-utility { width: 36px; padding: 0; border: 0; background: transparent; color: #426272; }
 .live-shell .boarding-pass .live-ticket-actions > .simulate-flight-button { border-color: #9ebacd; background: #e8f2f8; color: #17465a; }
-.live-shell .boarding-pass .live-ticket-actions > .refresh-button:not(.simulate-flight-button):hover { border-color: #789aa8; background: #f1f6f5; }
+.live-shell .boarding-pass .live-ticket-actions .ticket-refresh-utility:hover { background: #edf2f1; color: #17465a; }
 .live-shell .boarding-pass .live-ticket-actions > .simulate-flight-button:hover { border-color: #588fab; background: #d9eaf4; }
-.live-shell .boarding-pass .live-ticket-actions > button:not(:disabled):active { transform: translateY(1px); box-shadow: inset 0 2px 3px #102f4429; }
+.live-shell .boarding-pass .live-ticket-actions button:not(:disabled):active { transform: translateY(1px); box-shadow: inset 0 2px 3px #102f4429; }
 .live-ticket-actions .primary-button svg { margin-left: 0; transform: none; }
 .live-shell .live-ticket-actions .primary-button:hover svg { transform: none; }
 .live-ticket-actions button svg { flex: none; width: 14px; height: 14px; }
 .live-ticket-actions .simulate-flight-button svg { color: #286484; }
 .live-ticket-actions .primary-button:hover { transform: none; box-shadow: none; }
 [data-theme="dark"] .live-ticket-actions .simulate-flight-button svg { color: #94bed8; }
-[data-theme="dark"] .live-shell .boarding-pass .live-ticket-actions > .refresh-button:not(.simulate-flight-button) { border-color: #464646; background: #161616; color: #c1c1c1; }
+[data-theme="dark"] .live-shell .boarding-pass .live-ticket-actions .ticket-refresh-utility { background: transparent; color: #b4b4b4; }
 [data-theme="dark"] .live-shell .boarding-pass .live-ticket-actions > .simulate-flight-button { border-color: #40566a; background: #18232c; color: #d3e8f8; }
-[data-theme="dark"] .live-shell .boarding-pass .live-ticket-actions > .refresh-button:not(.simulate-flight-button):hover { border-color: #737373; background: #232323; }
+[data-theme="dark"] .live-shell .boarding-pass .live-ticket-actions .ticket-refresh-utility:hover { background: #252525; color: #eeeeee; }
 [data-theme="dark"] .live-shell .boarding-pass .live-ticket-actions > .simulate-flight-button:hover { border-color: #7196b3; background: #223444; }
-[data-theme="dark"] .live-shell .boarding-pass .live-ticket-actions > button:not(:disabled):active { box-shadow: inset 0 2px 3px #0005; }
+[data-theme="dark"] .live-shell .boarding-pass .live-ticket-actions button:not(:disabled):active { box-shadow: inset 0 2px 3px #0005; }
 @media (max-width: 520px) {
   .live-quiet-codes > div > span { font-size: 8px; letter-spacing: .04em; }
   .live-quiet-codes .boarding-barcode svg { height: 22px; }
-  .live-ticket-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .live-ticket-actions > .primary-button { grid-column: 1 / -1; }
-  .live-shell .boarding-pass .live-ticket-actions > .refresh-button:not(.simulate-flight-button) { width: 100%; }
+  .live-ticket-actions { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .live-location-controls { grid-column: 1; }
   .live-shell .empty-boarding-pass .boarding-pass-stub-details { padding-top: 12px; }
   .hero-flight-details .live-ticket-actions { margin-top: 14px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .live-shell .boarding-pass .live-ticket-actions > button { transition: none; }
-  .live-shell .boarding-pass .live-ticket-actions > button:not(:disabled):active { transform: none; }
+  .live-shell .boarding-pass .live-ticket-actions button { transition: none; }
+  .live-shell .boarding-pass .live-ticket-actions button:not(:disabled):active { transform: none; }
 }
 
 /* Enable appearance transitions only during an explicit theme change. */
