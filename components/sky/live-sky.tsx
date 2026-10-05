@@ -11,6 +11,7 @@ import { closestLiveAircraft, projectLiveAircraft } from "../../lib/live-snapsho
 import FlightLink from "../boarding-pass/flight-link";
 import FlightIdentity, { flightIdentityText } from "../boarding-pass/flight-identity";
 import LiveTicketActions from "../boarding-pass/live-ticket-actions";
+import BoardingBarcode from "../boarding-pass/boarding-barcode";
 import BoardingRoute from "../boarding-pass/boarding-route";
 import { BoardingPassStats, BoardingPassStub } from "../boarding-pass/boarding-pass-extras";
 import type { SkyResponse } from "../../lib/sky-contract";
@@ -185,9 +186,10 @@ export default function LiveSky({ onModeChange, onSimulateFlight, place, onPlace
           </div>
         </BoardingPassStub>
       : <div className="boarding-pass-stub">
-          <div className="boarding-pass-stub-codes">
+          <div className="boarding-pass-stub-codes live-quiet-codes">
             <div><span>SKY STATUS</span><strong>{loading && !data ? "Checking for aircraft" : error ? "Feed unavailable" : coverageWarning ? "Coverage incomplete" : refreshNeeded ? "Refresh to check again" : "No nearby aircraft"}</strong></div>
             <div><span>OBSERVATION ZONE</span><strong>5 nautical miles</strong></div>
+            <BoardingBarcode />
           </div>
           <div className="boarding-pass-stub-details">
             <LiveTicketActions locating={locating} onUseLocation={useLocation} onRefresh={() => setRefreshKey((key) => key + 1)} onSimulate={onSimulateFlight} />

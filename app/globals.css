@@ -1727,6 +1727,9 @@ button, input, select,
 }
 
 /* Live actions occupy the existing controls area. */
+.live-shell .live-quiet-codes { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, .85fr); }
+.live-quiet-codes > .boarding-barcode { display: block; align-self: center; width: 100%; min-height: 0; margin: 0; }
+.live-quiet-codes .boarding-barcode svg { height: 28px; }
 .live-ticket-actions { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .8fr) minmax(0, 1.25fr); gap: 8px; }
 .hero-flight-details .live-ticket-actions { margin-top: 18px; }
 .live-shell .boarding-pass .live-ticket-actions > button {
@@ -1740,6 +1743,8 @@ button, input, select,
 .live-ticket-actions .primary-button:hover { transform: none; box-shadow: none; }
 [data-theme="dark"] .live-ticket-actions .simulate-flight-button svg { color: #94bed8; }
 @media (max-width: 520px) {
+  .live-quiet-codes > div > span { font-size: 8px; letter-spacing: .04em; }
+  .live-quiet-codes .boarding-barcode svg { height: 22px; }
   .live-ticket-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .live-ticket-actions > .primary-button { grid-column: 1 / -1; }
   .hero-flight-details .live-ticket-actions { margin-top: 14px; }
