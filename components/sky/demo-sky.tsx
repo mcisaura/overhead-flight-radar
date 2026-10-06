@@ -1,6 +1,6 @@
 "use client";
 
-import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ArrowRight, Navigation2, Pause, Play, RotateCcw } from "lucide-react";
 import FlightMap from "../map/flight-map";
 import SiteHeader from "../site-header";
@@ -26,7 +26,7 @@ const DEMO_CROSSING_DURATION_MS = 30_000;
 const AircraftModel = lazy(() => import("../sky/aircraft-model"));
 const HeroCloud = lazy(() => import("../sky/hero-cloud"));
 
-export default function DemoSky({ onModeChange, weatherUnit, onWeatherUnitChange, heroBackground, onHeroBackgroundChange, headerModeControl, initialPickerOpen = false }: { onModeChange: (mode: "live" | "demo") => void; weatherUnit: WeatherUnit; onWeatherUnitChange: (unit: WeatherUnit) => void; heroBackground: HeroBackground; onHeroBackgroundChange: (background: HeroBackground) => void; headerModeControl?: ReactNode; initialPickerOpen?: boolean }) {
+export default function DemoSky({ onModeChange, weatherUnit, onWeatherUnitChange, heroBackground, onHeroBackgroundChange, initialPickerOpen = false }: { onModeChange: (mode: "live" | "demo") => void; weatherUnit: WeatherUnit; onWeatherUnitChange: (unit: WeatherUnit) => void; heroBackground: HeroBackground; onHeroBackgroundChange: (background: HeroBackground) => void; initialPickerOpen?: boolean }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(initialPickerOpen);
   const passMainRef = useRef<HTMLDivElement>(null);
@@ -179,7 +179,7 @@ export default function DemoSky({ onModeChange, weatherUnit, onWeatherUnitChange
 
   return (
     <main className={`app-shell hero-background-${heroBackground} demo-ticket-picker`}>
-      <SiteHeader mode="demo" onModeChange={onModeChange} placeLabel={demoPlace.label} weather={demoWeather} weatherUnit={weatherUnit} modeControl={headerModeControl} />
+      <SiteHeader mode="demo" onModeChange={onModeChange} placeLabel={demoPlace.label} weather={demoWeather} weatherUnit={weatherUnit} />
 
       <section className={`sky-stage sky-${phase} ${flight ? "has-flight" : ""}`} aria-labelledby="hero-title">
         <div className="sky-art" aria-hidden="true" />

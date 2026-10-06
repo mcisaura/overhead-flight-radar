@@ -1704,12 +1704,6 @@ button, input, select,
 }
 .instrument-mode-panel[data-mode="demo"] .choice-selection-pill::after { background: repeating-linear-gradient(90deg, var(--instrument-accent) 0 3px, transparent 3px 5px); }
 @keyframes instrument-symbol-in { from { opacity: .4; transform: translateY(2px); } to { opacity: 1; transform: translateY(0); } }
-.instrument-preview-note {
-  display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  padding: 9px clamp(20px, 5vw, 80px); color: var(--ink-soft); background: var(--paper);
-  border-bottom: 1px solid var(--rule); font-size: 10px; line-height: 1.4;
-}
-.instrument-preview-note a { flex: none; color: var(--ink); text-underline-offset: 3px; }
 [data-theme="dark"] .instrument-mode-panel { --instrument-accent: #236946; }
 [data-theme="dark"] .instrument-mode-panel[data-mode="demo"] { --instrument-accent: #286484; }
 [data-theme="dark"] .instrument-mode-toggle { border-color: #535953; background: #151815; }
@@ -1722,7 +1716,6 @@ button, input, select,
 [data-theme="dark"] .instrument-mode-toggle button:not([aria-pressed="true"]):hover { color: #edf1e6; background: #ffffff12; }
 @media (max-width: 520px) {
   .instrument-mode-toggle button { width: 58px; font-size: 10px; gap: 4px; }
-  .instrument-preview-note { font-size: 9px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .instrument-mode-toggle button[aria-pressed="true"] svg { animation: none; }

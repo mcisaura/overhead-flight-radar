@@ -1,5 +1,4 @@
 import { CloudSun, MapPin, Navigation2 } from "lucide-react";
-import type { ReactNode } from "react";
 import ModeToggle from "./controls/mode-toggle";
 import type { SkyResponse } from "../lib/sky-contract";
 import { formatTemperature, formatWind, type WeatherUnit } from "../lib/weather-units";
@@ -15,14 +14,13 @@ function weatherLabel(code: number) {
   return "Stormy";
 }
 
-export default function SiteHeader({ mode, onModeChange, placeLabel, weather, weatherUnit, loading = false, modeControl }: {
+export default function SiteHeader({ mode, onModeChange, placeLabel, weather, weatherUnit, loading = false }: {
   mode: "live" | "demo";
   onModeChange: (mode: "live" | "demo") => void;
   placeLabel: string;
   weather: SkyResponse["weather"];
   weatherUnit: WeatherUnit;
   loading?: boolean;
-  modeControl?: ReactNode;
 }) {
   const source = mode === "demo" ? "Sample weather" : "Live weather";
   const condition = weather ? weatherLabel(weather.code) : loading ? "Loading weather…" : "Unavailable";
@@ -39,7 +37,7 @@ export default function SiteHeader({ mode, onModeChange, placeLabel, weather, we
         <span className="header-weather-stat header-weather-wind">Wind {weather ? formatWind(weather.windMph, weatherUnit) : "—"}</span>
       </div>
       <div className="topbar-right">
-        {modeControl ?? <ModeToggle mode={mode} onChange={onModeChange} />}
+        <ModeToggle mode={mode} onChange={onModeChange} />
         <span className="top-divider" />
         <span className="topbar-place" title={placeLabel}><MapPin size={15} /><span className="topbar-place-text">{placeLabel.split(" · ")[0]}</span></span>
       </div>
