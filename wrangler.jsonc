@@ -1,0 +1,55 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "overhead-flight-radar",
+  "account_id": "ad00798f4b7b4313624a6daac07098b3",
+  "main": "./worker.ts",
+  "compatibility_date": "2026-05-15",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "workers_dev": true,
+  "ratelimits": [
+    {
+      "name": "SKY_CLIENT_LIMIT",
+      "namespace_id": "2718281801",
+      "simple": {
+        "limit": 12,
+        "period": 60
+      }
+    },
+    {
+      "name": "SKY_LOCATION_LIMIT",
+      "namespace_id": "2718281802",
+      "simple": {
+        "limit": 120,
+        "period": 60
+      }
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "AIRLABS_BUDGET",
+        "class_name": "AirLabsBudget"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "airlabs-budget-v1",
+      "new_sqlite_classes": [
+        "AirLabsBudget"
+      ]
+    }
+  ],
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "enabled": true,
+      "invocation_logs": false
+    },
+    "traces": {
+      "enabled": false
+    }
+  }
+}

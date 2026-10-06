@@ -12,7 +12,9 @@
     "test": "node --import tsx --test tests/*.test.ts",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "typecheck": "tsc --noEmit",
-    "check": "npm test && npm run typecheck && npm run lint && npm run build"
+    "check": "npm test && npm run typecheck && npm run lint && npm run build",
+    "deploy": "wrangler deploy --config dist/server/wrangler.json",
+    "types": "wrangler types cloudflare-env.d.ts --include-runtime=false"
   },
   "dependencies": {
     "leaflet": "^1.9.4",

@@ -1,19 +1,6 @@
 import vinext from "vinext";
 import { defineConfig } from "vite";
 
-// Local Worker bindings. Deployment uses the same names from the generated
-// dist/server/wrangler.json.
-const localBindingConfig = {
-  main: "./worker.ts",
-  compatibility_flags: ["nodejs_compat"],
-  ratelimits: [
-    { name: "SKY_CLIENT_LIMIT", namespace_id: "2718281801", simple: { limit: 12, period: 60 as const } },
-    { name: "SKY_LOCATION_LIMIT", namespace_id: "2718281802", simple: { limit: 120, period: 60 as const } },
-  ],
-  durable_objects: { bindings: [{ name: "AIRLABS_BUDGET", class_name: "AirLabsBudget" }] },
-  migrations: [{ tag: "airlabs-budget-v1", new_sqlite_classes: ["AirLabsBudget"] }],
-};
-
 // Some macOS sandboxes block FSEvents; fall back to polling so HMR still works.
 const pollForChanges = process.env.CODEX_SANDBOX === "seatbelt";
 
@@ -39,7 +26,7 @@ export default defineConfig(async () => {
       cloudflare({
         viteEnvironment: { name: "rsc", childEnvironments: ["ssr"] },
         inspectorPort: false,
-        config: localBindingConfig,
+        configPath: "./wrangler.jsonc",
       }),
     ],
   };
