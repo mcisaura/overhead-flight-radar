@@ -40,13 +40,20 @@ public/       Models, images, and fonts used by the app
 tests/        Flight logic and API regression tests
 docs/         Short development notes
 worker.ts     Cloudflare Worker and shared API budget
+wrangler.jsonc Cloudflare deployment settings
 ```
 
 Built with React, TypeScript, Tailwind CSS, Three.js, Leaflet, and vinext (Next-style routing on Vite). The production build targets Cloudflare Workers.
 
 ## Live hosting
 
-Before deploying Live, store `AIRLABS_API_KEY` as a Worker secret and verify the deployed rate-limit bindings and budget Durable Object. The app caps new AirLabs calls at 900 per rolling 31 days; it cannot count earlier calls or other apps sharing the account. Check the provider’s current usage first. A public Cloudflare deployment has not yet been verified.
+Open [Overhead](https://overhead-flight-radar.sankarpete.workers.dev/) or [Demo](https://overhead-flight-radar.sankarpete.workers.dev/?mode=demo).
+
+Cloudflare is connected to [GitHub’s `main` branch](https://github.com/mcisaura/overhead-flight-radar), which is the source of truth. Each push runs `npm run check` and deploys with `npm run deploy`. Preview builds are disabled.
+
+For a manual deployment of the latest GitHub version, run `npm run build` then `npm run deploy` after signing in to Wrangler. Cloudflare stores `AIRLABS_API_KEY` as a Worker secret; visitors share this server-side key. Never add it to GitHub or a build variable.
+
+The app caps new AirLabs calls at 900 per rolling 31 days. This counter cannot count earlier calls or other apps sharing the account, so check the provider’s current usage before enabling Live. `wrangler.jsonc` configures the rate limits and persistent shared budget; `npm run types` refreshes its binding types.
 
 ## Credits
 

@@ -11,17 +11,20 @@ Overhead is a personal React/vinext app with Live aircraft data and three fictio
 
 ## Current state (6 October 2026)
 
-- Branch: `main`. No remote or public deployment configured.
+- GitHub `mcisaura/overhead-flight-radar`, branch `main`, is the source of truth. Fetch and reconcile it before making local changes. Preserve uncommitted work; do not overwrite GitHub with a stale copy.
+- Cloudflare Worker: `overhead-flight-radar` in the owner’s account. GitHub pushes to `main` run checks and deploy automatically; preview builds are disabled.
+- Worker secrets hold the shared AirLabs key. Keep it out of build variables. Application error logs are enabled; request URL logs and automatic traces are disabled to avoid recording locations or the upstream key.
 - README and these notes are now concise; older session logs and the resolved September code review remain available in Git history.
 - Removed unused font/aircraft assets, the obsolete `/preview/mode-toggle` route, and the toggle wrapper. The main Live/Demo toggle keeps its existing markup and styles.
 - One GitHub workflow runs `npm run check` on pushes to `main`, or manually. Keep the existing local regression tests.
 - After this cleanup, all 66 tests, type checks, lint, and production build pass with the existing warnings. The toggle markup is identical to its previous implementation.
 - Keep the supplied fonts and do not add a code license, per the owner’s preference. The supplied Frutiger files have no accompanying license file; redistribution rights have not been independently verified.
 
-## Remaining checks
+## Hosting verification
 
-- Visually check Live and Demo at desktop and phone widths. Recent automated checks passed, but recent browser interaction verification was unavailable.
-- Before hosting Live publicly, check AirLabs account usage, store the Worker secret, and verify deployed rate limits and the budget Durable Object. The counter cannot include earlier usage or other apps on the account.
+- The hosted Live and Demo endpoints returned 200 with weather and no warnings. Cloudflare confirms the Worker secret, rate-limit bindings, and `AirLabsBudget` namespace.
+- Desktop browser verification covered Demo aircraft rendering, map loading, playback/pause, and switching to Live. Phone-width verification remains optional.
+- The owner confirmed AirLabs allowance on 6 October 2026. The shared budget cannot include earlier usage or other apps on the account.
 
 ## Owner’s Git conventions
 
