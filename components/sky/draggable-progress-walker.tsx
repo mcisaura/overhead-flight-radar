@@ -123,14 +123,16 @@ export default function DraggableProgressWalker({ progress, paused, trackRef, on
     onLostPointerCapture: (event: PointerEvent<HTMLButtonElement>) => { if (grabRef.current?.pointerId === event.pointerId) finish(); },
   };
   return <>
-    <button ref={controlRef} type="button" role="slider" className="progress-walker-control"
-      aria-label="Drag the character to preview flight progress" aria-orientation="horizontal"
-      aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress)} aria-valuetext={`${Math.round(progress)}% through the flight`}
-      title="Drag left or right to scrub. Lift and release to drop."
-      style={{ left: `calc(${progress}% + ${15 - .3 * progress}px)`, opacity: floating ? 0 : 1, pointerEvents: floating ? "none" : undefined }}
-      onKeyDown={keyDown} {...pointerHandlers}>
-      <ProgressWalker progress={50} pointing={progress >= 40 && progress < 60} paused={paused} returning={false} />
-    </button>
+    <span className={`progress-walker-position${floating ? " is-lifted" : ""}`} style={{ transform: `translate3d(${Math.max(0, Math.min(100, progress))}%, 0, 0)` }}>
+      <button ref={controlRef} type="button" role="slider" className="progress-walker-control"
+        aria-label="Drag the character to preview flight progress" aria-orientation="horizontal"
+        aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress)} aria-valuetext={`${Math.round(progress)}% through the flight`}
+        title="Drag left or right to scrub. Lift and release to drop."
+        style={{ left: 0, opacity: floating ? 0 : 1, pointerEvents: floating ? "none" : undefined }}
+        onKeyDown={keyDown} {...pointerHandlers}>
+        <ProgressWalker progress={50} pointing={progress >= 40 && progress < 60} paused={paused} animationPaused={paused} returning={false} />
+      </button>
+    </span>
     {floating && createPortal(<button type="button" className="progress-walker-ghost" aria-hidden="true" tabIndex={-1}
       style={{ left: floating.x, top: floating.y }} {...pointerHandlers}>
       <ProgressWalker progress={50} pointing={false} paused returning={false} />

@@ -174,20 +174,37 @@ button:disabled { opacity: .6; cursor: wait; }
 .hero-crossing-heading strong { font-size: 16px; font-variant-numeric: tabular-nums; }
 .hero-crossing-track { position: relative; height: 6px; margin: 39px 0 7px; border-radius: 99px; background: #d7e7e7; }
 .hero-crossing-fill { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #5ba1ad, var(--flight-accent)); transition: width .06s linear; }
-.pixel-walker { position: absolute; bottom: 4px; display: block; width: 24px; height: 36px; color: var(--flight-accent); transform: translateX(-50%); filter: drop-shadow(1px 1px 0 #f8fcf8); }
-.pixel-walker svg { display: block; overflow: visible; }
-.pixel-walker.is-returning svg { transform: scaleX(-1); }
-.walker-stride-a { animation: pixel-step-a .44s steps(1, end) infinite; }
-.walker-stride-b { animation: pixel-step-b .44s steps(1, end) infinite; }
-.walker-point-arm, .walker-rest-arms, .walker-still-legs { display: none; }
-.pixel-walker.is-pointing .walker-arms { display: none; }
-.pixel-walker.is-pointing .walker-point-arm { display: block; }
-.pixel-walker.is-paused .walker-arms, .pixel-walker.is-paused .walker-legs { display: none; }
-.pixel-walker.is-paused .walker-still-legs { display: block; }
-.pixel-walker.is-paused:not(.is-pointing) .walker-rest-arms { display: block; }
-.pixel-walker.is-pointing { color: #bf6946; }
-@keyframes pixel-step-a { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
-@keyframes pixel-step-b { 0%, 49% { opacity: 0; } 50%, 100% { opacity: 1; } }
+/* The pilot uses crisp SVG pixels; pose changes preserve the same feet position. */
+.pixel-walker { position: absolute; bottom: 2px; display: block; width: 36px; height: 48px; transform: translate3d(-50%, 0, 0); pointer-events: none; }
+.pilot-sprite { display: block; width: 36px; height: 48px; overflow: visible; }
+.pixel-walker.is-returning .pilot-sprite { transform: scaleX(-1); }
+.pilot-stride-a, .pilot-stride-b, .pilot-stride-c, .pilot-stride-d { animation: pilot-step .8s steps(1, end) infinite; }
+.pilot-stride-b { animation-delay: -.6s; }
+.pilot-stride-c { animation-delay: -.4s; }
+.pilot-stride-d { animation-delay: -.2s; }
+.pilot-upper-body { animation: pilot-bob .8s ease-in-out infinite; }
+.pilot-point-arm, .pilot-rest-arms, .pilot-still-legs { display: none; }
+.pixel-walker:is(.is-paused, .is-pointing) .pilot-arms,
+.pixel-walker.is-paused .pilot-legs { display: none; }
+.pixel-walker.is-paused .pilot-upper-body { animation: none; }
+.pixel-walker.is-paused .pilot-still-legs { display: block; }
+.pixel-walker.is-pointing .pilot-point-arm { display: block; }
+.pixel-walker.is-paused:not(.is-pointing) .pilot-rest-arms { display: block; }
+.pixel-walker.is-animation-paused :is(.pilot-stride-a, .pilot-stride-b, .pilot-stride-c, .pilot-stride-d, .pilot-upper-body) { animation-play-state: paused; }
+[data-theme="dark"] .pilot-sprite { filter: drop-shadow(1px 0 0 #d7e2e744) drop-shadow(-1px 0 0 #d7e2e744); }
+.walker-dialog { position: absolute; left: 50%; bottom: 56px; z-index: 1; display: block; padding: 6px 8px; border: 1px solid #183849; background: #fff8df; color: #183849; box-shadow: inset 0 0 0 1px #c4d6df, 2px 2px 0 #18384926; opacity: 0; visibility: hidden; transform: translate(-50%, 4px); transition: opacity .14s ease-out, transform .14s ease-out, visibility .14s; }
+.walker-dialog::before { content: ""; position: absolute; left: calc(50% - 6px); bottom: -10px; width: 12px; height: 10px; background: #183849; clip-path: polygon(0 0, 100% 0, 100% 40%, 75% 40%, 75% 70%, 60% 70%, 60% 100%, 40% 100%, 40% 70%, 25% 70%, 25% 40%, 0 40%); }
+.walker-dialog::after { content: ""; position: absolute; left: calc(50% - 4px); bottom: -6px; width: 8px; height: 6px; background: #fff8df; clip-path: polygon(0 0, 100% 0, 100% 33%, 75% 33%, 75% 67%, 62.5% 67%, 62.5% 100%, 37.5% 100%, 37.5% 67%, 25% 67%, 25% 33%, 0 33%); }
+.walker-dialog-text { display: block; width: 58.5px; height: 10.5px; }
+.pixel-walker.is-pointing .walker-dialog { opacity: 1; visibility: visible; transform: translate(-50%, 0); }
+@keyframes pilot-step { 0%, 24.999% { opacity: 1; } 25%, 100% { opacity: 0; } }
+@keyframes pilot-bob { 0%, 50%, 100% { transform: translateY(0); } 25%, 75% { transform: translateY(-.6px); } }
+@media (prefers-reduced-motion: reduce) {
+  .pixel-walker :is(.pilot-stride-a, .pilot-stride-b, .pilot-stride-c, .pilot-stride-d, .pilot-upper-body) { animation: none; }
+  .pixel-walker .pilot-arms, .pixel-walker .pilot-legs { display: none; }
+  .pixel-walker .pilot-still-legs, .pixel-walker:not(.is-pointing) .pilot-rest-arms { display: block; }
+  .walker-dialog { transition: none; }
+}
 .hero-crossing-ends { color: var(--ink-soft); font-size: 10px; font-weight: 650; }
 .hero-crossing.is-closest { border-color: #8fbac3; background: #fffef8eb; box-shadow: 0 12px 30px #1d64711e; }
 .closest-cue { display: inline-flex; align-items: center; gap: 6px; color: #146b82; }
@@ -977,18 +994,17 @@ button:disabled { opacity: .6; cursor: wait; }
   background: #83a8b1;
   opacity: .7;
 }
-.sky-stage.has-flight .pixel-walker { z-index: 2; bottom: 7px; width: 30px; height: 45px; }
-.sky-stage.has-flight .pixel-walker svg { width: 30px; height: 45px; }
+.sky-stage.has-flight .pixel-walker { z-index: 2; bottom: 2px; }
+/* Interpolate the 20 Hz Demo snapshots in a composited layer, without
+   making the map, ticket and flight calculations re-render at display rate. */
+.progress-walker-position { position: absolute; bottom: 0; left: 15px; right: 15px; height: 0; pointer-events: none; will-change: transform; transition: transform 70ms linear; }
+.progress-walker-position.is-lifted { transition: none; }
+@media (prefers-reduced-motion: reduce) { .progress-walker-position { transition: none; } }
 /* A generous hit area follows the pixel character; the lifted copy escapes hero clipping. */
-.progress-walker-control, .progress-walker-ghost { position: absolute; bottom: 0; z-index: 5; display: block; width: 44px; height: 56px; padding: 0; border: 0; border-radius: 6px; background: none; transform: translateX(-50%); cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+.progress-walker-control, .progress-walker-ghost { position: absolute; bottom: 0; z-index: 5; display: block; width: 56px; height: 72px; padding: 0; border: 0; border-radius: 6px; background: none; transform: translate3d(-50%, 0, 0); pointer-events: auto; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
 .progress-walker-control:active, .progress-walker-ghost { cursor: grabbing; }
 .progress-walker-ghost { position: fixed; bottom: auto; z-index: 2000; }
-.hero-progress-baseline .progress-walker-control .pixel-walker, .progress-walker-ghost .pixel-walker { display: block; bottom: 7px; width: 30px; height: 45px; pointer-events: none; }
-.progress-walker-ghost .pixel-walker svg { width: 30px; height: 45px; }
-@media (prefers-reduced-motion: reduce) {
-  .progress-walker-control .walker-stride-a, .progress-walker-control .walker-stride-b { animation: none; }
-  .progress-walker-control .walker-stride-b { display: none; }
-}
+.hero-progress-baseline .progress-walker-control .pixel-walker, .progress-walker-ghost .pixel-walker { bottom: 2px; }
 .sky-stage.has-flight .hero-crossing.minimal-progress {
   display: flex;
   align-items: flex-end;
@@ -1149,7 +1165,6 @@ button:disabled { opacity: .6; cursor: wait; }
 [data-theme="dark"] .hero-baseline { border-color: #aaaaaa70; color: #dddddd; }
 [data-theme="dark"] .hero-description { color: #c8c8c8; }
 [data-theme="dark"] .zone-scrub input { accent-color: #b8b8b8; }
-[data-theme="dark"] .pixel-walker.is-pointing { color: #eeeeee; }
 [data-theme="dark"] .boarding-route-connector { color: #9b9b9b; }
 [data-theme="dark"] .boarding-route-connector::before,
 [data-theme="dark"] .boarding-route-connector::after { border-color: #777777; }

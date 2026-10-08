@@ -1,5 +1,5 @@
 export type WalkerPoint = { x: number; y: number };
-export const WALKER_HANDLE_HEIGHT = 56;
+export const WALKER_HANDLE_HEIGHT = 72;
 const EDGE_INSET = 15;
 
 export function walkerProgressAtX(x: number, track: { left: number; width: number }) {
