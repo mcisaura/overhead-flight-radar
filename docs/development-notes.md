@@ -9,7 +9,7 @@ Overhead is a personal React/vinext app with Live aircraft data and three fictio
 - Prefer `/?mode=demo` for browser testing. Every uncached Live AirLabs request spends part of the shared 900-call rolling 31-day budget; there is no periodic polling.
 - The real AirLabs key is in ignored `.env.local`. Never print it, commit it, or overwrite an existing configured key.
 
-## Current state (6 October 2026)
+## Deployment baseline (6 October 2026)
 
 - GitHub `mcisaura/overhead-flight-radar`, branch `main`, is the source of truth. Fetch and reconcile it before making local changes. Preserve uncommitted work; do not overwrite GitHub with a stale copy.
 - Cloudflare Worker: `overhead-flight-radar` in the owner’s account. GitHub pushes to `main` run checks and deploy automatically; preview builds are disabled.
@@ -20,7 +20,21 @@ Overhead is a personal React/vinext app with Live aircraft data and three fictio
 - After this cleanup, all 66 tests, type checks, lint, and production build pass with the existing warnings. The toggle markup is identical to its previous implementation.
 - Keep the supplied fonts and do not add a code license, per the owner’s preference. The supplied Frutiger files have no accompanying license file; redistribution rights have not been independently verified.
 
-## Hosting verification
+## Pilot progress character (8 October 2026, local changes)
+
+- The pixel pilot is drawn directly in SVG in `components/sky/progress-walker.tsx`, with a navy cap and uniform, white shirt, tie, broad gold epaulettes, and a gold cap band. The character and dialogue use custom SVG artwork.
+- The character renders at 36 × 48 px, with the larger 56 × 72 px drag area retained. `app/globals.css` cycles four walking poses over 800 ms with a subtle torso bob. The raised pointing arm is separated from the cap, with a pixel “Look up” bubble during the 40–60% overhead cue. The walking legs and torso bob continue while pointing during Demo playback.
+- `components/sky/draggable-progress-walker.tsx` places the Demo control in a transform wrapper with 15 px track insets. The existing 50 ms position updates are interpolated with a 70 ms linear transform transition; the lifted character follows the pointer directly. This keeps the map and ticket on their existing update schedule.
+- Scrubbing pauses playback and preserves the selected elapsed time for Resume. Arrow keys change progress by 1%, Shift increases the step to 10%, and Home/End select the endpoints. `lib/walker-drag.ts` uses the same track insets and 72 px handle height for lift-and-drop landing calculations.
+- Demo Pause stops walking and body bob while retaining the pointing cue. Reduced motion also disables movement transitions and the animated drop. Live remains a non-interactive progress indicator with its existing midpoint hold and return path.
+
+## Local verification
+
+- The full project check passed all 66 tests, type checks, lint, and production build for the final pilot changes, including walking while pointing. The existing airline-image and large-bundle warnings remain.
+- Pilot walking, pointing, and idle artwork was rendered separately and visually inspected.
+- Full browser animation and interaction verification remains pending: browser access was blocked because the browser security check was unavailable. The hosting verification below predates these local pilot changes.
+
+## Hosting verification (6 October 2026)
 
 - The hosted Live and Demo endpoints returned 200 with weather and no warnings. Cloudflare confirms the Worker secret, rate-limit bindings, and `AirLabsBudget` namespace.
 - Desktop browser verification covered Demo aircraft rendering, map loading, playback/pause, and switching to Live. Phone-width verification remains optional.

@@ -7,6 +7,17 @@ A personal flight-watching project inspired by British Airways’ **#LookUp** ca
 
 Both modes support light/dark appearance, three sky backgrounds, and weather units. Live positions are estimates; routes may be incomplete, and the 3D models represent broad aircraft categories.
 
+## Pixel pilot and preview controls
+
+A pixel pilot in a navy uniform and gold-banded cap follows the progress bar. During the 40–60% overhead cue, he raises a finger and shows a pixel “Look up” bubble. In Demo playback, his four-pose walk and subtle body bob continue while pointing, and movement between position updates is smoothed.
+
+- **Drag:** move the pilot left or right to preview the flight. Lift and release him to drop back onto the bar.
+- **Keyboard:** focus the pilot and use the arrow keys to move by 1%; hold Shift for 10%. Home and End go to the start and end.
+- **Playback:** scrubbing pauses the simulation. Use Resume to continue from the chosen position, or Replay to restart.
+- **Reduced motion:** the pilot uses a still pose; walking, body bob, movement transitions, and the animated drop are disabled. The pointing cue and preview controls remain available.
+
+Live uses a non-interactive progress indicator. The pilot pauses near the midpoint before walking back as the aircraft leaves.
+
 ## Run locally
 
 Requires Node.js 22.13 or newer and npm.
@@ -59,11 +70,13 @@ The app caps new AirLabs calls at 900 per rolling 31 days. This counter cannot c
 
 Aircraft data: [AirLabs](https://airlabs.co/). Weather: [Open-Meteo](https://open-meteo.com/). Maps: [OpenStreetMap](https://www.openstreetmap.org/copyright), displayed with [Leaflet](https://leafletjs.com/). 3D rendering: [Three.js](https://threejs.org/).
 
-| Model | Creator | License |
+| Asset | Creator | License |
 | --- | --- | --- |
 | [Boeing 737-200](https://sketchfab.com/3d-models/boeing-737-200-white-81030e446b7a40d29d83840e3ed878b3) | LucasSS | Sketchfab Standard; supplied with permission to include in this project and repository |
 | [Cessna 310](https://sketchfab.com/3d-models/cessna-310-airplane-low-poly-bbf73d06537c4a2ba86b96a3b97209c1) | BorealRiver | CC BY 4.0 |
 | [Helicopter](https://sketchfab.com/3d-models/helicopter-dec45a28e6f346648c3d6585426157b8) | linus1178 | CC BY 4.0 |
 | [Cloud](https://sketchfab.com/3d-models/low-poly-cloud-81910476b24d4fc5a73c908d6c2a38a2) | Hyungjung Kim | CC BY-NC 4.0 |
+
+The pixel pilot and “Look up” dialogue are drawn directly in SVG in `components/sky/progress-walker.tsx`. Their styling and animation live in `app/globals.css`.
 
 Fonts: supplied Frutiger, Barlow Condensed, and OCR-B, plus system Helvetica and local DIN when available. Barlow Condensed and OCR-B license files are included in `public/fonts/`. The cloud model has a non-commercial license. Third-party assets keep their own terms.
