@@ -26,7 +26,7 @@ Overhead is a personal React/vinext app with Live aircraft data and three fictio
 - The character renders at 36 × 48 px, with the larger 56 × 72 px drag area retained. `app/globals.css` cycles four walking poses over 800 ms with a subtle torso bob. The raised pointing arm is separated from the cap, with a pixel “Look up” bubble during the 40–60% overhead cue. The walking legs and torso bob continue while pointing during Demo playback.
 - `components/sky/draggable-progress-walker.tsx` places the Demo control in a transform wrapper with 15 px track insets. The existing 50 ms position updates are interpolated with a 70 ms linear transform transition; the lifted character follows the pointer directly. This keeps the map and ticket on their existing update schedule.
 - Scrubbing pauses playback and preserves the selected elapsed time for Resume. Arrow keys change progress by 1%, Shift increases the step to 10%, and Home/End select the endpoints. `lib/walker-drag.ts` uses the same track insets and 72 px handle height for lift-and-drop landing calculations.
-- Demo Pause stops walking and body bob while retaining the pointing cue. Reduced motion also disables movement transitions and the animated drop. Live remains a non-interactive progress indicator with its existing midpoint hold and return path.
+- Demo Pause freezes the leg cycle and body bob together while retaining the pointing cue; Resume continues their animation phases. Reduced motion also disables movement transitions and the animated drop. Live remains a non-interactive progress indicator with its existing midpoint hold and return path.
 
 ## Local verification
 
