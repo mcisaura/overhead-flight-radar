@@ -453,7 +453,7 @@ button:disabled { opacity: .6; cursor: wait; }
   .hero-description { max-width: 355px; font-size: 16px; line-height: 1.55; }
   .aircraft-scene { inset: 48% 0 0 0; }
   .hero-baseline { left: 23px; right: 23px; bottom: 20px; font-size: 11px; }
-  .hero-baseline span:last-child { display: none; }
+  .hero-baseline > span:last-child { display: none; }
   .presets-section { padding: 54px 18px 0; }
   .presets-heading { align-items: start; flex-direction: column; gap: 13px; }
   .presets-heading h2 { font-size: 36px; }
@@ -1806,4 +1806,145 @@ button, input, select,
 .theme-transition .flight-map :is(.flight-path, .sky-location-marker, .airport-marker, .zone-circle) { transition: stroke 300ms ease, fill 300ms ease; }
 @media (prefers-reduced-motion: reduce) {
   .sky-overlay::before, .sky-overlay::after, .theme-transition * { transition: none !important; }
+}
+
+.ticket-change-short { display: none; }
+@media (min-width: 521px) and (max-width: 850px) {
+  .sky-stage.has-flight > .boarding-pass { justify-self: center; }
+}
+
+/* Phone controls keep a comfortable touch area without crowding the ticket. */
+@media (max-width: 520px) {
+  .boarding-pass.empty-boarding-pass,
+  .live-stage .boarding-pass.empty-boarding-pass { min-height: 320px; }
+  .demo-ticket-picker .sky-stage:not(.has-flight) { min-height: 520px; }
+  .demo-ticket-picker .hero-flight .boarding-pass-main { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
+  .demo-ticket-picker .hero-flight .boarding-pass-heading { grid-column: 1 / -1; }
+  .demo-ticket-picker .hero-flight .hero-flight-identity { grid-column: 1; grid-row: 2; min-width: 0; }
+  .demo-ticket-picker .hero-flight .ticket-choose-another { grid-column: 2; grid-row: 2; margin: 0; padding: 0 0 0 8px; font-size: 11px; }
+  .demo-ticket-picker .hero-flight .boarding-pass-route-spacing { grid-column: 1 / -1; grid-row: 3; }
+  .demo-ticket-picker .hero-flight .boarding-route { grid-column: 1 / -1; grid-row: 4; }
+  .ticket-change-full { display: none; }
+  .ticket-change-short { display: inline; }
+  .flight-sidebar .empty-copy,
+  .live-shell .flight-sidebar .empty-copy { min-height: 0; font-size: 16px; line-height: 1.5; }
+  .sky-stage.has-flight,
+  .sky-stage.has-flight.live-stage { padding-top: 18px; row-gap: 8px; }
+  .sky-stage.has-flight > .boarding-pass { min-height: 0; }
+  .boarding-pass.hero-flight .boarding-pass-main { padding: 12px 16px 8px; }
+  .sky-stage.has-flight .boarding-pass .boarding-pass-heading,
+  .sky-stage.has-flight.live-stage .boarding-pass .boarding-pass-heading {
+    min-height: 60px; margin-bottom: 10px; font-size: clamp(25px, 6.8vw, 30px);
+  }
+  .sky-stage.has-flight .boarding-pass .hero-flight-identity { min-height: 36px; margin-bottom: 6px; }
+  .sky-stage.has-flight .boarding-pass .airline-badge { width: 30px; height: 30px; min-width: 30px; }
+  .sky-stage.has-flight .boarding-route { min-height: 60px; }
+  .sky-stage.has-flight .boarding-route-stop strong { font-size: 34px; }
+  .sky-stage.has-flight .boarding-route-city { margin-top: 4px; font-size: 10px; }
+  .sky-stage.has-flight .boarding-pass-divider { margin: 10px 0; }
+  .sky-stage.has-flight .boarding-pass-route-spacing { height: 12px; }
+  .sky-stage.has-flight .boarding-pass-stub { padding: 12px 16px; }
+  .sky-stage.has-flight .boarding-pass-stub-codes > div { min-height: 32px; gap: 4px; }
+  .sky-stage.has-flight .boarding-pass-stub-details { margin-top: 10px; padding-top: 10px; }
+  .sky-stage.has-flight .hero-flight-details .hero-playback { margin-top: 10px; }
+  .sky-stage.has-flight .sky-aircraft-layer,
+  .sky-stage.has-flight .aircraft-scene,
+  .sky-stage.has-flight .live-aircraft-scene { height: 260px; }
+  .sky-stage.has-flight .aircraft-model-caption.aircraft-interaction-hint { top: 8px; bottom: auto; }
+
+  .instrument-mode-toggle button { min-height: 44px; }
+  .boarding-pass-stub .hero-playback .boarding-pass-action-buttons > button,
+  .live-shell .boarding-pass .live-ticket-actions button,
+  .demo-flight-launch .primary-button,
+  .hero-flight-details .zone-play,
+  .hero-flight-details .zone-reset,
+  .map-view-switch button { min-height: 44px; }
+  .live-location-controls { grid-template-columns: minmax(0, 1fr) 44px; }
+  .live-shell .boarding-pass .live-ticket-actions .ticket-refresh-utility { width: 44px; }
+  .ticket-choose-another { display: inline-flex; align-items: center; min-height: 44px; margin-top: 4px; font-size: 12px; }
+  .manual-form label { flex: 1 1 120px; min-width: 0; }
+  .manual-form input { width: 100%; font-size: 16px; }
+
+  .site-footer { flex-wrap: wrap; padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+  .footer-settings { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; margin-left: 0; gap: 12px; }
+  .footer-settings .hero-background-control { grid-column: 1 / -1; min-width: 0; }
+  .footer-settings label,
+  .footer-settings .weather-unit-control > span,
+  .footer-theme-control > span { position: static; width: auto; height: auto; margin: 0; clip-path: none; font-size: 11px; }
+  .footer-settings .hero-background-select-wrap { width: 100%; min-height: 48px; }
+  .footer-settings .hero-background-select-wrap select { width: 100%; min-height: 44px; font-size: 16px; }
+  .footer-settings .weather-unit-toggle button { min-width: 44px; min-height: 44px; }
+  .footer-settings .theme-toggle button { width: 44px; min-height: 44px; }
+  .footer-credits { margin-left: auto; }
+  .footer-credits summary { min-height: 44px; font-size: 12px; }
+}
+
+/* The phone's first screen contains the complete header and sky. */
+@media (max-width: 520px) {
+  .topbar-main { height: 86px; min-height: 86px; padding: 4px 0; grid-template-rows: 30px 46px; row-gap: 2px; }
+  .topbar-right { padding-top: 0; }
+  .instrument-mode-toggle { padding: 0; --choice-inset: 0px; }
+  .sky-stage,
+  .sky-stage.has-flight,
+  .sky-stage.has-flight.live-stage,
+  .demo-ticket-picker .sky-stage:not(.has-flight) {
+    height: calc(100svh - 87px); min-height: 0;
+  }
+  .sky-stage.has-flight,
+  .sky-stage.has-flight.live-stage { grid-template-rows: auto minmax(0, 1fr); padding: 10px 18px 90px; row-gap: 0; }
+  .sky-stage.has-flight .sky-aircraft-layer,
+  .sky-stage.has-flight .aircraft-scene,
+  .sky-stage.has-flight .live-aircraft-scene { height: 100%; min-height: 0; }
+  .sky-stage.has-flight .aircraft-model { min-height: 0; }
+  .boarding-pass.hero-flight .boarding-pass-main { padding: 12px 16px 8px; }
+  .sky-stage.has-flight .boarding-pass .boarding-pass-heading,
+  .sky-stage.has-flight.live-stage .boarding-pass .boarding-pass-heading {
+    --flip-padding: 10px 12px; min-height: 56px; margin-bottom: 8px; padding: 10px 12px; font-size: clamp(24px, 6.5vw, 28px);
+  }
+  .sky-stage.has-flight .boarding-pass .hero-flight-identity { margin-bottom: 0; }
+  .sky-stage.has-flight .boarding-pass-route-spacing { height: 8px; }
+  .sky-stage.has-flight .boarding-route { min-height: 56px; }
+  .sky-stage.has-flight .boarding-route-stop strong { font-size: 34px; }
+  .sky-stage.has-flight .boarding-route-city { margin-top: 4px; }
+  .sky-stage.has-flight .boarding-pass-stub { padding: 12px 16px; }
+  .sky-stage.has-flight .boarding-pass-stub-codes > div { min-height: 32px; gap: 5px; }
+  .sky-stage.has-flight .boarding-pass-stub-details { margin-top: 10px; padding-top: 10px; }
+  .sky-stage.has-flight .hero-flight-details .hero-playback { margin-top: 8px; }
+  .sky-stage.has-flight .aircraft-model-caption.aircraft-interaction-hint { top: 6px; }
+  .hero-baseline { left: 18px; right: 18px; bottom: max(16px, env(safe-area-inset-bottom)); }
+  .pixel-walker { transform: translate3d(-50%, 0, 0) scale(.8); transform-origin: bottom center; }
+  .boarding-pass.empty-boarding-pass,
+  .live-stage .boarding-pass.empty-boarding-pass { min-height: 250px; margin: 12px 18px 0; width: calc(100% - 36px); }
+}
+
+@media (max-width: 360px) {
+  .sky-stage.has-flight .boarding-pass-stub-codes { gap: 6px; }
+  .sky-stage.has-flight .boarding-pass-stub-codes span { font-size: 8px; letter-spacing: 0; }
+  .sky-stage.has-flight .boarding-pass-stub-codes strong { font-size: 11px; letter-spacing: .04em; white-space: nowrap; }
+}
+
+/* Short phones reserve space for the aircraft and the smaller pilot. */
+@media (max-width: 520px) and (max-height: 640px) {
+  .sky-stage.has-flight,
+  .sky-stage.has-flight.live-stage { padding-bottom: 68px; }
+  .boarding-pass.hero-flight .boarding-pass-main { padding: 10px 14px 6px; }
+  .sky-stage.has-flight .boarding-pass .boarding-pass-heading,
+  .sky-stage.has-flight.live-stage .boarding-pass .boarding-pass-heading { min-height: 48px; margin-bottom: 6px; }
+  .sky-stage.has-flight .boarding-pass-route-spacing { height: 6px; }
+  .sky-stage.has-flight .boarding-route { min-height: 50px; }
+  .sky-stage.has-flight .boarding-pass-stub { padding: 8px 14px; }
+  .sky-stage.has-flight .boarding-pass-stub-details { margin-top: 8px; padding-top: 8px; }
+  .sky-stage.has-flight .aircraft-model-caption.aircraft-interaction-hint { display: none; }
+}
+
+@media (min-width: 641px) and (max-width: 850px) and (min-height: 900px) {
+  .sky-stage.has-flight,
+  .sky-stage.has-flight.live-stage {
+    height: calc(100svh - 85px); min-height: 0;
+    grid-template-rows: auto minmax(0, 1fr); padding: 24px 28px 80px; row-gap: 0;
+  }
+  .sky-stage.has-flight .sky-aircraft-layer,
+  .sky-stage.has-flight .aircraft-scene,
+  .sky-stage.has-flight .live-aircraft-scene { height: 100%; min-height: 0; }
+  .sky-stage.has-flight .aircraft-model { min-height: 0; }
 }

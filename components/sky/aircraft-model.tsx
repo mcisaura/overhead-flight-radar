@@ -146,10 +146,14 @@ export default function AircraftModel({ progress = 50, live = false, visual = "a
       // Measure the actual mesh so the nose starts just beyond the pass edge.
       model.position.x = baseX;
       model.updateMatrixWorld(true);
+      camera.zoom = 1;
+      camera.updateProjectionMatrix();
       camera.updateMatrixWorld(true);
       const point = new THREE.Vector3();
       let left = Infinity;
       let right = -Infinity;
+      let top = Infinity;
+      let bottom = -Infinity;
       model.traverse((child) => {
         if (!(child instanceof THREE.Mesh)) return;
         const positions = child.geometry.attributes.position;
@@ -157,14 +161,31 @@ export default function AircraftModel({ progress = 50, live = false, visual = "a
           point.fromBufferAttribute(positions, index).applyMatrix4(child.matrixWorld).project(camera);
           left = Math.min(left, (point.x + 1) / 2);
           right = Math.max(right, (point.x + 1) / 2);
+          top = Math.min(top, (1 - point.y) / 2);
+          bottom = Math.max(bottom, (1 - point.y) / 2);
         }
       });
-      const leftExtent = left - .5;
-      const rightExtent = right - .5;
+      let leftExtent = left - .5;
+      let rightExtent = right - .5;
       const desktop = window.matchMedia("(min-width: 851px)").matches;
+      if (!desktop && right > left && bottom > top) {
+        // Frame the aircraft by width even when a short phone leaves a shallow sky.
+        const phone = window.matchMedia("(max-width: 520px)").matches;
+        camera.zoom = Math.min((phone ? .76 : .88) / (right - left), (phone ? .6 : .7) / (bottom - top), phone ? 1.7 : 2);
+        camera.updateProjectionMatrix();
+        leftExtent *= camera.zoom;
+        rightExtent *= camera.zoom;
+      }
       const peek = Math.min(.11, Math.max(.07, 90 / containerBounds.width));
-      startCenter = desktop ? passRight + peek - rightExtent : .08 - rightExtent;
-      endCenter = 1.03 - leftExtent;
+      if (!desktop) {
+        // The stacked layout has no room for the desktop fly-through. Keep the complete
+        // mesh in the sky as it moves, including when playback is paused.
+        startCenter = Math.min(.5, .06 - leftExtent);
+        endCenter = Math.max(.5, .94 - rightExtent);
+      } else {
+        startCenter = desktop ? passRight + peek - rightExtent : .08 - rightExtent;
+        endCenter = 1.03 - leftExtent;
+      }
       root.style.setProperty("--stream-start", `${desktop ? Math.max(0, passRight) * 100 : 0}%`);
     };
     const positionSlipstream = () => {
@@ -174,10 +195,13 @@ export default function AircraftModel({ progress = 50, live = false, visual = "a
     };
     const positionForProgress = (value: number) => {
       const crossing = Math.max(0, Math.min(100, value));
-      const travel = (crossing / 100) ** 2;
+      // Keep the aircraft near the center at the overhead cue on a narrow sky.
+      const travel = window.matchMedia("(max-width: 850px)").matches
+        ? crossing / 100
+        : (crossing / 100) ** 2;
       const screenCenter = startCenter + (endCenter - startCenter) * travel;
       const horizontalHalf = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))
-        * camera.position.length() * camera.aspect;
+        * camera.position.length() * camera.aspect / camera.zoom;
       return -(screenCenter * 2 - 1) * horizontalHalf;
     };
     const place = (immediate: boolean) => {

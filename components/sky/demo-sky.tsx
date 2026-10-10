@@ -196,7 +196,7 @@ export default function DemoSky({ onModeChange, weatherUnit, onWeatherUnitChange
               <FlightIdentity {...flight} demo />
               <div className="boarding-pass-route-spacing" aria-hidden="true" />
               <BoardingRoute origin={routeEntry} destination={routeExit} zoneSegment={!routeKnown} />
-              <button type="button" className="ticket-choose-another" onClick={clearSky}>← Choose another flight</button>
+              <button type="button" className="ticket-choose-another" aria-label="Choose another flight" onClick={clearSky}><span className="ticket-change-full">← Choose another flight</span><span className="ticket-change-short">Change flight</span></button>
           </> : pickerOpen ? <TicketFlightPicker onSelect={selectFlight} /> : null}
         </div>
         {flight && selected ?
