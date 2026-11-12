@@ -606,7 +606,7 @@ button:disabled { opacity: .6; cursor: wait; }
 .location-feedback { max-width: 430px; margin-top: 12px; color: var(--ink-soft); font-family: var(--flight-text); animation: location-feedback-in 220ms ease-out both; }
 .location-feedback-line { display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 10px; }
 .location-feedback-line p { flex: 1 1 220px; margin: 0; color: var(--ink); font-size: 11px; line-height: 1.5; }
-.location-feedback-retry { flex: none; min-height: 28px; padding: 4px 0; border: 0; background: none; color: var(--ocean-deep); font-size: 10px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.location-feedback-retry, .location-feedback-map { flex: none; min-height: 28px; padding: 4px 0; border: 0; background: none; color: var(--ocean-deep); font-size: 10px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .location-feedback-note { margin: 4px 0 0; color: var(--ink-soft); font-size: 9px; line-height: 1.5; }
 .location-permission-help { margin-top: 6px; font-size: 10px; line-height: 1.6; }
 .location-permission-help summary { display: inline-flex; align-items: center; gap: 5px; min-height: 28px; color: var(--ocean-deep); list-style: none; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
@@ -1948,3 +1948,98 @@ button, input, select,
   .sky-stage.has-flight .live-aircraft-scene { height: 100%; min-height: 0; }
   .sky-stage.has-flight .aircraft-model { min-height: 0; }
 }
+
+/* Live sky location and radius preferences. */
+.zone-settings-dialog { margin: auto; width: min(760px, calc(100% - 40px)); max-height: calc(100dvh - 32px); padding: 0; border: 1px solid var(--rule); border-radius: 12px; background: var(--paper); color: var(--ink); box-shadow: 0 24px 80px #0004; overflow: hidden; overscroll-behavior: contain; }
+.zone-settings-dialog[open] { display: flex; flex-direction: column; }
+.zone-settings-dialog::backdrop { background: #10232c80; backdrop-filter: blur(4px); }
+.zone-dialog-heading { flex: none; position: relative; z-index: 3; background: var(--paper); display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding: 24px; border-bottom: 1px solid var(--rule); }
+.zone-dialog-heading h2 { margin: 0 0 6px; font-size: 22px; letter-spacing: -.03em; }
+.zone-dialog-heading p { margin: 0; font-size: 13px; color: var(--ink-soft); }
+.zone-dialog-heading > button { display: grid; place-items: center; flex: none; width: 36px; height: 36px; padding: 0; border: 1px solid var(--rule); border-radius: 6px; background: transparent; color: var(--ink); }
+.zone-settings-panel { flex: 1 1 auto; min-height: 0; padding: 24px; overflow-y: auto; overscroll-behavior: contain; scroll-padding: 20px; }
+.location-split-button { display: grid; grid-template-columns: minmax(0, 1fr) 36px; min-width: 0; }
+.live-shell .boarding-pass .live-ticket-actions .location-split-button > .primary-button:first-child { border-radius: 5px 0 0 5px; }
+.live-shell .boarding-pass .live-ticket-actions .location-options-button { border-radius: 0 5px 5px 0; border-left: 1px solid #ffffff50; padding: 0; }
+.location-split-button .primary-button:focus-visible { position: relative; z-index: 1; }
+.live-shell .boarding-pass .live-ticket-actions .location-options-button[aria-expanded="true"] { background: #103b4f; }
+[data-theme="dark"] .live-shell .boarding-pass .live-ticket-actions .location-options-button { border-left-color: #555; }
+[data-theme="dark"] .live-shell .boarding-pass .live-ticket-actions .location-options-button[aria-expanded="true"] { background: #3b3b3b; }
+.zone-search-form label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 10px; }
+.zone-search-field { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 14px; border: 1px solid var(--rule); border-radius: 8px; background: var(--paper); color: var(--ink-soft); }
+.zone-search-field:focus-within { border-color: var(--ocean); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ocean) 12%, transparent); }
+.zone-search-field > svg { flex: none; }
+.zone-search-field input { width: 100%; min-width: 0; height: 50px; padding: 0; border: 0; outline: none; background: transparent; color: var(--ink); font-size: 16px; }
+.zone-search-field input::-webkit-search-cancel-button { display: none; }
+.zone-search-field .zone-search-clear { display: grid; place-items: center; flex: none; width: 32px; height: 40px; padding: 0; border: 0; border-radius: 4px; background: transparent; color: var(--ink-soft); }
+.zone-search-spinner { animation: zone-search-spin 900ms linear infinite; }
+@keyframes zone-search-spin { to { transform: rotate(360deg); } }
+.zone-search-status, .zone-radius-control p, .zone-search-credit, .zone-picker-map > p { font-size: 12px; color: var(--ink-soft); line-height: 1.6; }
+.zone-search-status { min-height: 20px; margin: 8px 0 0; }
+.zone-search-results { list-style: none; padding: 4px; margin: 12px 0 0; border: 1px solid var(--rule); border-radius: 9px; background: var(--paper); }
+.zone-search-results li + li { border-top: 1px solid var(--rule); }
+.zone-search-results button { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 64px; text-align: left; padding: 12px; border: 0; border-radius: 6px; background: transparent; color: var(--ink); }
+.zone-search-results button:hover, .zone-search-results button:focus-visible { background: color-mix(in srgb, var(--ocean) 8%, var(--paper)); }
+.zone-result-icon { display: grid; place-items: center; flex: none; width: 32px; height: 32px; border: 1px solid var(--rule); border-radius: 50%; color: var(--ocean); }
+.zone-result-copy { display: grid; flex: 1; min-width: 0; gap: 4px; overflow-wrap: anywhere; }
+.zone-result-copy strong { font-size: 14px; font-weight: 600; line-height: 1.35; }
+.zone-result-copy small { font-size: 12px; color: var(--ink-soft); line-height: 1.45; }
+.zone-search-results button > svg { flex: none; }
+.zone-selected-place { display: grid; gap: 5px; margin: 16px 0 24px; padding: 12px 14px; border: 1px solid var(--rule); border-radius: 7px; font-size: 13px; overflow-wrap: anywhere; }
+.zone-selected-place strong { font-weight: 600; line-height: 1.45; }
+.zone-selected-place span { color: var(--ink-soft); font-size: 11px; font-variant-numeric: tabular-nums; }
+.zone-cancel { border: 0; background: none; color: var(--ocean); padding: 8px 0; font-size: 12px; text-decoration: underline; text-underline-offset: 3px; }
+.zone-radius-control { margin: 20px 0; }
+.zone-radius-control label { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; font-size: 13px; margin-bottom: 14px; }
+.zone-radius-control input { display: block; width: 100%; accent-color: var(--ocean); }
+.zone-radius-scale { display: flex; justify-content: space-between; color: var(--ink-soft); font-size: 11px; margin-top: 8px; }
+.zone-settings-actions { display: flex; gap: 20px; align-items: center; }
+.zone-search-credit { margin-bottom: 0; font-size: 10px; }
+.zone-search-credit a { color: inherit; }
+@media (max-width: 640px) {
+  .zone-dialog-heading, .zone-settings-panel { padding: 20px; }
+  .location-split-button { grid-template-columns: minmax(0, 1fr) 44px; }
+  .live-shell .boarding-pass .live-ticket-actions .location-split-button > button { min-height: 44px; }
+  .zone-settings-actions { flex-wrap: wrap; gap: 12px 20px; }
+}
+
+.zone-dialog-heading h2:focus { outline: none; }
+.zone-dialog-footer { flex: none; position: relative; z-index: 3; padding: 16px 24px; border-top: 1px solid var(--rule); background: var(--paper); }
+.zone-dialog-footer .zone-search-credit { margin-top: 10px; }
+.zone-settings-panel .zone-radius-control { margin: 20px 0 24px; }
+.zone-settings-panel .zone-radius-control p { margin-top: 8px; }
+.zone-search-section { margin-bottom: 24px; }
+.zone-settings-panel .zone-radius-control { padding-top: 22px; border-top: 1px solid var(--rule); }
+.zone-picker-map > p { margin: 10px 0 0; }
+.zone-location-map-wrap { position: relative; isolation: isolate; overflow: hidden; border: 1px solid var(--rule); border-radius: 8px; background: #e6efed; }
+.zone-location-map { height: 300px; width: 100%; }
+.zone-picker-map .zone-location-map { min-height: 0; }
+.zone-map-radius-badge { position: absolute; top: 12px; left: 12px; z-index: 1; pointer-events: none; background: var(--paper); color: var(--ink); padding: 8px 10px; border: 1px solid var(--rule); border-radius: 5px; font-size: 12px; font-weight: 600; box-shadow: 0 2px 8px #0001; }
+.zone-map-loading { position: absolute; inset: 0; z-index: 2; display: grid; place-items: center; padding: 24px; margin: 0; background: var(--paper); color: var(--ink-soft); font-size: 13px; text-align: center; }
+.demo-location-actions { margin-top: 14px; }
+.demo-location-actions .demo-choose-location { display: inline-flex; justify-content: center; align-items: center; gap: 6px; min-height: 38px; padding: 0 10px; white-space: nowrap; font-size: 11px; box-shadow: none; border-radius: 5px; }
+.demo-location-actions .primary-button svg { margin: 0; transform: none; }
+.demo-location-actions .primary-button:hover { transform: none; }
+@media (max-width: 640px) {
+  .zone-settings-dialog { width: calc(100% - 20px); max-height: calc(100dvh - 20px); }
+  .zone-dialog-heading, .zone-settings-panel { padding: 16px; }
+  .zone-dialog-footer { padding: 14px 16px; }
+  .zone-picker-map .zone-location-map { height: clamp(180px, 28dvh, 240px); }
+  .zone-dialog-footer .primary-button { min-height: 44px; padding: 0 14px; font-size: 12px; }
+  .demo-location-actions .demo-choose-location { min-height: 44px; }
+}
+
+.location-feedback-map { display: inline-flex; align-items: center; margin-top: 4px; }
+@media (max-width: 640px) {
+  .location-feedback-retry, .location-feedback-map, .location-permission-help summary { min-height: 44px; }
+  .location-permission-help { font-size: 11px; }
+  .location-feedback-note { font-size: 10px; }
+}
+
+@media (max-width: 640px) {
+  .zone-search-results button { padding: 12px 8px; gap: 10px; }
+  .zone-dialog-footer .zone-settings-actions { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; }
+  .zone-dialog-footer .zone-settings-actions .primary-button { width: 100%; justify-content: center; }
+  .zone-dialog-footer { padding-bottom: max(14px, env(safe-area-inset-bottom)); }
+}
+@media (prefers-reduced-motion: reduce) { .zone-search-spinner { animation: none; } }

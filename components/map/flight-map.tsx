@@ -47,6 +47,7 @@ type Props = {
   showDetails?: boolean;
   exiting?: boolean;
   onSelect?: (hex: string) => void;
+  radiusKm?: number;
 };
 
 type RouteDrawing =
@@ -73,7 +74,7 @@ function headingPoint(plane: MapAircraft, distanceKm: number) {
     plane.lon + Math.sin(radians) * distanceKm / kmPerLon] as [number, number];
 }
 
-export default function FlightMap({ lat, lon, aircraft: reportedAircraft, closestHex, demo = false, locationLabel, showDetails = true, exiting = false, onSelect }: Props) {
+export default function FlightMap({ lat, lon, aircraft: reportedAircraft, closestHex, demo = false, locationLabel, showDetails = true, exiting = false, onSelect, radiusKm = ZONE_RADIUS_KM }: Props) {
   const aircraft = useMemo(() => mapAircraftForDisplay(reportedAircraft, lon), [reportedAircraft, lon]);
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<Leaflet.Map | null>(null);
@@ -121,7 +122,7 @@ export default function FlightMap({ lat, lon, aircraft: reportedAircraft, closes
     void import("leaflet").then((L) => {
       if (cancelled || !containerRef.current) return;
       leafletRef.current = L;
-      map = L.map(containerRef.current, { scrollWheelZoom: false, zoomControl: false }).setView([lat, lon], 11);
+      map = L.map(containerRef.current, { scrollWheelZoom: false, zoomControl: false }).setView([0, 0], 2);
       mapRef.current = map;
       resizeObserver = new ResizeObserver(() => map?.invalidateSize({ animate: false }));
       resizeObserver.observe(containerRef.current);
@@ -130,9 +131,6 @@ export default function FlightMap({ lat, lon, aircraft: reportedAircraft, closes
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       }).addTo(map);
       L.control.zoom({ position: "bottomright" }).addTo(map);
-      L.circle([lat, lon], { radius: ZONE_RADIUS_KM * 1000, color: "#317f98", weight: 1, dashArray: "5 7", fillColor: "#74adc0", fillOpacity: 0.075, interactive: false, className: "zone-circle" }).addTo(map);
-      L.circleMarker([lat, lon], { radius: 8, color: "#fff", weight: 3, fillColor: "#1e6e8b", fillOpacity: 1, className: "sky-location-marker" })
-        .bindTooltip(locationLabel ?? (demo ? "Sample location" : "Your location"), { direction: "top" }).addTo(map);
       routeLayerRef.current = L.layerGroup().addTo(map);
       airportLayerRef.current = L.layerGroup().addTo(map);
       markerLayerRef.current = L.layerGroup().addTo(map);
@@ -142,6 +140,7 @@ export default function FlightMap({ lat, lon, aircraft: reportedAircraft, closes
       cancelled = true;
       resizeObserver?.disconnect();
       map?.remove();
+      setReady(false);
       mapRef.current = null;
       markerLayerRef.current = null;
       routeLayerRef.current = null;
@@ -152,7 +151,18 @@ export default function FlightMap({ lat, lon, aircraft: reportedAircraft, closes
       markerLabels.clear();
       leafletRef.current = null;
     };
-  }, [hasEntered, lat, lon, demo, locationLabel]);
+  }, [hasEntered]);
+
+  useEffect(() => {
+    const L = leafletRef.current;
+    const map = mapRef.current;
+    if (!ready || !L || !map) return;
+    const label = document.createElement("span");
+    label.textContent = locationLabel ?? (demo ? "Sample location" : "Your location");
+    const circle = L.circle([lat, lon], { radius: radiusKm * 1000, color: "#317f98", weight: 1, dashArray: "5 7", fillColor: "#74adc0", fillOpacity: 0.075, interactive: false, className: "zone-circle" }).addTo(map);
+    const marker = L.circleMarker([lat, lon], { radius: 8, color: "#fff", weight: 3, fillColor: "#1e6e8b", fillOpacity: 1, className: "sky-location-marker" }).bindTooltip(label, { direction: "top" }).addTo(map);
+    return () => { circle.remove(); marker.remove(); };
+  }, [ready, lat, lon, radiusKm, locationLabel, demo]);
 
   const activeHex = onSelect ? closestHex : selectedHex && aircraft.some((plane) => plane.hex === selectedHex)
     ? selectedHex : closestHex || aircraft[0]?.hex || null;
@@ -203,7 +213,7 @@ export default function FlightMap({ lat, lon, aircraft: reportedAircraft, closes
           routeDrawingsRef.current.set(plane.hex, { kind: "route", inbound, outbound });
         }
       } else if (plane.heading !== null) {
-        const points = [headingPoint(plane, -ZONE_RADIUS_KM), [plane.lat, plane.lon] as [number, number], headingPoint(plane, ZONE_RADIUS_KM)];
+        const points = [headingPoint(plane, -radiusKm), [plane.lat, plane.lon] as [number, number], headingPoint(plane, radiusKm)];
         if (existing?.kind === "heading") {
           existing.path.setLatLngs(points);
           existing.path.setStyle({ color, weight, opacity: highlighted ? .75 : .4 });
@@ -226,7 +236,7 @@ export default function FlightMap({ lat, lon, aircraft: reportedAircraft, closes
         routeDrawingsRef.current.delete(plane.hex);
       }
     }
-  }, [aircraft, ready, nearViewport, activeHex]);
+  }, [aircraft, ready, nearViewport, activeHex, radiusKm]);
 
   useEffect(() => {
     const L = leafletRef.current;
@@ -252,9 +262,9 @@ export default function FlightMap({ lat, lon, aircraft: reportedAircraft, closes
       map.fitBounds(L.latLngBounds([[originLat, originLon], [lat, lon], [destinationLat, destinationLon]]),
         { paddingTopLeft: [48, 60], paddingBottomRight: [48, 80], maxZoom: 6, animate: false });
     } else {
-      map.setView([lat, lon], 11, { animate: false });
+      map.fitBounds(L.latLng(lat, lon).toBounds(radiusKm * 2000), { padding: [30, 30], maxZoom: 13, animate: false });
     }
-  }, [ready, activeView, activeHex, originLat, originLon, destinationLat, destinationLon, lat, lon]);
+  }, [ready, activeView, activeHex, originLat, originLon, destinationLat, destinationLon, lat, lon, radiusKm]);
 
   useEffect(() => {
     const L = leafletRef.current;
@@ -302,7 +312,7 @@ export default function FlightMap({ lat, lon, aircraft: reportedAircraft, closes
         markerLabelRef.current.set(plane.hex, name);
       }
     }
-  }, [aircraft, ready, nearViewport, activeHex]);
+  }, [aircraft, ready, nearViewport, activeHex, radiusKm]);
 
   return (
     <section className={`map-section ${exiting ? "map-exiting" : selected ? "map-active" : "map-empty"}`} aria-label="Flight map">
@@ -323,8 +333,8 @@ export default function FlightMap({ lat, lon, aircraft: reportedAircraft, closes
         </div>}
       </div>
       <p className="map-note">{demo
-        ? "Fictional routes · Estimated positions · 5 nm zone"
-        : "Illustrative routes · Estimated positions · 5 nm zone"}</p>
+        ? `Fictional routes · Estimated positions · ${Math.round(radiusKm / 1.852)} nm radius`
+        : `Illustrative routes · Estimated positions · ${Math.round(radiusKm / 1.852)} nm radius`}</p>
     </section>
   );
 }

@@ -1,4 +1,7 @@
-export const ZONE_RADIUS_KM = 9.26; // 5 nautical miles, matching the live aircraft search.
+export const DEFAULT_RADIUS_NM = 5;
+export const MIN_RADIUS_NM = 1;
+export const MAX_RADIUS_NM = 25;
+export const ZONE_RADIUS_KM = DEFAULT_RADIUS_NM * 1.852;
 
 type Point = { lat: number; lon: number };
 type AircraftPosition = Point & { heading: number | null };

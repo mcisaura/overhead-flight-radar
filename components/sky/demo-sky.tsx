@@ -1,10 +1,13 @@
 "use client";
 
 import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { ArrowRight, Navigation2, Pause, Play, RotateCcw } from "lucide-react";
+import { ArrowRight, MapPin, Navigation2, Pause, Play, RotateCcw } from "lucide-react";
 import FlightMap from "../map/flight-map";
 import SiteHeader from "../site-header";
-import { demoElapsedFractionAtProgress, demoFlights, demoPlace, demoProgressAtElapsedFraction, demoWeather, distanceFromDemoPlace, sampleDemoProfile } from "../../lib/demo-data";
+import { demoElapsedFractionAtProgress, demoFlights, demoPlace, demoProgressAtElapsedFraction, demoWeather, sampleDemoProfile, demoAircraftAtLocation } from "../../lib/demo-data";
+import { distanceKm } from "../../lib/flight-estimate";
+import SkyZoneSettings from "../controls/sky-zone-settings";
+import type { Place } from "./live-sky";
 import { positionAtZoneProgress, zoneProgress } from "../../lib/zone-progress";
 import FlightIdentity, { flightIdentityText } from "../boarding-pass/flight-identity";
 import BoardingPassActions from "../boarding-pass/boarding-pass-actions";
@@ -26,7 +29,14 @@ const DEMO_CROSSING_DURATION_MS = 30_000;
 const AircraftModel = lazy(() => import("../sky/aircraft-model"));
 const HeroCloud = lazy(() => import("../sky/hero-cloud"));
 
-export default function DemoSky({ onModeChange, weatherUnit, onWeatherUnitChange, heroBackground, onHeroBackgroundChange, initialPickerOpen = false }: { onModeChange: (mode: "live" | "demo") => void; weatherUnit: WeatherUnit; onWeatherUnitChange: (unit: WeatherUnit) => void; heroBackground: HeroBackground; onHeroBackgroundChange: (background: HeroBackground) => void; initialPickerOpen?: boolean }) {
+export default function DemoSky({ onModeChange, weatherUnit, onWeatherUnitChange, heroBackground, onHeroBackgroundChange, initialPickerOpen = false, place, onPlaceChange, radiusNm, onRadiusChange }: { place: Place; onPlaceChange: (place: Place) => void; radiusNm: number; onRadiusChange: (radius: number) => void; onModeChange: (mode: "live" | "demo") => void; weatherUnit: WeatherUnit; onWeatherUnitChange: (unit: WeatherUnit) => void; heroBackground: HeroBackground; onHeroBackgroundChange: (background: HeroBackground) => void; initialPickerOpen?: boolean }) {
+  const radiusKm = radiusNm * 1.852;
+  const [zoneSettingsOpen, setZoneSettingsOpen] = useState(false);
+  const locationControls = <div className="demo-location-actions">
+    <button type="button" className="primary-button demo-choose-location" onClick={() => setZoneSettingsOpen(true)} aria-haspopup="dialog" aria-expanded={zoneSettingsOpen} aria-controls="sky-zone-panel"><MapPin size={15} aria-hidden="true" />Choose location &amp; zone</button>
+  </div>;
+  const relocated = Math.abs(place.lat - demoPlace.lat) > .0001 || Math.abs(place.lon - demoPlace.lon) > .0001;
+  const locationLabel = place.sample ? "Downtown Houston" : place.label.split(" · ")[0];
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(initialPickerOpen);
   const passMainRef = useRef<HTMLDivElement>(null);
@@ -44,18 +54,23 @@ export default function DemoSky({ onModeChange, weatherUnit, onWeatherUnitChange
   const progressRef = useRef(0);
   const elapsedRef = useRef(0);
   const selected = demoFlights.find((item) => item.id === selectedId) ?? null;
-  const previewPosition = selected ? positionAtZoneProgress(demoPlace, selected.aircraft, progress) : null;
-  const flight = selected ? {
-    ...selected.aircraft,
+  const localAircraft = selected ? demoAircraftAtLocation(selected.aircraft, place, radiusKm) : null;
+  const previewPosition = localAircraft ? positionAtZoneProgress(place, localAircraft, progress, radiusKm) : null;
+  const flight = selected && localAircraft ? {
+    ...localAircraft,
     ...previewPosition,
     ...sampleDemoProfile(selected.profile, progress),
-    distanceKm: previewPosition ? distanceFromDemoPlace(previewPosition.lat, previewPosition.lon) : selected.aircraft.distanceKm,
+    distanceKm: previewPosition ? distanceKm(place, previewPosition) : selected.aircraft.distanceKm,
   } : null;
-  const crossing = flight ? zoneProgress(demoPlace, flight) : null;
-  const routeKnown = Boolean(selected?.origin && selected?.destination);
-  const routeEntry = selected?.origin ?? selected?.scenario.localSegment?.entry ?? null;
-  const routeExit = selected?.destination ?? selected?.scenario.localSegment?.exit ?? null;
-  const mapAircraft = flight && selected ? [{ ...flight, origin: selected.origin, destination: selected.destination }] : [];
+  const crossing = flight ? zoneProgress(place, flight, radiusKm) : null;
+  const routeKnown = Boolean(!relocated && selected?.origin && selected?.destination);
+  const localPlaceName = locationLabel.split(",")[0];
+  const localDirection = (heading: number) => ["N", "NE", "E", "SE", "S", "SW", "W", "NW"][Math.round(((heading + 360) % 360) / 45) % 8];
+  const entryDirection = localDirection((flight?.heading ?? 0) + 180);
+  const exitDirection = localDirection(flight?.heading ?? 0);
+  const routeEntry = relocated ? { code: entryDirection, city: `${entryDirection} of ${localPlaceName}` } : selected?.origin ?? selected?.scenario.localSegment?.entry ?? null;
+  const routeExit = relocated ? { code: exitDirection, city: `${exitDirection} of ${localPlaceName}` } : selected?.destination ?? selected?.scenario.localSegment?.exit ?? null;
+  const mapAircraft = flight && selected ? [{ ...flight, origin: relocated ? null : selected.origin, destination: relocated ? null : selected.destination }] : [];
   const crossingStatus = phase === "exiting" ? "Leaving your sky" : crossing?.motion === "approaching" ? "Drawing closer" : crossing?.motion === "leaving" ? "Heading away" : "Crossing your sky";
   const displayKey = flight && selected ? `${selected.id}:${flightRun}:${crossingStatus}` : "quiet";
 
@@ -95,7 +110,7 @@ export default function DemoSky({ onModeChange, weatherUnit, onWeatherUnitChange
   }
 
   useEffect(() => {
-    if (!playing || !selected || scrubbing) return;
+    if (!playing || !selected || scrubbing || zoneSettingsOpen) return;
     let lastTick = performance.now();
     const tick = () => {
       const now = performance.now();
@@ -114,10 +129,10 @@ export default function DemoSky({ onModeChange, weatherUnit, onWeatherUnitChange
     const timer = window.setInterval(tick, 50);
     document.addEventListener("visibilitychange", tick);
     return () => { window.clearInterval(timer); document.removeEventListener("visibilitychange", tick); };
-  }, [playing, selected, flightRun, scrubbing]);
+  }, [playing, selected, flightRun, scrubbing, zoneSettingsOpen]);
 
   useEffect(() => {
-    if (phase !== "exiting" || scrubbing) return;
+    if (phase !== "exiting" || scrubbing || zoneSettingsOpen) return;
     const timer = window.setTimeout(() => {
       setSelectedId(null);
       setPhase("empty");
@@ -127,7 +142,7 @@ export default function DemoSky({ onModeChange, weatherUnit, onWeatherUnitChange
       setPreparing(false);
     }, 2000);
     return () => window.clearTimeout(timer);
-  }, [phase, scrubbing]);
+  }, [phase, scrubbing, zoneSettingsOpen]);
 
   function startWhenReady() {
     if (!pendingStartRef.current || !modelReadyRef.current || !passReadyRef.current) return;
@@ -179,7 +194,11 @@ export default function DemoSky({ onModeChange, weatherUnit, onWeatherUnitChange
 
   return (
     <main className={`app-shell hero-background-${heroBackground} demo-ticket-picker`}>
-      <SiteHeader mode="demo" onModeChange={onModeChange} placeLabel={demoPlace.label} weather={demoWeather} weatherUnit={weatherUnit} />
+      <SiteHeader mode="demo" onModeChange={onModeChange} placeLabel={`${locationLabel} · sample sky`} weather={demoWeather} weatherUnit={weatherUnit} />
+
+      {zoneSettingsOpen && <SkyZoneSettings place={place} radiusNm={radiusNm} onClose={() => setZoneSettingsOpen(false)} onApply={(nextPlace, nextRadius) => {
+        onPlaceChange(nextPlace); onRadiusChange(nextRadius);
+      }} />}
 
       <section className={`sky-stage sky-${phase} ${flight ? "has-flight" : ""}`} aria-labelledby="hero-title">
         <div className="sky-art" aria-hidden="true" />
@@ -197,7 +216,7 @@ export default function DemoSky({ onModeChange, weatherUnit, onWeatherUnitChange
               <div className="boarding-pass-route-spacing" aria-hidden="true" />
               <BoardingRoute origin={routeEntry} destination={routeExit} zoneSegment={!routeKnown} />
               <button type="button" className="ticket-choose-another" aria-label="Choose another flight" onClick={clearSky}><span className="ticket-change-full">← Choose another flight</span><span className="ticket-change-short">Change flight</span></button>
-          </> : pickerOpen ? <TicketFlightPicker onSelect={selectFlight} /> : null}
+          </> : pickerOpen ? <TicketFlightPicker onSelect={selectFlight} locationLabel={locationLabel} relocated={relocated} /> : null}
         </div>
         {flight && selected ?
             <BoardingPassStub demo callsign={flight.callsign} aircraftType={flight.aircraftType}>
@@ -207,12 +226,13 @@ export default function DemoSky({ onModeChange, weatherUnit, onWeatherUnitChange
                   <button type="button" className="zone-play" disabled={phase === "exiting" || preparing} onClick={() => setPlaying((value) => !value)}>{playing ? <Pause size={15} /> : <Play size={15} />}{preparing ? "Preparing…" : playing ? "Pause" : "Resume"}</button>
                   <button type="button" className="zone-reset" onClick={() => selectFlight(selected.id)}><RotateCcw size={15} />Replay</button>
                 </BoardingPassActions>
+                {locationControls}
               </div>
             </BoardingPassStub>
         : <div ref={quietStubRef} className={`boarding-pass-stub demo-quiet-stub ${pickerOpen ? "is-open" : ""}`}>
             <div className="boarding-pass-stub-codes">
               <div><span>SKY STATUS</span><strong>No aircraft in the zone</strong></div>
-              <div><span>OBSERVATION ZONE</span><strong>5 nautical miles</strong></div>
+              <div><span>OBSERVATION RADIUS</span><strong>{radiusNm} nautical {radiusNm === 1 ? "mile" : "miles"}</strong></div>
             </div>
             <div className="boarding-pass-stub-details">
               <div className="demo-stub-footer">
@@ -221,6 +241,7 @@ export default function DemoSky({ onModeChange, weatherUnit, onWeatherUnitChange
                 </div>
                 <BoardingBarcode />
               </div>
+              {locationControls}
             </div>
           </div>}
         </BoardingPassDisplay>
@@ -229,13 +250,13 @@ export default function DemoSky({ onModeChange, weatherUnit, onWeatherUnitChange
           startWhenReady();
         }} /></Suspense></div>}
         {flight && <HeroProgressLine key={`${selectedId}-${flightRun}`} progress={progress} label={`${flight.callsign || "Aircraft"} crossing the zone`} valueText={`${Math.round(progress)}%, ${crossingStatus.toLowerCase()}`}
-          paused={!playing} onScrubStart={() => { setScrubbing(true); setPreviewProgress(progressRef.current); }}
+          paused={!playing || zoneSettingsOpen} onScrubStart={() => { setScrubbing(true); setPreviewProgress(progressRef.current); }}
           onProgressChange={setPreviewProgress} onScrubEnd={() => setScrubbing(false)} />}
       </section>
 
       <div className="sky-dashboard">
       <div className="map-details-card">
-      <FlightMap lat={demoPlace.lat} lon={demoPlace.lon} aircraft={mapAircraft} closestHex={flight?.hex ?? null} demo showDetails={false} exiting={phase === "exiting"} onSelect={(hex) => {
+      <FlightMap lat={place.lat} lon={place.lon} radiusKm={radiusKm} locationLabel={`${locationLabel} · simulated sky`} aircraft={mapAircraft} closestHex={flight?.hex ?? null} demo showDetails={false} exiting={phase === "exiting"} onSelect={(hex) => {
         const match = demoFlights.find((item) => item.aircraft.hex === hex);
         if (match) selectFlight(match.id);
       }} />
@@ -254,7 +275,7 @@ export default function DemoSky({ onModeChange, weatherUnit, onWeatherUnitChange
               <div><span>Ground speed</span><strong>{flight.speedKts == null ? "—" : `${Math.round(flight.speedKts)} kt`}</strong></div>
               <div><span>Distance</span><strong>{formatDistanceNm(flight.distanceKm)}</strong></div>
             </div>
-            <p className="data-note">{selected.scenario.routeNote}</p>
+            <p className="data-note">{relocated ? "Fictional local crossing over your selected location" : selected.scenario.routeNote}</p>
             </> : <p className="empty-copy">No flight details yet. Start a sample flight to see its journey.</p>}
           </article>
           {flight && <div className="map-preview-controls">

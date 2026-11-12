@@ -4,9 +4,10 @@ import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react"
 import { ArrowRight, Navigation2 } from "lucide-react";
 import FlightMap from "../map/flight-map";
 import SiteHeader from "../site-header";
+import SkyZoneSettings from "../controls/sky-zone-settings";
 import LocationFeedback from "../controls/location-feedback";
 import { createLocationRequester, type LocationIssue } from "../../lib/location-access";
-import { ZONE_RADIUS_KM, zoneProgress } from "../../lib/zone-progress";
+import { zoneProgress } from "../../lib/zone-progress";
 import { closestLiveAircraft, liveRefreshTarget, projectLiveAircraft } from "../../lib/live-snapshot";
 import FlightLink from "../boarding-pass/flight-link";
 import FlightIdentity, { flightIdentityText } from "../boarding-pass/flight-identity";
@@ -27,7 +28,9 @@ import type { HeroBackground } from "../controls/hero-background-toggle";
 export type Place = { lat: number; lon: number; label: string; sample: boolean };
 const AircraftModel = lazy(() => import("./aircraft-model"));
 const HeroCloud = lazy(() => import("./hero-cloud"));
-export default function LiveSky({ onModeChange, onSimulateFlight, place, onPlaceChange, weatherUnit, onWeatherUnitChange, heroBackground, onHeroBackgroundChange }: { onModeChange: (mode: "live" | "demo") => void; onSimulateFlight: () => void; place: Place; onPlaceChange: (place: Place) => void; weatherUnit: WeatherUnit; onWeatherUnitChange: (unit: WeatherUnit) => void; heroBackground: HeroBackground; onHeroBackgroundChange: (background: HeroBackground) => void }) {
+export default function LiveSky({ onModeChange, onSimulateFlight, place, onPlaceChange, radiusNm, onRadiusChange, weatherUnit, onWeatherUnitChange, heroBackground, onHeroBackgroundChange }: { onModeChange: (mode: "live" | "demo") => void; onSimulateFlight: () => void; place: Place; onPlaceChange: (place: Place) => void; radiusNm: number; onRadiusChange: (radius: number) => void; weatherUnit: WeatherUnit; onWeatherUnitChange: (unit: WeatherUnit) => void; heroBackground: HeroBackground; onHeroBackgroundChange: (background: HeroBackground) => void }) {
+  const radiusKm = radiusNm * 1.852;
+  const [zoneSettingsOpen, setZoneSettingsOpen] = useState(false);
   const [data, setData] = useState<SkyResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -73,7 +76,7 @@ export default function LiveSky({ onModeChange, onSimulateFlight, place, onPlace
     async function refresh() {
       const requestId = ++latestRequest;
       try {
-        const params = new URLSearchParams({ mode: "live", lat: String(place.lat), lon: String(place.lon) });
+        const params = new URLSearchParams({ mode: "live", lat: String(place.lat), lon: String(place.lon), radiusNm: String(radiusNm) });
         const response = await fetch(`/api/sky?${params}`, { cache: "no-store" });
         if (!response.ok) {
           const problem = await response.json().catch(() => null) as { error?: string } | null;
@@ -96,7 +99,7 @@ export default function LiveSky({ onModeChange, onSimulateFlight, place, onPlace
     }
     void refresh();
     return () => { active = false; };
-  }, [place, refreshKey]);
+  }, [place, radiusNm, refreshKey]);
 
   useEffect(() => {
     const requester = createLocationRequester(navigator.geolocation, {
@@ -116,13 +119,19 @@ export default function LiveSky({ onModeChange, onSimulateFlight, place, onPlace
     return () => { requester.cancel(); locationRequesterRef.current = null; };
   }, [onPlaceChange]);
   const useLocation = useCallback(() => locationRequesterRef.current?.request(), []);
+  const chooseLocation = useCallback(() => {
+    // The map picker takes over from any still-pending browser location request.
+    locationRequesterRef.current?.cancel();
+    setLocating(false);
+    setZoneSettingsOpen(true);
+  }, []);
 
   const aircraft = projectLiveAircraft(data?.aircraft ?? [], place, receivedAt, clockMs);
   const selectedAircraft = aircraft.find((plane) => plane.hex === data?.flight?.hex);
-  const inZone = Boolean(selectedAircraft && selectedAircraft.distanceKm <= ZONE_RADIUS_KM);
+  const inZone = Boolean(selectedAircraft && selectedAircraft.distanceKm <= radiusKm);
   const flight = inZone ? data?.flight ?? null : null;
-  const closestAircraft = closestLiveAircraft(aircraft);
-  const refreshTarget = liveRefreshTarget(data?.flight?.hex, selectedAircraft, closestAircraft);
+  const closestAircraft = closestLiveAircraft(aircraft, undefined, radiusKm);
+  const refreshTarget = liveRefreshTarget(data?.flight?.hex, selectedAircraft, closestAircraft, radiusKm);
   const refreshKind = refreshTarget?.kind;
   const refreshHex = refreshTarget?.hex;
   useEffect(() => {
@@ -139,7 +148,7 @@ export default function LiveSky({ onModeChange, onSimulateFlight, place, onPlace
   const coverageWarning = data?.warnings.find((warning) => warning.includes("coverage")) ?? null;
   const refreshNeeded = Boolean(data && receivedAt && (clockMs - receivedAt >= 90_000 || (data.aircraft.length > 0 && aircraft.length === 0)));
   const flightName = flight ? flightIdentityText(flight) : "Aircraft";
-  const crossing = selectedAircraft ? zoneProgress(place, selectedAircraft) : flight?.zoneProgress ?? null;
+  const crossing = selectedAircraft ? zoneProgress(place, selectedAircraft, radiusKm) : flight?.zoneProgress ?? null;
   const progress = crossing?.percent ?? null;
   const shownDistanceKm = selectedAircraft?.distanceKm ?? flight?.distanceKm ?? 0;
   const shownAgeSeconds = selectedAircraft?.seenSeconds ?? flight?.seenSeconds ?? 0;
@@ -147,9 +156,20 @@ export default function LiveSky({ onModeChange, onSimulateFlight, place, onPlace
   const flightHeading = error ? "Live feed interrupted" : crossing?.motion === "approaching" ? "Drawing closer" : crossing?.motion === "leaving" ? "Heading away" : "Live aircraft nearby";
   const minutesToZoneExit = crossing && selectedAircraft?.speedKts && selectedAircraft.speedKts > 0
     ? crossing.remainingKm / (selectedAircraft.speedKts * 1.852 / 60) : null;
-  const nextAircraft = flight ? closestLiveAircraft(aircraft, flight.hex) : null;
+  const nextAircraft = flight ? closestLiveAircraft(aircraft, flight.hex, radiusKm) : null;
   return <main className={`app-shell live-shell hero-background-${heroBackground}`}>
     <SiteHeader mode="live" onModeChange={onModeChange} placeLabel={place.sample ? "Downtown Houston · live sky" : place.label} weather={data?.weather ?? null} weatherUnit={weatherUnit} loading={loading} />
+
+    {zoneSettingsOpen && <SkyZoneSettings onClose={() => setZoneSettingsOpen(false)} place={place} radiusNm={radiusNm} onApply={(nextPlace, nextRadius) => {
+      locationRequesterRef.current?.cancel();
+      setLocating(false);
+      setLocationIssue(null);
+      exitRefreshHex.current = null;
+      takeoverRefreshHex.current = null;
+      setData(null); setReceivedAt(0); setError(null); setLoading(true);
+      onPlaceChange(nextPlace); onRadiusChange(nextRadius);
+      setRefreshKey((key) => key + 1);
+    }} />}
 
     <section className={`sky-stage live-stage ${flight ? "sky-active has-flight" : "sky-empty"}`} aria-labelledby="hero-title">
       <div className="sky-art" aria-hidden="true" /><div className="sky-overlay" aria-hidden="true" />
@@ -169,8 +189,8 @@ export default function LiveSky({ onModeChange, onSimulateFlight, place, onPlace
           <div className="hero-flight-details">
             <BoardingPassStats altitudeFt={flight.altitudeFt} speedKts={flight.speedKts} distanceKm={shownDistanceKm} />
             <p className="boarding-pass-freshness">Last reported {Math.round(shownAgeSeconds)} sec ago{coverageWarning ? " · Coverage may be incomplete" : ""}</p>
-            <LiveTicketActions locating={locating} onUseLocation={useLocation} onRefresh={() => setRefreshKey((key) => key + 1)} onSimulate={onSimulateFlight} />
-            {locationIssue && <LocationFeedback key={locationIssue} issue={locationIssue} onRetry={useLocation} />}
+            <LiveTicketActions onChooseLocation={chooseLocation} zoneSettingsOpen={zoneSettingsOpen} locating={locating} onUseLocation={useLocation} onRefresh={() => setRefreshKey((key) => key + 1)} onSimulate={onSimulateFlight} />
+            {locationIssue && <LocationFeedback key={locationIssue} issue={locationIssue} onRetry={useLocation} onChooseLocation={chooseLocation} />}
             {nextAircraft && <div className="next-aircraft-queue" aria-label="Next closest aircraft">
               <span className="next-aircraft-label">NEXT CLOSEST</span>
               <div className="next-aircraft-main"><strong><FlightLink callsign={nextAircraft.callsign} registration={nextAircraft.registration}>{nextAircraft.callsign || nextAircraft.registration || nextAircraft.hex.toUpperCase()}</FlightLink></strong><span>{nextAircraft.originCode || "···"} → {nextAircraft.destinationCode || "···"}</span></div>
@@ -181,22 +201,22 @@ export default function LiveSky({ onModeChange, onSimulateFlight, place, onPlace
       : <div className="boarding-pass-stub">
           <div className="boarding-pass-stub-codes live-quiet-codes">
             <div><span>SKY STATUS</span><strong>{loading && !data ? "Checking for aircraft" : error ? "Feed unavailable" : coverageWarning ? "Coverage incomplete" : refreshNeeded ? "Refresh to check again" : "No nearby aircraft"}</strong></div>
-            <div><span>OBSERVATION ZONE</span><strong>5 nautical miles</strong></div>
+            <div><span>OBSERVATION RADIUS</span><strong>{radiusNm} nautical {radiusNm === 1 ? "mile" : "miles"}</strong></div>
             <BoardingBarcode />
           </div>
           <div className="boarding-pass-stub-details">
-            <LiveTicketActions locating={locating} onUseLocation={useLocation} onRefresh={() => setRefreshKey((key) => key + 1)} onSimulate={onSimulateFlight} />
-            {locationIssue && <LocationFeedback key={locationIssue} issue={locationIssue} onRetry={useLocation} />}
+            <LiveTicketActions onChooseLocation={chooseLocation} zoneSettingsOpen={zoneSettingsOpen} locating={locating} onUseLocation={useLocation} onRefresh={() => setRefreshKey((key) => key + 1)} onSimulate={onSimulateFlight} />
+            {locationIssue && <LocationFeedback key={locationIssue} issue={locationIssue} onRetry={useLocation} onChooseLocation={chooseLocation} />}
           </div>
         </div>}
       </BoardingPassDisplay>
       {flight && <div className="sky-aircraft-layer"><Suspense fallback={null}><AircraftModel key={`${flight.hex}-${aircraftVisualForFlight(flight)}`} progress={progress} visual={aircraftVisualForFlight(flight)} live /></Suspense></div>}
-      {flight && <HeroProgressLine key={flight.hex} progress={progress} label={`${flightName} crossing the 5 nautical mile zone`} valueText={progress == null ? "Progress unavailable" : `${progress.toFixed(1)}% through the zone, estimated from the latest reported position and heading`} live />}
+      {flight && <HeroProgressLine key={flight.hex} progress={progress} label={`${flightName} crossing the ${radiusNm} nautical mile radius zone`} valueText={progress == null ? "Progress unavailable" : `${progress.toFixed(1)}% through the zone, estimated from the latest reported position and heading`} live />}
     </section>
 
     <div className="sky-dashboard">
       <div className="map-details-card">
-      <FlightMap lat={place.lat} lon={place.lon} aircraft={aircraft} closestHex={flight?.hex ?? null} locationLabel={place.sample ? "Downtown Houston" : "Your location"} />
+      <FlightMap lat={place.lat} lon={place.lon} aircraft={aircraft} closestHex={flight?.hex ?? null} radiusKm={radiusKm} locationLabel={place.sample ? "Downtown Houston" : place.label.split(" · ")[0]} />
       <aside className="flight-sidebar" aria-label="Live flight details"><article className="detail-panel flight-panel">
         <div className="detail-title"><Navigation2 size={18} strokeWidth={1.8} /><h3><FlightLink callsign={flight?.callsign} registration={flight?.registration}>{flightName}</FlightLink></h3></div>
         {flight ? <><div className="airport-row"><div><strong className="airport-code">{flight.origin?.code ?? "···"}</strong><span className="airport-city">{flight.origin?.city ?? "Origin unknown"}</span></div><ArrowRight className="airport-connector" size={25} strokeWidth={1.3} aria-hidden="true" /><div><strong className="airport-code">{flight.destination?.code ?? "···"}</strong><span className="airport-city">{flight.destination?.city ?? "Destination unknown"}</span></div></div>

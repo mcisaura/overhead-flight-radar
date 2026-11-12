@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDemoSky } from "../../../lib/demo-data";
-import { ZONE_RADIUS_KM, zoneProgress } from "../../../lib/zone-progress";
+import { DEFAULT_RADIUS_NM, MIN_RADIUS_NM, MAX_RADIUS_NM, zoneProgress } from "../../../lib/zone-progress";
 import { distanceKm, estimatePosition } from "../../../lib/flight-estimate";
 import { airlineIdentity, displayAircraftType, displayFlightName } from "../../../lib/flight-display";
 import { reportedRouteIsPlausible } from "../../../lib/route-plausibility";
@@ -42,8 +42,8 @@ function airLabsUrl(endpoint: string, apiKey: string, params: Record<string, str
   return url.toString();
 }
 
-function bounds(lat: number, lon: number) {
-  const searchKm = ZONE_RADIUS_KM + MAX_PLAUSIBLE_SPEED_KTS * 1.852 * MAX_REPORT_AGE_SECONDS / 3600;
+function bounds(lat: number, lon: number, radiusKm: number) {
+  const searchKm = radiusKm + MAX_PLAUSIBLE_SPEED_KTS * 1.852 * MAX_REPORT_AGE_SECONDS / 3600;
   const latDelta = searchKm / 111.32;
   const lonDelta = Math.min(180, searchKm / Math.max(0.001, 111.32 * Math.cos(lat * Math.PI / 180)));
   const south = Math.max(-90, lat - latDelta), north = Math.min(90, lat + latDelta);
@@ -185,6 +185,11 @@ export async function GET(request: NextRequest) {
   if (!Number.isFinite(lat) || !Number.isFinite(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180 || request.nextUrl.searchParams.get("lat") === null || request.nextUrl.searchParams.get("lon") === null) {
     return NextResponse.json({ error: "Valid latitude and longitude are required." }, { status: 400 });
   }
+  const radiusNm = Number(request.nextUrl.searchParams.get("radiusNm") ?? DEFAULT_RADIUS_NM);
+  if (!Number.isInteger(radiusNm) || radiusNm < MIN_RADIUS_NM || radiusNm > MAX_RADIUS_NM) {
+    return NextResponse.json({ error: `Zone radius must be a whole number from ${MIN_RADIUS_NM} to ${MAX_RADIUS_NM} nautical miles.` }, { status: 400 });
+  }
+  const radiusKm = radiusNm * 1.852;
   const apiKey = process.env.AIRLABS_API_KEY;
   if (!apiKey) return NextResponse.json({ error: "AirLabs is not configured." }, { status: 503 });
   const client = request.headers.get("cf-connecting-ip") || "anonymous";
@@ -194,7 +199,7 @@ export async function GET(request: NextRequest) {
   }
 
   const warnings: string[] = [];
-  const flights = Promise.allSettled(bounds(lat, lon).map((bbox) => getAirLabs<AirLabsFlight[]>("flights", apiKey, { bbox, _fields: flightFields }, 30)))
+  const flights = Promise.allSettled(bounds(lat, lon, radiusKm).map((bbox) => getAirLabs<AirLabsFlight[]>("flights", apiKey, { bbox, _fields: flightFields }, 30)))
     .then((results) => {
       const groups = results.filter((result): result is PromiseFulfilledResult<AirLabsFlight[]> => result.status === "fulfilled");
       if (!groups.length) {
@@ -235,7 +240,7 @@ export async function GET(request: NextRequest) {
         const projectedDistanceKm = projected ? distanceKm({ lat, lon }, projected) : Infinity;
         return { item, altitudeFt, seenSeconds, speedKts, projected, projectedDistanceKm };
       })
-      .filter((entry) => entry.projectedDistanceKm <= ZONE_RADIUS_KM && entry.seenSeconds !== null && entry.seenSeconds <= MAX_REPORT_AGE_SECONDS)
+      .filter((entry) => entry.projectedDistanceKm <= radiusKm && entry.seenSeconds !== null && entry.seenSeconds <= MAX_REPORT_AGE_SECONDS)
       .sort((a, b) => a.projectedDistanceKm - b.projectedDistanceKm || a.item.hex!.localeCompare(b.item.hex!));
     nearbyCount = candidates.length;
     const selected = candidates[0];
@@ -292,7 +297,7 @@ export async function GET(request: NextRequest) {
         routeStatus, routeSource: "airlabs",
         reportedPosition: { lat: item.lat!, lon: item.lng! },
         estimatedPosition: { lat: selected.projected!.lat, lon: selected.projected!.lon },
-        zoneProgress: zoneProgress({ lat, lon }, { ...selected.projected!, heading: typeof item.dir === "number" ? item.dir : null }),
+        zoneProgress: zoneProgress({ lat, lon }, { ...selected.projected!, heading: typeof item.dir === "number" ? item.dir : null }, radiusKm),
       };
     }
   } else {

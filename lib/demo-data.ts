@@ -1,5 +1,6 @@
+import { isSupportedMapLocation, wrapMapLongitude } from "./map-location";
 import type { MapAircraft } from "../components/map/flight-map";
-import { positionAtZoneProgress, zoneProgress } from "./zone-progress";
+import { positionAtZoneProgress, zoneProgress, ZONE_RADIUS_KM } from "./zone-progress";
 
 export const demoPlace = { lat: 29.7604, lon: -95.3698, label: "Downtown Houston · sample sky" };
 
@@ -167,5 +168,18 @@ export function getDemoSky(presetId?: string | null) {
     weather: demoWeather,
     updatedAt: new Date().toISOString(),
     warnings: [],
+  };
+}
+
+// Keep each sample's heading and relative closest pass when moving its zone.
+export function demoAircraftAtLocation(aircraft: DemoFlight["aircraft"], center: { lat: number; lon: number }, radiusKm: number) {
+  if (!isSupportedMapLocation(center.lat, center.lon) || !Number.isFinite(radiusKm) || radiusKm <= 0) return null;
+  const scale = radiusKm / ZONE_RADIUS_KM;
+  const eastKm = (aircraft.lon - demoPlace.lon) * 111.32 * Math.cos(demoPlace.lat * Math.PI / 180) * scale;
+  const northKm = (aircraft.lat - demoPlace.lat) * 111.32 * scale;
+  return {
+    ...aircraft,
+    lat: center.lat + northKm / 111.32,
+    lon: wrapMapLongitude(center.lon + eastKm / (111.32 * Math.cos(center.lat * Math.PI / 180))),
   };
 }

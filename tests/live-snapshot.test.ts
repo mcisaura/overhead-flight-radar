@@ -70,3 +70,11 @@ test("an exit with a replacement requests one handoff; expiry without a replacem
   assert.equal(liveRefreshTarget("first", undefined, null), null);
   assert.equal(liveRefreshTarget(undefined, undefined, null), null);
 });
+
+test("custom radius controls aircraft selection and zone exit", () => {
+  const aircraft = [{ hex: "outer", distanceKm: 18, seenSeconds: 10 }];
+  assert.equal(closestLiveAircraft(aircraft), null);
+  assert.equal(closestLiveAircraft(aircraft, undefined, 25 * 1.852)?.hex, "outer");
+  assert.equal(liveRefreshTarget("outer", aircraft[0], null, 25 * 1.852), null);
+  assert.deepEqual(liveRefreshTarget("outer", aircraft[0], null, 1.852), { kind: "exit", hex: "outer" });
+});

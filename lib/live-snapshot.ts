@@ -13,10 +13,10 @@ export function projectLiveAircraft<T extends ReportedAircraft>(aircraft: T[], p
   }).filter((plane) => plane.seenSeconds <= MAX_ESTIMATE_SECONDS);
 }
 
-export function closestLiveAircraft<T extends { hex: string; distanceKm: number; seenSeconds: number }>(aircraft: T[], excludeHex?: string) {
+export function closestLiveAircraft<T extends { hex: string; distanceKm: number; seenSeconds: number }>(aircraft: T[], excludeHex?: string, radiusKm = ZONE_RADIUS_KM) {
   let closest: T | null = null;
   for (const plane of aircraft) {
-    if (plane.hex === excludeHex || !(plane.distanceKm <= ZONE_RADIUS_KM) || !(plane.seenSeconds <= 60)) continue;
+    if (plane.hex === excludeHex || !(plane.distanceKm <= radiusKm) || !(plane.seenSeconds <= 60)) continue;
     if (!closest || plane.distanceKm < closest.distanceKm || (plane.distanceKm === closest.distanceKm && plane.hex.localeCompare(closest.hex) < 0)) closest = plane;
   }
   return closest;
@@ -26,9 +26,10 @@ export function liveRefreshTarget(
   trackedHex: string | undefined,
   trackedAircraft: { distanceKm: number } | undefined,
   closestAircraft: { hex: string } | null,
+  radiusKm = ZONE_RADIUS_KM,
 ): { kind: "handoff" | "exit"; hex: string } | null {
   // A fresh replacement can survive after the tracked report expires while hidden.
   if (closestAircraft && closestAircraft.hex !== trackedHex) return { kind: "handoff", hex: closestAircraft.hex };
-  if (trackedHex && trackedAircraft && trackedAircraft.distanceKm > ZONE_RADIUS_KM) return { kind: "exit", hex: trackedHex };
+  if (trackedHex && trackedAircraft && trackedAircraft.distanceKm > radiusKm) return { kind: "exit", hex: trackedHex };
   return null;
 }

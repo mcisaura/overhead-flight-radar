@@ -1,4 +1,6 @@
-export type LocationIssue = "blocked" | "unavailable" | "timeout" | "unsupported" | "unknown";
+import { isSupportedMapLocation } from "./map-location";
+
+export type LocationIssue = "blocked" | "unavailable" | "timeout" | "unsupported" | "out-of-range" | "unknown";
 
 type Handlers = {
   onStart: () => void;
@@ -24,8 +26,11 @@ export function createLocationRequester(geolocation: Pick<Geolocation, "getCurre
       const finish = (result: { position: GeolocationPosition } | { issue: LocationIssue }) => {
         if (!pending || requestId !== generation) return;
         pending = false;
-        if ("position" in result) handlers.onSuccess(result.position);
-        else handlers.onError(result.issue);
+        if ("position" in result) {
+          const { latitude, longitude } = result.position.coords;
+          if (isSupportedMapLocation(latitude, longitude)) handlers.onSuccess(result.position);
+          else handlers.onError("out-of-range");
+        } else handlers.onError(result.issue);
         handlers.onFinish();
       };
       if (!geolocation) { finish({ issue: "unsupported" }); return; }

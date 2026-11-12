@@ -401,3 +401,27 @@ test("excess live requests are rejected before upstream work", async () => {
   assert.equal(last?.headers.get("Retry-After"), "60");
   assert.ok(calls <= 12);
 });
+
+test("invalid radii are rejected before upstream requests", async () => {
+  globalThis.fetch = async () => { throw new Error("unexpected upstream request"); };
+  for (const radius of ["0", "26", "-1", "2.5", "NaN", "Infinity", ""]) {
+    const response = await GET(new NextRequest(`http://localhost/api/sky?mode=live&lat=0&lon=0&radiusNm=${radius}`));
+    assert.equal(response.status, 400, `radius ${radius}`);
+  }
+});
+
+test("custom radius expands upstream bounds and selects aircraft outside the default zone", async () => {
+  const calls = fixtureFetch({ hex: "outer-zone", lat: -10, lng: .2, dir: 90, speed: 0, updated: Math.floor(Date.now() / 1000), status: "active" });
+  const small = await (await GET(new NextRequest("http://localhost/api/sky?mode=live&lat=-10&lon=0&radiusNm=1"))).json() as SkyResponse;
+  const large = await (await GET(new NextRequest("http://localhost/api/sky?mode=live&lat=-10&lon=0&radiusNm=25"))).json() as SkyResponse;
+  assert.equal(small.flight, null);
+  assert.equal(small.aircraft.length, 0);
+  assert.equal(large.flight?.hex, "outer-zone");
+  assert.equal(large.aircraft.length, 1);
+  assert.ok(large.flight?.zoneProgress);
+  assert.ok(large.flight.zoneProgress.remainingKm > 10);
+  const boxes = calls.filter((url) => url.pathname.endsWith("/flights")).map((url) => url.searchParams.get("bbox")!.split(",").map(Number));
+  assert.equal(boxes.length, 2);
+  assert.ok(boxes[1][1] < boxes[0][1]);
+  assert.ok(boxes[1][3] > boxes[0][3]);
+});
