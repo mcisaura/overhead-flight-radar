@@ -2,10 +2,29 @@
 
 A personal flight-watching project inspired by British Airways’ **#LookUp** campaign. It shows nearby aircraft with a boarding pass, interactive 3D models, a map, and weather.
 
-- **Live:** aircraft reported within 5 nautical miles of a selected location. Starts in downtown Houston; choose **Use my location** to look nearby.
-- **Demo:** three fictional Houston flights with pause, replay, and draggable progress controls. Works without an API key.
+- **Live:** aircraft reported within a selected radius (1–25 nautical miles, default 5). Starts in downtown Houston. Use device location or choose a point on the map.
+- **Demo:** three fictional flight presets with pause, replay, and draggable progress controls. Choose a location and radius without an AirLabs key or browser location access. Houston presets use sample routes; other locations show local entry/exit directions.
 
 Both modes support light/dark appearance, three sky backgrounds, and weather units. Live positions are estimates; routes may be incomplete, and the 3D models represent broad aircraft categories.
+
+## Choose a location and zone
+
+In Live, **Use my location** requests the browser’s location permission; the adjacent arrow opens the manual picker. Demo has a single **Choose location & zone** button and never requests device location.
+
+- **Map:** drag to move the zone, tap to recenter, or use the arrow keys. The zone follows the map center while panning, and zoom stays unchanged when moving it. Changing screen size preserves the selected center.
+- **Search:** type a city or postcode below the map. Suggestions update after a short pause once you enter two characters. Enter searches immediately; Down/Up navigate suggestions, and Enter selects one. Clear removes the search; Escape clears a nonempty search before dismissing the dialog.
+- **Radius:** choose 1–25 nautical miles from the center. Map, aircraft selection, and crossing progress use the same radius.
+- **Apply or cancel:** **Apply location & zone** saves the current map center, including during a moving pan. Cancel, the close button, or Escape outside search leaves the current sky unchanged.
+
+Location selection supports **85°S–85°N**. Location and radius are shared between Live and Demo for the current session and reset on reload. Demo crossings move with the zone; opening the picker pauses playback, and closing it resumes a previously playing simulation.
+
+### Location permission on iPhone
+
+Safari controls the native permission prompt. If access is blocked, the app shows iPhone-specific instructions, **Check again**, and **Choose on the map instead**.
+
+In Safari’s Page Menu, open **Website Settings** (or **More**) and set **Location** to **Ask** or **Allow**. Also check **Settings → Privacy & Security → Location Services → Safari Websites → While Using the App**. Return to the site and choose **Check again**. See [Apple’s website-permission guidance](https://support.apple.com/en-ie/guide/iphone/iphb01fc3c85/ios).
+
+Device location needs HTTPS, except on localhost. For phone testing, a plain HTTP local-network address will not provide the same permission flow as the public HTTPS site. Manual map selection remains available without device permission.
 
 ## Pixel pilot and preview controls
 
@@ -68,7 +87,7 @@ The app caps new AirLabs calls at 900 per rolling 31 days. This counter cannot c
 
 ## Credits
 
-Aircraft data: [AirLabs](https://airlabs.co/). Weather: [Open-Meteo](https://open-meteo.com/). Maps: [OpenStreetMap](https://www.openstreetmap.org/copyright), displayed with [Leaflet](https://leafletjs.com/). 3D rendering: [Three.js](https://threejs.org/).
+Aircraft data: [AirLabs](https://airlabs.co/). Weather and location search: [Open-Meteo](https://open-meteo.com/), with location data from [GeoNames](https://www.geonames.org/). Maps: [OpenStreetMap](https://www.openstreetmap.org/copyright), displayed with [Leaflet](https://leafletjs.com/). 3D rendering: [Three.js](https://threejs.org/).
 
 | Asset | Creator | License |
 | --- | --- | --- |
